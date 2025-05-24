@@ -1,4 +1,4 @@
-from nidhoggr import *
+from yggdrasil import *
 
 constants = PhysicalConstants(1,1,1.0,1.0,1.0) 
 nx = 100

@@ -1,10 +1,11 @@
 Introduction
 ============
 
-The Níðhöggr (pronounced Nith-hewer) is the mythical serpent demon that gnaws at the roots of the world-tree, Yggdrasil. 
-This naming choice may or may not have been inspired by my simultaneous loathing and admiration for tree codes.
+The Yggdrasil is an immense and sacred tree in Norse mythology that upholds the nine realms of the cosmos. 
 
-.. image:: yggdrasil.png
+.. image:: ygg.jpg
+   :align: center
+   :width: 50%
 
 Purpose of Yggdrasil
 ---------------------

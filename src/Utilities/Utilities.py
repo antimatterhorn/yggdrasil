@@ -1,4 +1,4 @@
-from nidhoggr import SiloMeshWriter2d
+from yggdrasil import SiloMeshWriter2d
 import wave
 import numpy as np
 

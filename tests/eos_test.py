@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
-from nidhoggr import *
+from yggdrasil import *
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(nrho = 50,

@@ -1,4 +1,4 @@
-from nidhoggr import *
+from yggdrasil import *
 from Animation import *
 
 if __name__ == "__main__":

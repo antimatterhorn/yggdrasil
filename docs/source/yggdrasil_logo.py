@@ -7,11 +7,11 @@ class YggdrasilLogoDirective(Directive):
     def run(self):
         literal = nodes.literal_block(
             text=(
-                "     _   _ _                  \n"
-                " ___|_|_| | |_ ___ ___ ___ ___\n"
-                "|   | | . |   | . | . | . |  _|\n"
-                "|_|_|_|___|_|_|___|_  |_  |_|\n"
-                "      v0.8.0      |___|___|\n"
+                "               _             _ _ \n"
+                " _ _ ___ ___ _| |___ ___ ___|_| |\n"
+                "| | | . | . | . |  _| .'|_ -| | |\n"
+                "|_  |_  |_  |___|_| |__,|___|_|_|\n"
+                "|___|___|___|       v0.8.5       \n"
             )
         )
         literal['language'] = 'text'  # tell Sphinx it's plain text

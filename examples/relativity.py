@@ -1,4 +1,4 @@
-from nidhoggr import *
+from yggdrasil import *
 
 travelTime = 2 # years
 distance   = 4  # light-years

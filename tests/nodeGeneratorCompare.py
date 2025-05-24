@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import random
-from nidhoggr import *
+from yggdrasil import *
 from scipy.spatial import distance_matrix
 
 

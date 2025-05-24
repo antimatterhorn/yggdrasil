@@ -1,4 +1,4 @@
-from nidhoggr import *
+from yggdrasil import *
 import matplotlib.pyplot as plt
 from Animation import *
 

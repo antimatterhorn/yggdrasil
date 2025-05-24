@@ -1,4 +1,4 @@
-from nidhoggr import *
+from yggdrasil import *
 
 commandLine = CommandLineArguments(nx = 10,
                                    ny = 10,

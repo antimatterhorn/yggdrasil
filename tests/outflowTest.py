@@ -1,4 +1,4 @@
-from nidhoggr import *
+from yggdrasil import *
 from Animation import *
 from math import sin,cos,sqrt
 

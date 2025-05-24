@@ -1,4 +1,4 @@
-from nidhoggr import *
+from yggdrasil import *
 
 class dumpState:
     def __init__(self,nodeList,workCycle=1):

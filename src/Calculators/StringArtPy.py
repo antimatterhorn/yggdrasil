@@ -3,7 +3,7 @@ import numpy as np
 from math import *
 from random import randrange
 
-from nidhoggr import StringArt, Vector2d
+from yggdrasil import StringArt, Vector2d
 from PyImage import PyImage
 from PIL import Image,ImageOps
 

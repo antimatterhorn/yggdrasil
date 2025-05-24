@@ -1,4 +1,4 @@
-from nidhoggr import *
+from yggdrasil import *
 
 m1 = Tensor2d(1.0,2.0,
                 3.0,4.0)

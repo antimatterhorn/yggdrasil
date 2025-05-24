@@ -1,4 +1,4 @@
-from nidhoggr import *
+from yggdrasil import *
 from StringArtPy import *
 import matplotlib.pyplot as plt
 

@@ -1,4 +1,4 @@
-from nidhoggr import *
+from yggdrasil import *
 
 vec1 = Vector3d(1.0,2.0,3.0)
 vec2 = Vector3d(2.0,3.0,4.0)

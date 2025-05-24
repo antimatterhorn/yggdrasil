@@ -1,4 +1,4 @@
-from nidhoggr import *
+from yggdrasil import *
 
 z       = 10
 omega_m = 0.3

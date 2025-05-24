@@ -1,7 +1,7 @@
 import sys
 sys.path.append("../build/src/Utilities")
 
-from nidhoggr import *
+from yggdrasil import *
 from RPS import *
 from Animation import *
 

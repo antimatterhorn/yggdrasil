@@ -1,4 +1,4 @@
-from nidhoggr import *
+from yggdrasil import *
 from math import sqrt
 class dumpState:
     def __init__(self,nodeList,workCycle=1,G=1):
