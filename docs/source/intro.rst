@@ -4,10 +4,10 @@ Introduction
 The Níðhöggr (pronounced Nith-hewer) is the mythical serpent demon that gnaws at the roots of the world-tree, Yggdrasil. 
 This naming choice may or may not have been inspired by my simultaneous loathing and admiration for tree codes.
 
-.. image:: Nidhogg.png
+.. image:: yggdrasil.png
 
 Purpose of Yggdrasil
--------------------
+---------------------
 
 Yggdrasil is a generic physics simulation framework. It is designed to be used as a base for varied physics simulation methods 
 (FVM,FEM,etc) while keeping helper methods like equations of state and integrators generic enough to be portable between a wide 

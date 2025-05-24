@@ -2,7 +2,7 @@ Yggdrasil Documentation
 =======================
 View Yggdrasil's source code at `Github <https://github.com/antimatterhorn/yggdrasil>`_
 
-.. image:: nithhewer.png
+.. image:: yggdrasil.png
    :align: center
    :width: 50%
 
