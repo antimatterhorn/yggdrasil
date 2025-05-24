@@ -9,7 +9,7 @@
 import sys
 import os
 sys.path.append(os.path.abspath('.'))
-project = 'Nidhoggr'
+project = 'Yggdrasil'
 copyright = '2025, Cody Raskin'
 author = 'Cody Raskin'
 release = '0.8.0'
@@ -18,7 +18,7 @@ release = '0.8.0'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    'nidhoggr_logo',
+    'yggdrasil_logo',
     'myst_parser',
 ]
 

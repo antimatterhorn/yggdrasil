@@ -1,12 +1,12 @@
 Getting Started
 ===============
 
-Before proceeding, ensure that your Nidhoggr installation is working correctly by running Python interactively inside the ``tests`` directory.
-Attempt to import the ``nidhoggr`` package with ``from nidhoggr import *`` and you should be greeted with the following output:
+Before proceeding, ensure that your Yggdrasil installation is working correctly by running Python interactively inside the ``tests`` directory.
+Attempt to import the ``yggdrasil`` package with ``from yggdrasil import *`` and you should be greeted with the following output:
 
-.. nidhoggr-logo::
+.. yggdrasil-logo::
 
-If so, then Nidhoggr is ready to use. If not, then you'll need to troubleshoot your installation before proceeding.
+If so, then Yggdrasil is ready to use. If not, then you'll need to troubleshoot your installation before proceeding.
 
 First run: a simple example
 ---------------------------
@@ -24,12 +24,12 @@ in this case is a Nodelist with a single node.
    :linenos:
 
 Next, we want to create our physics packages, so we'll define a gravity vector pointing downwards in 2d space, and then create the constant gravity package.
-In Nidhoggr, if you're using particles as simple hard spheres, it's a good idea to also construct the Kinetics package as that will ensure that the mass, radius,
+In Yggdrasil, if you're using particles as simple hard spheres, it's a good idea to also construct the Kinetics package as that will ensure that the mass, radius,
 and velocity fields are created and assigned to your Nodelist. Then we place both physics
 packages into a convenient Python list. 
 
 .. note::
-   While mixing dimensionality is possible within Nidhoggr, it's not recommended unless you know what you're doing,
+   While mixing dimensionality is possible within Yggdrasil, it's not recommended unless you know what you're doing,
    so in this case, we'll stick to 2d space for everything.
 
 .. literalinclude:: getting_started.py
@@ -95,6 +95,6 @@ like so:
 
 .. image:: example.gif
 
-Simply close the animation window to quit Nidhoggr. At this point, I encourage you to increase the total number of nodes and set their initial conditions
+Simply close the animation window to quit Yggdrasil. At this point, I encourage you to increase the total number of nodes and set their initial conditions
 with a loop over numNodes. Try giving each node slightly different initial conditions (and positions since they are kinetic and so will collide with one another) 
 and see how the animation changes!

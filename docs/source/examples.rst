@@ -68,6 +68,6 @@ Simulates acoustic waves inside a region with Dirichlet boundary conditions arra
 Simple Test Cases
 -----------------
 
-Many of the Python scripts inside the ``tests`` folder stress single components of Nidhoggr, or a small subset of them. For instance, 
+Many of the Python scripts inside the ``tests`` folder stress single components of Yggdrasil, or a small subset of them. For instance, 
 ``waveBox.py`` tests the acoustic wave solver with a single oscillatory source in the center of a box with two openings on either end 
 (using Dirichlet boundaries to create the box).

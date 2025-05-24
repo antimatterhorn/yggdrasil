@@ -1,6 +1,6 @@
-Nidhoggr Documentation
+Yggdrasil Documentation
 =======================
-View Nidhoggr's source code at `Github <https://github.com/antimatterhorn/nidhoggr>`_
+View Yggdrasil's source code at `Github <https://github.com/antimatterhorn/yggdrasil>`_
 
 .. image:: nithhewer.png
    :align: center

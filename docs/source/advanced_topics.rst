@@ -3,7 +3,7 @@ Advanced Topics
 
 Periodic Work
 --------------------
-Nidhoggr's controller object permits for periodic work to be inserted at a chosen cadence into the simulation.
+Yggdrasil's controller object permits for periodic work to be inserted at a chosen cadence into the simulation.
 This is done by passing a ``periodicWork`` argument to the controller constructor: 
 
 .. code-block:: python
@@ -32,7 +32,7 @@ effects in your simulation, or to perform analysis tasks in real time during int
 
 Calculators and Linear Algebra
 ------------------------------
-Nidhoggr also includes a small number of calculator objects that can be used anywhere in a Nidhoggr
+Yggdrasil also includes a small number of calculator objects that can be used anywhere in a Yggdrasil
 script. These includes
 
 .. code-block:: text
@@ -43,7 +43,7 @@ script. These includes
 
 Each of these has an example script in the ``examples`` directory.
 
-In addition to the above-mentioned calculators, Nidhoggr includes a fairly well-featured linear
+In addition to the above-mentioned calculators, Yggdrasil includes a fairly well-featured linear
 algebra computational package through its Vector and Tensor class methods. 
 
 .. note::
@@ -52,6 +52,6 @@ algebra computational package through its Vector and Tensor class methods.
 
 Implicit vs. Explicit Time integration
 ---------------------------------------
-Most of the physics packages in Nidhoggr are designed for use with explicit time integration
+Most of the physics packages in Yggdrasil are designed for use with explicit time integration
 and can become quite unstable if you try to run them with implicit time integration (e.g. Crank-Nicolson).
 As of version 0.8.5, the only physics module that is stable under implicit time integration is ImplicitPhysicsXd. 

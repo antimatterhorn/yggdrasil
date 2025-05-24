@@ -1,10 +1,10 @@
-git clone --recurse-submodules https://github.com/antimatterhorn/nidhoggr.git
+git clone --recurse-submodules https://github.com/antimatterhorn/yggdrasil.git
 git submodule update --remote --recursive
 git submodule update --init --recursive
 
 mkdir build
 
-Nidhoggr/
+Yggdrasil/
 |-- docs/
 |-- exmaples/
 |-- src/

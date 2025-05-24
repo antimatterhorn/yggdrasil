@@ -4,7 +4,7 @@ Core Concepts
 Dimensionality
 --------------
 
-Nidhoggr is designed from the start to be extensible to multiple spatial dimensions. This is accomplished by templating
+Yggdrasil is designed from the start to be extensible to multiple spatial dimensions. This is accomplished by templating
 most classes on integer dimensionality. For example, 
 
 .. code-block:: c++
@@ -12,13 +12,13 @@ most classes on integer dimensionality. For example,
     template <int dim>
     class Kinetics : public Physics<dim> {}
 
-defines a derived class ``Kinetics`` that operates in 1, 2, or 3 spaital dimensions. When templated classes are Python wrapped in Nidhoggr,
+defines a derived class ``Kinetics`` that operates in 1, 2, or 3 spaital dimensions. When templated classes are Python wrapped in Yggdrasil,
 they typically specify dimensionality in their instantiated name, *e.g.* ``Kinetics2d``.
 
 Units and Constants
 -------------------
 
-Nidhoggr is unit agnostic. That is to say, the code does not *prescribe* any particular units for you. However, 
+Yggdrasil is unit agnostic. That is to say, the code does not *prescribe* any particular units for you. However, 
 for most problems, you will want to define your units in order for certain universal constants like *G* to have their 
 correct values. This is done via the ``PhysicalConstants`` object which has two constructor methods. You can either supply 
 the full scope of your desired units with unit length (in meters), unit mass (in kg), 
@@ -31,10 +31,10 @@ For example, in order to simulate something like the Earth with state quantities
 
     myUnits = PhysicalConstants(6.387e6, 5.97e24, 1.0)
 
-From these units, Nidhoggr will calculate at the time of the constructor new values for all of the universal constants 
+From these units, Yggdrasil will calculate at the time of the constructor new values for all of the universal constants 
 to use in your chosen physics packages.
 
-Nidhoggr also comes with some helper methods for a handful of frequently used unit systems in 
+Yggdrasil also comes with some helper methods for a handful of frequently used unit systems in 
 ``Units.py``, like ``MKS()``, ``CGS()``, and ``SOL()``. 
 Simply invoke them with ``myUnits = MKS()`` if you've imported the ``Units`` module.
 
@@ -50,23 +50,23 @@ as part of the state. This way, if multiple physics packages use the same Field 
 an operator split mode.
 
 .. note::
-    Nidhoggr does not currently support the use of multiple Field objects with the same internal name. If you try to assign two Fields 
-    with the same name to a ``Nodelist``, Nidhoggr will raise an error.
+    Yggdrasil does not currently support the use of multiple Field objects with the same internal name. If you try to assign two Fields 
+    with the same name to a ``Nodelist``, Yggdrasil will raise an error.
 
-Nidhoggr's primary container for state data is the ``Nodelist`` class. Fields are assigned to a ``Nodelist`` for containerization
+Yggdrasil's primary container for state data is the ``Nodelist`` class. Fields are assigned to a ``Nodelist`` for containerization
 of data, for pairing of different Field data into a state, and for state copying. Most physics packages will expect a ``Nodelist`` 
 to be passed as a constructor argument to keep track of
 which state vectors the physics package is intended to evolve. 
 
 .. note::
-    Nidhoggr does not assume any specific Fields (except ``id``) are necessary without a physics package first 
+    Yggdrasil does not assume any specific Fields (except ``id``) are necessary without a physics package first 
     creating that Field and then assigning it to the ``Nodelist``. If you try to access a Field called ``density`` inside
-    a problem without any physics classes that use ``density``, Nidhoggr will raise an error, unless you have manually created that Field yourself
+    a problem without any physics classes that use ``density``, Yggdrasil will raise an error, unless you have manually created that Field yourself
     within your problem script.
 
 Physics Packages
 --------------------
-Physics packages are the primary computational engines of Nidhoggr. With a few exceptions,
+Physics packages are the primary computational engines of Yggdrasil. With a few exceptions,
 all physics packages consume a ``NodeList`` and a ``constants`` object at constructor time.
 Hydrodynamics physics packages also require an equation of state (``eos``). Physics packages
 hold onto State vectors of pertinent Fields and prescribe how their derivatives are to be
@@ -119,14 +119,14 @@ The current list of available equations of state and their constructors is
 
 Mesh/Grid Handling
 --------------------
-Nidhoggr supports two kinds of meshes: Eulerian grids and Element meshes. 
+Yggdrasil supports two kinds of meshes: Eulerian grids and Element meshes. 
 
 Eulerian Grids
 ^^^^^^^^^^^^^^
 Eulerian grids are invoked with the dimensional ``Grid`` class with 
 ``myGrid=Grid2d(nx=[int],ny=[int],dx=[float],dy=[float])`` to create a 2D grid with nx cells in the x-direction
 and ny cells in the y-direction. The ``dx`` and ``dy`` parameters set the spatial dimensions of a single cell.
-Grids in Nidhoggr can be 1D, 2D, or 3D, and the constructor assigns positions to the cells of the grid 
+Grids in Yggdrasil can be 1D, 2D, or 3D, and the constructor assigns positions to the cells of the grid 
 in ascending order in each spatial coordinate. 
 
 .. note::
@@ -142,12 +142,12 @@ Element Meshes
 
 Boundary Conditions
 --------------------
-Currently, Nidhoggr has two species of boundary objects: grid boundaries and collider boundaries.
+Currently, Yggdrasil has two species of boundary objects: grid boundaries and collider boundaries.
 Grid boundaries apply to mesh-based physics and collider boundaries apply to lagrangian particles.
 
 Grid Boundaries
 ^^^^^^^^^^^^^^^
-The types of grid boundaries used in Nidhoggr are:
+The types of grid boundaries used in Yggdrasil are:
 
 .. code-block:: text
     
@@ -177,7 +177,7 @@ of the mesh. The other grid boundary types merely perform ``addDomain`` at const
 have any special methods.
 
 .. warning::
-    At this time, Nidhoggr's reflecting, periodic, and outlfow boundaries apply to all of the bounds
+    At this time, Yggdrasil's reflecting, periodic, and outlfow boundaries apply to all of the bounds
     of your mesh, *i.e* the left and right-most cells will be periodic as well as the top and bottom-most
     cells in 2d. 
 
@@ -208,10 +208,10 @@ Collider boundaries can be assigned to lagrangian physics packages with the ``ad
 
 Integrators
 --------------------
-Nidhoggr's integrators all have essentially the same interface: they take as arguments your physics packages
+Yggdrasil's integrators all have essentially the same interface: they take as arguments your physics packages
 as ``packages=[python list]``, a ``dtmin=[float]`` argument to set the lowest allowable timestep, and a ``verbose=[boolean]`` 
 argument that determines whether or not to print to screen which physics package is controlling the timestep. As of |today|, the 
-integrators available in Nidhoggr are
+integrators available in Yggdrasil are
 
 .. code-block:: text
 

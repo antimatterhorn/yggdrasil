@@ -1,13 +1,13 @@
 Class Guides
 =======================
-Most classes in Nidhoggr are purely virtual. This allows for the interaction between class species (like physics classes
+Most classes in Yggdrasil are purely virtual. This allows for the interaction between class species (like physics classes
 and integrators) to be abstracted and predictable.  
 
 Physics Classes
 --------------------
-The primary class that you'll interact with in Nidhoggr is the ``Physics`` class. This class contains the prescription
+The primary class that you'll interact with in Yggdrasil is the ``Physics`` class. This class contains the prescription
 for the state vector and all of the necessary logic for computing derivatives of the state vector.
-Nidhoggr's integrators expect assigned (derived) physics classes to override the physics base class methods for 
+Yggdrasil's integrators expect assigned (derived) physics classes to override the physics base class methods for 
 ``PrestepInitialize``, ``EvaluateDerivatives``, and ``FinalizeStep``. 
 
 Let's use ``constantGravity.cc`` in the ``src/Physics`` directory as an example of a derived class that implements these methods.
@@ -89,11 +89,11 @@ An example of this pattern for simple forward Euler integration is shown below:
    :lines: 6-66
 
 .. note::
-   While this class is a foward Euler integrator, it is also the base class for all integrators in Nidhoggr.
+   While this class is a foward Euler integrator, it is also the base class for all integrators in Yggdrasil.
 
 Equations of State
 ------------------
-Equations of state are possibly the simplest classes in Nidhoggr. They consume Field objects (or referenced doubles) 
+Equations of state are possibly the simplest classes in Yggdrasil. They consume Field objects (or referenced doubles) 
 and set the values of other Fields according to their respective closure equations. Most of the logic for how they 
 work is self-described by the base class interface file ``equationOfState.hh``.
 
@@ -104,4 +104,4 @@ work is self-described by the base class interface file ``equationOfState.hh``.
    :lineno-start: 9
 
 .. note::
-    Equations of state are not typically templated in Nidhoggr since they act only on scalar Fields. 
+    Equations of state are not typically templated in Yggdrasil since they act only on scalar Fields. 

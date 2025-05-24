@@ -1,7 +1,7 @@
 from docutils import nodes
 from docutils.parsers.rst import Directive
 
-class NidhoggrLogoDirective(Directive):
+class YggdrasilLogoDirective(Directive):
     has_content = False
 
     def run(self):
@@ -18,4 +18,4 @@ class NidhoggrLogoDirective(Directive):
         return [literal]
 
 def setup(app):
-    app.add_directive("nidhoggr-logo", NidhoggrLogoDirective)
+    app.add_directive("yggdrasil-logo", YggdrasilLogoDirective)
