@@ -6,13 +6,13 @@
 namespace Mesh {
     template <int dim>
     Grid<dim>::Grid(int num_cells_x, double spacing_x)
-        : nx(num_cells_x), ny(1), nz(1), dx(spacing_x), dy(0.0), dz(0.0) {
+        : nx(num_cells_x), ny(1), nz(1), dx(spacing_x), dy(1), dz(1) {
         initializeGrid();
     }
 
     template <int dim>
     Grid<dim>::Grid(int num_cells_x, int num_cells_y, double spacing_x, double spacing_y)
-        : nx(num_cells_x), ny(num_cells_y), nz(1), dx(spacing_x), dy(spacing_y), dz(0.0) {
+        : nx(num_cells_x), ny(num_cells_y), nz(1), dx(spacing_x), dy(spacing_y), dz(1) {
         initializeGrid();
     }
 

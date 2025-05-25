@@ -50,10 +50,37 @@ namespace Mesh {
         inline std::vector<int> frontMost() const   { return fm; };
         inline std::vector<int> backMost() const    { return km; };
 
+        inline double cellVolume(int idx) const { return dx * dy * dz; };  // for now, grids are homogeneous
+        inline double faceArea(int i, int j) const {
+            auto ci = indexToCoordinates(i);
+            auto cj = indexToCoordinates(j);
+
+            int dx_ = std::abs(ci[0] - cj[0]);
+            int dy_ = std::abs(ci[1] - cj[1]);
+            int dz_ = std::abs(ci[2] - cj[2]);
+
+            if constexpr (dim == 1) {
+                return 1.0;  // face area is unitless in 1D
+            }
+            else if constexpr (dim == 2) {
+                if (dx_ == 1 && dy_ == 0) return dy;
+                if (dy_ == 1 && dx_ == 0) return dx;
+            }
+            else if constexpr (dim == 3) {
+                if (dx_ == 1 && dy_ == 0 && dz_ == 0) return dy * dz;
+                if (dx_ == 0 && dy_ == 1 && dz_ == 0) return dx * dz;
+                if (dx_ == 0 && dy_ == 0 && dz_ == 1) return dx * dy;
+            }
+
+            // Diagonal or non-adjacent — undefined
+            return 0.0;
+        }
+
         double spacing(int axis) const;
         Lin::Vector<dim> getPosition(int id);
 
         std::vector<int> getNeighboringCells(int idx) const;
+        inline std::vector<int> neighbors(int idx ) const { return getNeighboringCells(idx); };
         std::array<int, 3> indexToCoordinates(int idx) const;
 
         void findBoundaries(const int buffer);

@@ -24,7 +24,7 @@ public:
     virtual void
     VerifyFields(NodeList* nodeList) {
         this->template EnrollFields<double>({"pressure", "density", "specificInternalEnergy", "soundSpeed", "temperature", "conductivity"});
-        this->template EnrollStateFields<double>({"specificInternalEnergy"});
+        this->template EnrollStateFields<double>({"specificInternalEnergy","temperature","conductivity"});
     }
 
     void SetConductivity() {
@@ -34,20 +34,20 @@ public:
         ScalarField* rho           = nodeList->getField<double>("density");
         ScalarField* u             = nodeList->getField<double>("specificInternalEnergy");
         ScalarField* T             = nodeList->getField<double>("temperature");
-        ScalarField* x             = nodeList->getField<double>("conductivity");
+        ScalarField* X             = nodeList->getField<double>("conductivity");
         // looping and using scalar methods for speed
-        for (int i = 0 ; i < numZones ; ++i) SetConductivity(rho,u,T,x,i);
+        for (int i = 0 ; i < numZones ; ++i) SetConductivity(rho,u,T,X,i);
     }
 
     void SetConductivity(ScalarField* rho, ScalarField* u, ScalarField* T, ScalarField* X, int i) {
         double rhoi = rho->getValue(i);
         double ui   = u->getValue(i);
-        double Ti   = 0;
-        double xi   = 0;
+        double Ti   = T->getValue(i);
+        double Xi   = X->getValue(i);
         eos->setTemperature(&Ti, &rhoi, &ui);
         T->setValue(i, Ti);
-        opac->setConductivity(&xi, &rhoi, &Ti);
-        X->setValue(i, xi);
+        opac->setConductivity(&Xi, &rhoi, &Ti);
+        X->setValue(i, Xi);
     }
 
     virtual void ZeroTimeInitialize() override {
@@ -65,27 +65,36 @@ public:
 
         ScalarField* rho    = nodeList->getField<double>("density");
         ScalarField* u      = initialState->template getField<double>("specificInternalEnergy");
+        ScalarField* T      = initialState->template getField<double>("temperature");
+        ScalarField* X      = initialState->template getField<double>("conductivity");
 
         ScalarField* dudt   = deriv.template getField<double>("specificInternalEnergy");
 
         for (int i = 0 ; i < numZones ; ++i) {
             if (!grid->onBoundary(i)) {
-                const Vector& ri = grid->position(i);
+                const Vector& ri = grid->getPosition(i);
                 double Vi = grid->cellVolume(i);
                 double divFlux = 0.0;
+                double Xi = X->getValue(i);
+                double Ti = T->getValue(i);
+
+                SetConductivity(rho,u,T,X,i);
 
                 for (int j : grid->neighbors(i)) {
                     if (j < 0 || j >= numZones || j == i) continue;
 
-                    const Vector& rj = grid->position(j);
+                    double Xj = X->getValue(j);
+                    double Tj = T->getValue(j);
+
+                    const Vector& rj = grid->getPosition(j);
                     Vector dx = rj - ri;
-                    double dist2 = dx.magnitude2();
+                    double dist2 = dx.mag2();
                     if (dist2 == 0.0) continue;
 
-                    double Tij = T[j] - T[i];
-                    double kij = 0.5 * (kappa[i] + kappa[j]);  // symmetric average
+                    double Tij = Tj-Ti;
+                    double Xij = 0.5 * (Xi+Xj);  // symmetric average
 
-                    double flux = -kij * Tij / std::sqrt(dist2);  // scalar flux across face
+                    double flux = -Xij * Tij / std::sqrt(dist2);  // scalar flux across face
                     double Aij = grid->faceArea(i, j);            // effective area between i and j
 
                     divFlux += flux * Aij;
