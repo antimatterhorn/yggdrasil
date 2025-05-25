@@ -5,7 +5,7 @@
 #include "../DataBase/field.hh"
 
 class OpacityModel {
-private:
+protected:
     PhysicalConstants& constants;
 public:
     OpacityModel(PhysicalConstants& constants) : constants(constants) {}

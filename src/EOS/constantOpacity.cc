@@ -11,15 +11,21 @@ public:
         }
     }
     virtual void setConductivity(Field<double>* conductivity, Field<double>* density, Field<double>* temperature) const override {
+        double sig = this->constants.stefanBoltzmannConstant();
         for (int i = 0 ; i < conductivity->size(); ++i){
-            conductivity->setValue(i, 1.0/k0);
+            double T = temperature->getValue(i);
+            double rho = density->getValue(i);
+            conductivity->setValue(i, 16.0*sig*T*T*T/(3.0*k0*rho));
         }
     }
     virtual void setOpacity(double* opacity, double* density, double* temperature) const override {
         (*opacity) = k0;
     }
     virtual void setConductivity(double* conductivity, double* density, double* temperature) const override {
-        (*conductivity) = 1.0/k0;
+        double sig = this->constants.stefanBoltzmannConstant();
+        double T = *temperature;
+        double rho = *density;
+        (*conductivity) = 16.0*sig*T*T*T/(3.0*k0*rho);
     }
 
     virtual std::string 

@@ -7,7 +7,8 @@ class ThermalConduction(Physics):
                nodeList="NodeList*",
                constants="PhysicalConstants&",
                eos="EquationOfState*",
-               grid="Mesh::Grid<dim>*"):
+               opac="OpacityModel*",
+               grid="Mesh::Grid<%(dim)s>*"):
         return
 
 ThermalConduction1d = PYB11TemplateClass(ThermalConduction,

@@ -50,6 +50,10 @@ public:
         EOSLookup();
     }
 
+    virtual void PreStepInitialize() override {
+        EOSLookup();
+    }
+
     virtual void EvaluateDerivatives(const State<dim>* initialState,
                                      State<dim>& deriv,
                                      const double time,
