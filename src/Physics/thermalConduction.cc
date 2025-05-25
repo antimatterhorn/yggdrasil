@@ -9,6 +9,7 @@ protected:
     Mesh::Grid<dim>* grid;
     EquationOfState* eos;
     OpacityModel* opac;
+    double dtmin;
 public:
     using Vector = Lin::Vector<dim>;
     using VectorField = Field<Vector>;
@@ -112,23 +113,33 @@ public:
 
                 // Approximate cv = du/dT numerically:
                 double ui = u->getValue(i);
-                double dT = Ti * 1.0e-4 + 1e-10;  // small perturbation
+                double dT = std::max(std::abs(Ti) * 1e-4, 1e-10);
                 double ui_plus, Ti_plus = Ti + dT;
-                eos->setInternalEnergy(&ui_plus, &rhoi, &Ti_plus);
+                eos->setInternalEnergyFromTemperature(&ui_plus, &rhoi, &Ti_plus);
                 double cv = (ui_plus - ui) / dT;
 
-                double D = Xi / (rhoi * cv + 1e-30);  // prevent divide by zero
-                double dt_candidate = 0.5 * dx2 / (D + 1e-30);
+                // Clamp or skip invalid results
+                if (cv <= 0.0 || std::isnan(cv) || std::isinf(cv)) continue;
 
-                local_dtmin = std::min(local_dtmin, dt_candidate);
+                double D = Xi / (rhoi * cv);
+                if (D <= 0.0 || std::isnan(D) || std::isinf(D)) continue;
+
+                double dt_candidate = 0.5 * dx2 / D;
+                if (dt_candidate > 0.0)
+                    local_dtmin = std::min(local_dtmin, dt_candidate);
             }
         }
+        dtmin = local_dtmin;
 
+        //std::cout << "dtmin = " << dtmin << std::endl;
         this->lastDt = dt;
     }
 
     virtual double EstimateTimestep() const override {
-        return 1e30; // this physics package does not support setting the timestep for now
+        double timestepCoefficient = 0.25; // Adjust as needed
+        double timestep = timestepCoefficient * std::sqrt(dtmin);
+
+        return timestep;
     }
 
     virtual void FinalizeStep(const State<dim>* finalState) override {
