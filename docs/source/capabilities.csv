@@ -1,7 +1,7 @@
 ﻿Component,Working,Under Development,Planned
-Physics,N-body gravity,FEM,SPH
+Physics,N-body gravity,FEM,
 ,Gravity point sources,HLLC hydro,
-,Constant direction gravity,,
+,Constant direction gravity,Conduction,
 ,Particle kinetics,,
 ,Acoustic wave solvers,,
 ,Shallow wave solvers,,
@@ -9,6 +9,7 @@ Physics,N-body gravity,FEM,SPH
 ,HLLE hydro,,
 Equations of State,Ideal gas,,Helmholtz
 ,Polytrope,,
+Opacity/Conductivity,Roseland Mean,,
 Time Integrators,Forward Euler,,Symplectic
 ,RK2,,
 ,RK4,,

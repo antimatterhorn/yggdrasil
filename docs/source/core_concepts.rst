@@ -116,6 +116,24 @@ The current list of available equations of state and their constructors is
     TillotsonEOS(constants,**params<from TillotsonMaterials>)
     IsothermalEOS(soundSpeed,constants)
 
+Opacity/Conductivity
+--------------------
+Opacity and conducitivity are very much an "under development" feature in Yggdrasil. However, the code does currently support
+a constant opacity model, and by extension, a conductivity that assumes the radiative limit.
+
+.. math::
+    \begin{aligned}
+    \chi_{rad} &= \frac{16\sigma_{SB}T^3}{3\kappa\rho}\\
+    \end{aligned}
+
+Much like equations of state, this opacity model requires a constants object to compute the Stefan Boltzmann constant.
+
+.. code-block:: text
+
+    ConstantOpacity(double k0,PhysicalConstants& constants)
+
+Currently, only the thermal conduction physics package requires (and can make use of) an opacity model. 
+
 
 Mesh/Grid Handling
 --------------------
