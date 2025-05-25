@@ -10,6 +10,9 @@ class ThermalConduction(Physics):
                opac="OpacityModel*",
                grid="Mesh::Grid<%(dim)s>*"):
         return
+    @PYB11cppname("getCell")
+    def getCell2d(self,i="int",j="int",fieldName="std::string"):
+        return
 
 ThermalConduction1d = PYB11TemplateClass(ThermalConduction,
                               template_parameters = ("1"),

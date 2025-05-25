@@ -17,6 +17,7 @@ public:
     ThermalConduction(NodeList* nodeList, PhysicalConstants& constants, EquationOfState* eos, OpacityModel* opac, Mesh::Grid<dim>* grid) : 
         Physics<dim>(nodeList,constants), eos(eos), grid(grid), opac(opac) {
         VerifyFields(nodeList);
+        grid->assignPositions(nodeList);
     }
 
     virtual ~ThermalConduction() {}
@@ -24,7 +25,8 @@ public:
     virtual void
     VerifyFields(NodeList* nodeList) {
         this->template EnrollFields<double>({"pressure", "density", "specificInternalEnergy", "soundSpeed", "temperature", "conductivity"});
-        this->template EnrollStateFields<double>({"specificInternalEnergy","temperature","conductivity"});
+        this->template EnrollFields<Vector>({"position"});
+        this->template EnrollStateFields<double>({"specificInternalEnergy"});
     }
 
     void SetConductivity() {
@@ -65,11 +67,15 @@ public:
 
         ScalarField* rho    = nodeList->getField<double>("density");
         ScalarField* u      = initialState->template getField<double>("specificInternalEnergy");
-        ScalarField* T      = initialState->template getField<double>("temperature");
-        ScalarField* X      = initialState->template getField<double>("conductivity");
+        ScalarField* T      = nodeList->getField<double>("temperature");
+        ScalarField* X      = nodeList->getField<double>("conductivity");
 
         ScalarField* dudt   = deriv.template getField<double>("specificInternalEnergy");
 
+        double local_dtmin = 1e30;
+        double dx2 = grid->getdx() * grid->getdx();  // assume uniform dx for now
+
+        #pragma omp parallel for reduction(min:local_dtmin)
         for (int i = 0 ; i < numZones ; ++i) {
             if (!grid->onBoundary(i)) {
                 const Vector& ri = grid->getPosition(i);
@@ -101,6 +107,20 @@ public:
                 }
 
                 dudt->setValue(i,divFlux / Vi);
+
+                double rhoi = rho->getValue(i);  // density
+
+                // Approximate cv = du/dT numerically:
+                double ui = u->getValue(i);
+                double dT = Ti * 1.0e-4 + 1e-10;  // small perturbation
+                double ui_plus, Ti_plus = Ti + dT;
+                eos->setInternalEnergy(&ui_plus, &rhoi, &Ti_plus);
+                double cv = (ui_plus - ui) / dT;
+
+                double D = Xi / (rhoi * cv + 1e-30);  // prevent divide by zero
+                double dt_candidate = 0.5 * dx2 / (D + 1e-30);
+
+                local_dtmin = std::min(local_dtmin, dt_candidate);
             }
         }
 
@@ -120,6 +140,22 @@ public:
         int numZones = nodeList->size();
         State<dim> state = this->state;
 
+        ScalarField* u      = nodeList->getField<double>("specificInternalEnergy");
+        ScalarField* fu     = stateToPush->template getField<double>("specificInternalEnergy");
+
+        u->copyValues(fu);
+
+        if (stateToPush != &(state))
+        {
+            ScalarField* su = state.template getField<double>("specificInternalEnergy");
+            su->copyValues(fu);
+        }
+    }
+
+    double getCell(int i, int j, const std::string& fieldName = "pressure") const {
+        int idx = grid->index(i, j, 0);
+        ScalarField* field = this->nodeList->template getField<double>(fieldName);
+        return field->getValue(idx);
     }
 
     virtual std::string name() const override { return "ThermalConduction"; }
