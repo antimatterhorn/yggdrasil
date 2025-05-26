@@ -40,7 +40,7 @@ namespace Mesh {
             }
         }
 
-        findBoundaries(1);
+        findBoundaries(1); // the buffer determines the thickness of the boundary in cell widths
     }
 
     template <int dim>
