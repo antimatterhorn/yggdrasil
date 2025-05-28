@@ -139,7 +139,8 @@ public:
         for (int i = 0; i < pressure->size(); ++i) {
             double logRho = std::log10(density->getValue(i));
             double logU   = std::log10(internalEnergy->getValue(i));
-            pressure->setValue(i, bilinearInterp(PTable, logRho, logU));
+            double P = Lin::bilinearInterp(PTable,logRhoGrid,logUGrid,logRho,logU);
+            pressure->setValue(i, P);
         }
     }
     virtual void 
@@ -155,7 +156,8 @@ public:
         for (int i = 0; i < soundSpeed->size(); ++i) {
             double logRho = std::log10(density->getValue(i));
             double logU   = std::log10(internalEnergy->getValue(i));
-            soundSpeed->setValue(i, bilinearInterp(CsTable, logRho, logU));
+            double c = Lin::bilinearInterp(CsTable,logRhoGrid,logUGrid,logRho,logU);
+            soundSpeed->setValue(i, c);
         }
     }
     virtual void 
@@ -189,7 +191,7 @@ public:
     setPressure(double* pressure, double* density, double* internalEnergy) const override {
         double logRho = std::log10(*density);
         double logU   = std::log10(*internalEnergy);
-        *pressure = bilinearInterp(PTable, logRho, logU);
+        *pressure = Lin::bilinearInterp(PTable,logRhoGrid,logUGrid,logRho,logU);
     }
 
     virtual void 
@@ -203,7 +205,7 @@ public:
     setSoundSpeed(double* soundSpeed, double* density, double* internalEnergy) const override {
         double logRho = std::log10(*density);
         double logU   = std::log10(*internalEnergy);
-        *soundSpeed = bilinearInterp(CsTable, logRho, logU);
+        *soundSpeed = Lin::bilinearInterp(CsTable,logRhoGrid,logUGrid,logRho,logU);
     }
 
     virtual void 
