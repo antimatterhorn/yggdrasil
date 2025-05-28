@@ -233,8 +233,8 @@ public:
     void 
     generateTable() {
         // Define log-spaced rho and u values
-        logRhoGrid = logspace(-2, 10, 300);  // log10(rho) from 1e-2 to 1e10
-        logUGrid   = logspace(-2, 12, 300);  // log10(u) from 1e-2 to 1e12
+        logRhoGrid = linspace(-2, 10, 300);  // log10(rho) from 1e-2 to 1e10
+        logUGrid   = linspace(-2, 12, 300);  // log10(u) from 1e-2 to 1e12
 
         // Resize tables
         PTable.resize(logRhoGrid.size(), std::vector<double>(logUGrid.size()));
