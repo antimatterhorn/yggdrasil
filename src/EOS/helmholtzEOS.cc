@@ -1,18 +1,21 @@
 #include <vector>
+#include <set>
+#include <unordered_map>
+#include <tuple>
 #include <string>
 #include <cmath>
 #include <stdexcept>
 #include "equationOfState.hh"
-#include "../Math/scalarMath.hh"
+#include "eosTable.hh"
 
 class HelmholtzEOS : public EquationOfState {
 private:
     std::vector<double> logRhoGrid;
     std::vector<double> logUGrid;
 
-    std::vector<std::vector<double>> PTable;
-    std::vector<std::vector<double>> UTable;
-    std::vector<std::vector<double>> CsTable;
+    EOSTable PTable;
+    EOSTable UTable;
+    EOSTable CsTable;
 
     const PhysicalConstants constants;
     const std::string& tableFile;
@@ -56,43 +59,56 @@ private:
 
         char line[512];
         std::vector<std::tuple<double, double, double, double>> rows;
-        std::vector<double> rawRhos, rawUs;
+        std::set<double> rawRhos, rawUs;
 
+        // Read file into raw vectors
         while (std::fgets(line, sizeof(line), file)) {
             double logRho, logU, P, cs;
             int count = std::sscanf(line, "%lf %lf %lf %lf", &logRho, &logU, &P, &cs);
             if (count != 4) continue;
 
             rows.emplace_back(logRho, logU, P, cs);
-            rawRhos.push_back(logRho);
-            rawUs.push_back(logU);
+            rawRhos.insert(logRho);
+            rawUs.insert(logU);
         }
         std::fclose(file);
 
-        // Deduplicate and sort axes
-        std::sort(rawRhos.begin(), rawRhos.end());
-        std::sort(rawUs.begin(), rawUs.end());
-        rawRhos.erase(std::unique(rawRhos.begin(), rawRhos.end()), rawRhos.end());
-        rawUs.erase(std::unique(rawUs.begin(), rawUs.end()), rawUs.end());
-
-        logRhoGrid = std::move(rawRhos);
-        logUGrid   = std::move(rawUs);
+        // Deduplicate and sort axis grids
+        logRhoGrid.assign(rawRhos.begin(), rawRhos.end());
+        logUGrid.assign(rawUs.begin(), rawUs.end());
 
         const size_t nRho = logRhoGrid.size();
         const size_t nU   = logUGrid.size();
 
-        PTable.resize(nRho, std::vector<double>(nU));
-        UTable.resize(nRho, std::vector<double>(nU));
-        CsTable.resize(nRho, std::vector<double>(nU));
+        std::vector<std::vector<double>> PTableData(nRho, std::vector<double>(nU));
+        std::vector<std::vector<double>> UTableData(nRho, std::vector<double>(nU));
+        std::vector<std::vector<double>> CsTableData(nRho, std::vector<double>(nU));
 
+        // Build lookup maps from value to index for fast lookup
+        std::unordered_map<double, size_t> rhoIndex, uIndex;
+        for (size_t i = 0; i < nRho; ++i) rhoIndex[logRhoGrid[i]] = i;
+        for (size_t j = 0; j < nU; ++j)   uIndex[logUGrid[j]] = j;
+
+        // Populate tables
         for (const auto& [logRho, logU, P, cs] : rows) {
-            size_t i = std::distance(logRhoGrid.begin(), std::find(logRhoGrid.begin(), logRhoGrid.end(), logRho));
-            size_t j = std::distance(logUGrid.begin(), std::find(logUGrid.begin(), logUGrid.end(), logU));
-            PTable[i][j]  = P;
-            UTable[i][j]  = std::pow(10.0, logU);  // Store internal energy in linear space
-            CsTable[i][j] = cs;
+            auto itRho = rhoIndex.find(logRho);
+            auto itU   = uIndex.find(logU);
+            if (itRho == rhoIndex.end() || itU == uIndex.end()) continue;
+
+            size_t i = itRho->second;
+            size_t j = itU->second;
+
+            PTableData[i][j]  = P;
+            UTableData[i][j]  = std::pow(10.0, logU);  // store u in linear space
+            CsTableData[i][j] = cs;
         }
+
+        // Assign to EOSTable members
+        PTable  = EOSTable(std::move(PTableData), logRhoGrid, logUGrid);
+        UTable  = EOSTable(std::move(UTableData), logRhoGrid, logUGrid);
+        CsTable = EOSTable(std::move(CsTableData), logRhoGrid, logUGrid);
     }
+
 
 
     void 
@@ -139,7 +155,7 @@ public:
         for (int i = 0; i < pressure->size(); ++i) {
             double logRho = std::log10(density->getValue(i));
             double logU   = std::log10(internalEnergy->getValue(i));
-            double P = Lin::bilinearInterp(PTable,logRhoGrid,logUGrid,logRho,logU);
+            double P      = PTable.interpolate(logRho, logU);
             pressure->setValue(i, P);
         }
     }
@@ -147,8 +163,9 @@ public:
     setInternalEnergy(Field<double>* internalEnergy, Field<double>* density, Field<double>* pressure) const override {
         for (int i = 0; i < internalEnergy->size(); ++i) {
             double logRho = std::log10(density->getValue(i));
-            double logP   = std::log10(pressure->getValue(i)); // Placeholder
-            internalEnergy->setValue(i, bilinearInterp(UTable, logRho, logP));
+            double logP   = std::log10(pressure->getValue(i));
+            double U      = UTable.interpolate(logRho, logP);
+            internalEnergy->setValue(i, U);
         }
     }
     virtual void 
@@ -156,7 +173,7 @@ public:
         for (int i = 0; i < soundSpeed->size(); ++i) {
             double logRho = std::log10(density->getValue(i));
             double logU   = std::log10(internalEnergy->getValue(i));
-            double c = Lin::bilinearInterp(CsTable,logRhoGrid,logUGrid,logRho,logU);
+            double c      = CsTable.interpolate(logRho, logU);
             soundSpeed->setValue(i, c);
         }
     }
@@ -191,21 +208,21 @@ public:
     setPressure(double* pressure, double* density, double* internalEnergy) const override {
         double logRho = std::log10(*density);
         double logU   = std::log10(*internalEnergy);
-        *pressure = Lin::bilinearInterp(PTable,logRhoGrid,logUGrid,logRho,logU);
+        *pressure     = PTable.interpolate(logRho, logU);
     }
 
     virtual void 
     setInternalEnergy(double* internalEnergy, double* density, double* pressure) const override {
         double logRho = std::log10(*density);
         double logP   = std::log10(*pressure);  // approximate inverse
-        *internalEnergy = bilinearInterp(UTable, logRho, logP);
+        *internalEnergy = UTable.interpolate(logRho, logP);
     }
 
     virtual void 
     setSoundSpeed(double* soundSpeed, double* density, double* internalEnergy) const override {
         double logRho = std::log10(*density);
         double logU   = std::log10(*internalEnergy);
-        *soundSpeed = Lin::bilinearInterp(CsTable,logRhoGrid,logUGrid,logRho,logU);
+        *soundSpeed   = CsTable.interpolate(logRho, logU);
     }
 
     virtual void 
@@ -238,10 +255,15 @@ public:
         logRhoGrid = Lin::linspace(-2, 10, 300);  // log10(rho) from 1e-2 to 1e10
         logUGrid   = Lin::linspace(-2, 12, 300);  // log10(u) from 1e-2 to 1e12
 
+
+        std::vector<std::vector<double>> PTableData;
+        std::vector<std::vector<double>> UTableData;
+        std::vector<std::vector<double>> CsTableData;
+
         // Resize tables
-        PTable.resize(logRhoGrid.size(), std::vector<double>(logUGrid.size()));
-        UTable = PTable;
-        CsTable = PTable;
+        PTableData.resize(logRhoGrid.size(), std::vector<double>(logUGrid.size()));
+        UTableData = PTableData;
+        CsTableData = PTableData;
 
         for (size_t i = 0; i < logRhoGrid.size(); ++i) {
             for (size_t j = 0; j < logUGrid.size(); ++j) {
@@ -251,9 +273,9 @@ public:
                 double P, cs;
                 computeHelmholtzApprox(rho, u, P, cs);
 
-                PTable[i][j]  = P;
-                UTable[i][j]  = u;
-                CsTable[i][j] = cs;
+                PTableData[i][j]  = P;
+                UTableData[i][j]  = u;
+                CsTableData[i][j] = cs;
             }
         }
 
@@ -265,11 +287,15 @@ public:
             for (size_t j = 0; j < logUGrid.size(); ++j) {
                 std::fprintf(fp, "%.10e %.10e %.10e %.10e\n",
                             logRhoGrid[i], logUGrid[j],
-                            PTable[i][j], CsTable[i][j]);
+                            PTableData[i][j], CsTableData[i][j]);
             }
         }
 
         std::fclose(fp);
+
+        PTable  = EOSTable(std::move(PTableData), logRhoGrid, logUGrid);
+        UTable  = EOSTable(std::move(UTableData), logRhoGrid, logUGrid);
+        CsTable = EOSTable(std::move(CsTableData), logRhoGrid, logUGrid);
     }
 
 };
