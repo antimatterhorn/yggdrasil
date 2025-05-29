@@ -8,8 +8,8 @@ if __name__ == "__main__":
                                        nu = 50,
                                        minrho = 1e-2,
                                        maxrho = 1e6,
-                                       minu   = 1e-2,
-                                       maxu   = 1e8,
+                                       minu   = 1e8,
+                                       maxu   = 1e16,
                                        eos = "IdealGasEOS")
 
     assert eos in ["IdealGasEOS",

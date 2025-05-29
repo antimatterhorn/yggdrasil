@@ -84,6 +84,10 @@ private:
         const double kB = constants.kB();            // erg/K
         const double mH = constants.protonMass();    // g
         const double mu = 0.6;                       // mean molecular weight
+        const double h  = constants.planckConstant();
+        const double pi = M_PI;
+        const double hb = h/(pi*2.0);
+        const double me = constants.electronMass();
 
         // Convert internal energy per mass to temperature (ideal gas approx)
         double T = (2.0 / 3.0) * (mu * mH / kB) * u;
@@ -92,10 +96,15 @@ private:
         double P_ion = (rho / (mu * mH)) * kB * T;
 
         // Degenerate electron pressure estimate (non-relativistic)
+        const double coeff = std::pow(3.0 * pi * pi, 2.0 / 3.0);
         constexpr double mu_e = 2.0;
-        double rho_over_me = rho / (mu_e * mH);
-        double P_deg = 1.0e13 * std::pow(rho_over_me, 5.0 / 3.0);
-
+        double K = (coeff*std::pow(hb,2)) / (5.0 * me ) * std::pow(1.0/(mu_e*mH),5.0/3.0);
+        double n_e = rho / (mu_e * mH);  // # electrons / cm^3
+        double EF = (std::pow(3.0 * pi * pi * n_e, 2.0 / 3.0) * hb * hb) / (2.0 * me);
+        
+        // Suppress P_deg if not degenerate
+        double P_deg = ((kB * T > EF) ? 0.0 : K * std::pow(n_e, 5.0 / 3.0));
+            
         // Total pressure and sound speed
         P = P_ion + P_deg;
         double gamma_eff = 5.0 / 3.0;
@@ -221,7 +230,7 @@ public:
     generateTable() {
         // Define log-spaced rho and u values
         logRhoGrid = Lin::linspace(-2, 10, 300);  // log10(rho) from 1e-2 to 1e10
-        logUGrid   = Lin::linspace(-2, 12, 300);  // log10(u) from 1e-2 to 1e12
+        logUGrid   = Lin::linspace(-2, 16, 300);  // log10(u) from 1e-2 to 1e16
 
         std::vector<std::vector<double>> PTableData;
         std::vector<std::vector<double>> UTableData;
