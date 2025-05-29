@@ -20,36 +20,6 @@ private:
     const PhysicalConstants constants;
     const std::string& tableFile;
 
-    size_t findIndex(const std::vector<double>& grid, double value) const {
-        auto it = std::upper_bound(grid.begin(), grid.end(), value);
-        if (it == grid.begin() || it == grid.end()) return std::max<size_t>(grid.size() - 2, 0);
-        return std::distance(grid.begin(), it) - 1;
-    }
-    
-    double 
-    bilinearInterp(const std::vector<std::vector<double>>& table,
-                          double logRho, double logU) const {
-        size_t i = findIndex(logRhoGrid, logRho);
-        size_t j = findIndex(logUGrid, logU);
-
-        double x0 = logRhoGrid[i], x1 = logRhoGrid[i + 1];
-        double y0 = logUGrid[j],   y1 = logUGrid[j + 1];
-
-        double q11 = table[i][j];
-        double q12 = table[i][j + 1];
-        double q21 = table[i + 1][j];
-        double q22 = table[i + 1][j + 1];
-
-        double tx = (logRho - x0) / (x1 - x0);
-        double ty = (logU - y0) / (y1 - y0);
-
-        return (1 - tx) * (1 - ty) * q11 +
-               (1 - tx) * ty       * q12 +
-               tx       * (1 - ty) * q21 +
-               tx       * ty       * q22;
-    }
-
-    
     void 
     loadTable(const std::string& filename) {
         FILE* file = std::fopen(filename.c_str(), "r");
@@ -108,8 +78,6 @@ private:
         UTable  = EOSTable(std::move(UTableData), logRhoGrid, logUGrid);
         CsTable = EOSTable(std::move(CsTableData), logRhoGrid, logUGrid);
     }
-
-
 
     void 
     computeHelmholtzApprox(double rho, double u, double& P, double& cs) {
@@ -254,7 +222,6 @@ public:
         // Define log-spaced rho and u values
         logRhoGrid = Lin::linspace(-2, 10, 300);  // log10(rho) from 1e-2 to 1e10
         logUGrid   = Lin::linspace(-2, 12, 300);  // log10(u) from 1e-2 to 1e12
-
 
         std::vector<std::vector<double>> PTableData;
         std::vector<std::vector<double>> UTableData;
