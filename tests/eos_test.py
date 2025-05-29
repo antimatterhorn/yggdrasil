@@ -8,8 +8,8 @@ if __name__ == "__main__":
                                        nu = 50,
                                        minrho = 1e-2,
                                        maxrho = 1e6,
-                                       minu   = 1e8,
-                                       maxu   = 1e16,
+                                       minT   = 200,
+                                       maxT   = 1e8,
                                        eos = "IdealGasEOS")
 
     assert eos in ["IdealGasEOS",
@@ -19,6 +19,9 @@ if __name__ == "__main__":
                    "TillotsonEOS",
                    "IsothermalEOS"]
 
+    constants = CGS()
+    minu = constants.kB * minT / (0.6 * constants.protonMass)
+    maxu = constants.kB * maxT / (0.6 * constants.protonMass)
     # Log-space grid
     log_rho = np.linspace(np.log10(minrho), np.log10(maxrho), nrho)
     log_u   = np.linspace(np.log10(minu),   np.log10(maxu),   nu)
@@ -26,7 +29,6 @@ if __name__ == "__main__":
 
     # Flattened input for NodeList and Fields
     N = nrho * nu
-    constants = CGS()
 
     if eos == "IdealGasEOS":
         eos = IdealGasEOS(1.4, constants)

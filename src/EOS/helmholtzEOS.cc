@@ -103,10 +103,13 @@ private:
         double EF = (std::pow(3.0 * pi * pi * n_e, 2.0 / 3.0) * hb * hb) / (2.0 * me);
         
         // Suppress P_deg if not degenerate
-        double P_deg = ((kB * T > EF) ? 0.0 : K * std::pow(n_e, 5.0 / 3.0));
-            
+        double P_deg = K * std::pow(n_e, 5.0 / 3.0);
+
+        // Smooth suppression factor
+        double ratio = kB*T / EF;
+        double suppression = 1.0 / (1.0 + std::pow(ratio, 4.0));
         // Total pressure and sound speed
-        P = P_ion + P_deg;
+        P = P_ion + suppression* P_deg;
         double gamma_eff = 5.0 / 3.0;
         cs = std::sqrt(gamma_eff * P / rho);
     }
