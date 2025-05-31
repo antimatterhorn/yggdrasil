@@ -5,11 +5,11 @@ from numpy import sqrt
 import random
 
 class GlassNodeGenerator2d:
-    def __init__(self, numNodes):
+    def __init__(self, numNodes, overSample = 1):
         self.numNodes = numNodes
         self.positions = []
         self.bounds = [[-1, -1], [1, 1]]
-        self.trials = 20*numNodes
+        self.trials = overSample*numNodes
         
         pfield = FieldofVector2d("trials")
         minx,miny = self.bounds[0]
