@@ -53,6 +53,12 @@ method  = ConstantDThetaDisk2d
 xs,ys = stDev(method)
 scatter4 = ax.plot(xs, ys, c="green", label="Constant DTheta")
 
+from PoissonNodeGenerator import PoissonDisk2d
+method   = PoissonDisk2d
+
+xs,ys = stDev(method)
+scatter4 = ax.plot(xs, ys, c="red", label="Poisson")
+
 ax.set_xlabel("number of points")
 ax.set_ylabel("standard deviation")
 

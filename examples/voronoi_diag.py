@@ -8,7 +8,7 @@ if __name__ == "__main__":
                                        bmax = [4,4],
                                        method = "random")
     
-    assert method in ["random", "fibonacci", "glass", "constantDTheta"]
+    assert method in ["random", "fibonacci", "glass", "constantDTheta", "poisson", "glassDisk"]
 
 
     if method == "random":
@@ -24,6 +24,13 @@ if __name__ == "__main__":
         from ConstantDThetaGenerator import ConstantDThetaDisk2d
         posF = ConstantDThetaDisk2d(numNodes).positions
         numNodes = len(posF) # needs to be fixed because constantDTheta may overfill
+    elif method == "poisson":
+        from PoissonNodeGenerator import PoissonDisk2d
+        posF = PoissonDisk2d(numNodes).positions
+        numNodes = len(posF) # needs to be fixed because constantDTheta may overfill
+    elif method == "glassDisk":
+        from GlassNodeGenerator import GlassDisk2d
+        posF = GlassDisk2d(numNodes).positions
 
     myNodeList = NodeList(numNodes)
     myNodeList.insertFieldVector2d("position")
