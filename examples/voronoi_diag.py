@@ -19,8 +19,14 @@ if __name__ == "__main__":
 
     print("Creating VoronoiMesh2d")
     vor = VoronoiMesh2d(pos)
-    cells = vor.getCells()
-    print(len(cells),"cells")
+    print(len(vor.getCells()),"cells")
+
+    for cell in vor.getCells():
+        gen = np.array([cell.generator.x, cell.generator.y])
+        verts = np.array([[v.x, v.y] for v in cell.vertices])
+        centroid = np.mean(verts, axis=0)
+        if np.linalg.norm(gen - centroid) > 1.0:
+            print(f"WARNING: generator {gen} far from cell centroid {centroid}")
 
     import matplotlib.pyplot as plt
     from matplotlib.patches import Polygon

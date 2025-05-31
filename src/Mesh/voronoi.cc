@@ -19,8 +19,8 @@ VoronoiMesh<dim>::getBisectingHyperplanes(int i) {
         if (j == i) continue;
         const auto& pj = generators.getValue(j);
         auto midpoint = (pi + pj) * 0.5;
-        auto normal = (pj - pi).normal();  // points from pi to pj
-        planes.emplace_back(midpoint, -normal);  // inward-facing
+        auto normal = (pj - pi).normal();
+        planes.emplace_back(midpoint, -normal);  // inward facing
     }
 
     return planes;
@@ -70,9 +70,10 @@ VoronoiMesh<2>::intersectHalfSpaces(const std::vector<std::pair<Lin::Vector<2>, 
             double da = (a - p).dot(n);
             double db = (b - p).dot(n);
 
-            if (da <= 0) newPoly.push_back(a);
+            // Change from <= 0 to >= 0:
+            if (da >= 0) newPoly.push_back(a);
 
-            if ((da <= 0 && db > 0) || (da > 0 && db <= 0)) {
+            if ((da >= 0 && db < 0) || (da < 0 && db >= 0)) {
                 double t = da / (da - db);
                 Vector intersection = a + (b - a) * t;
                 newPoly.push_back(intersection);
