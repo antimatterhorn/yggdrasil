@@ -8,7 +8,7 @@ if __name__ == "__main__":
                                        bmax = [4,4],
                                        method = "random")
     
-    assert method in ["random", "fibonacci"]
+    assert method in ["random", "fibonacci", "glass"]
 
     myNodeList = NodeList(numNodes)
     myNodeList.insertFieldVector2d("position")
@@ -17,13 +17,17 @@ if __name__ == "__main__":
 
     pos = myNodeList.getFieldVector2d("position")
     if method == "random":
-        for i in range(numNodes):
-            pos.setValue(i,Vector2d(random.uniform(bmin[0],bmax[0]), random.uniform(bmin[1],bmax[1])))
-    else:
+        from RandomNodeGenerator import RandomNodeGenerator2d
+        posF = RandomNodeGenerator2d(numNodes).positions
+    elif method == "fibonacci":
         from FibonacciNodeGenerator import FibonacciDisk2d
         posF = FibonacciDisk2d(numNodes).positions
-        for i in range(numNodes):
-            pos.setValue(i,Vector2d(posF[i][0], posF[i][1])*0.5*(bmax[1]-bmin[1]))
+    elif method == "glass":
+        from GlassNodeGenerator import GlassNodeGenerator2d
+        posF = GlassNodeGenerator2d(numNodes).positions
+
+    for i in range(numNodes):
+        pos.setValue(i,Vector2d(posF[i][0], posF[i][1])*0.5*(bmax[1]-bmin[1]))
 
     print("Creating VoronoiMesh2d")
     vor = VoronoiMesh2d(pos)
