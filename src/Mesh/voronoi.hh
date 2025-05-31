@@ -1,20 +1,35 @@
 #pragma once
 
 #include "../Math/vectorMath.hh"
+#include "../DataBase/field.hh"
 
-namespace Mesh {  
+
+namespace Mesh { 
+
+template <int dim>
+class VoronoiCell {
+    public:
+        using Vector = Lin::Vector<dim>;
+        Vector generator;
+        std::vector<Vector> vertices;
+        
+        VoronoiCell(Vector generator, std::vector<Vector> vertices)
+            : generator(generator),
+              vertices(std::move(vertices))
+        {}
+
+        Vector getGenerator() const { return generator; }
+        const std::vector<Vector>& getVertices() const { return vertices; }
+};
+  
+
 template <int dim>
 class VoronoiMesh {
 private:
     using Vector = Lin::Vector<dim>;
-    struct VoronoiCell {
-        Vector generator;
-        std::vector<Vector> vertices; // Convex polytope vertices
-        // Optionally, store faces for dim > 2
-    };
 
-    std::vector<Vector> generators;
-    std::vector<VoronoiCell> cells;
+    Field<Vector> generators;
+    std::vector<VoronoiCell<dim>> cells;
 
 
 
@@ -26,12 +41,11 @@ public:
 
     VoronoiMesh() = default;
 
-    explicit VoronoiMesh(const std::vector<Vector>& seedPoints)
-        : generators(seedPoints) {}
+    explicit VoronoiMesh(const Field<Vector>& seedPoints);
 
     void generateMesh();
 
-    const std::vector<VoronoiCell>& getCells() const { return cells; }
+    const std::vector<VoronoiCell<dim>>& getCells() const { return cells; }
 
 
 };

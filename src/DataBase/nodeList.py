@@ -51,3 +51,9 @@ class NodeList:
                                 template_parameters = ("Lin::Vector<3>"))
     insertFieldDouble = PYB11TemplateMethod(insertField,
                                 template_parameters = ("double"))
+    insertFieldVector1d = PYB11TemplateMethod(insertField,
+                                template_parameters = ("Lin::Vector<1>"))
+    insertFieldVector2d = PYB11TemplateMethod(insertField,
+                                template_parameters = ("Lin::Vector<2>"))
+    insertFieldVector3d = PYB11TemplateMethod(insertField,
+                                template_parameters = ("Lin::Vector<3>"))
