@@ -4,12 +4,12 @@ import matplotlib.pyplot as plt
 import random
 from yggdrasil import *
 from scipy.spatial import distance_matrix
-
+from progressBar import ProgressBar
 
 def stDev(method):
     ns = []
     sd = []
-    for n in range(10,1000,10):
+    for n in range(10,500,10):
         p = method(n).positions
         p = np.array(p)
 
@@ -25,9 +25,10 @@ def stDev(method):
         As = (4 * np.pi) / local_density    # Approximate area per point
         As = As/As.mean()                   # Normalize areas
 
-        ns.append(n)
+        ns.append(len(p))
         sd.append(np.std(As))
-        print(n)
+        ProgressBar((n+10)/500,method.__name__)
+    print("\n")
     return ns,sd
 
 fig = plt.figure()
@@ -45,6 +46,12 @@ method  = GlassNodeGenerator2d
 
 xs,ys = stDev(method)
 scatter4 = ax.plot(xs, ys, c="black", label="Glass")
+
+from ConstantDThetaGenerator import ConstantDThetaDisk2d
+method  = ConstantDThetaDisk2d
+
+xs,ys = stDev(method)
+scatter4 = ax.plot(xs, ys, c="green", label="Constant DTheta")
 
 ax.set_xlabel("number of points")
 ax.set_ylabel("standard deviation")

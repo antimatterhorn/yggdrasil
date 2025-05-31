@@ -8,14 +8,9 @@ if __name__ == "__main__":
                                        bmax = [4,4],
                                        method = "random")
     
-    assert method in ["random", "fibonacci", "glass"]
+    assert method in ["random", "fibonacci", "glass", "constantDTheta"]
 
-    myNodeList = NodeList(numNodes)
-    myNodeList.insertFieldVector2d("position")
 
-    print("field names =",myNodeList.fieldNames)
-
-    pos = myNodeList.getFieldVector2d("position")
     if method == "random":
         from RandomNodeGenerator import RandomNodeGenerator2d
         posF = RandomNodeGenerator2d(numNodes).positions
@@ -25,6 +20,17 @@ if __name__ == "__main__":
     elif method == "glass":
         from GlassNodeGenerator import GlassNodeGenerator2d
         posF = GlassNodeGenerator2d(numNodes).positions
+    elif method == "constantDTheta":
+        from ConstantDThetaGenerator import ConstantDThetaDisk2d
+        posF = ConstantDThetaDisk2d(numNodes).positions
+        numNodes = len(posF) # needs to be fixed because constantDTheta may overfill
+
+    myNodeList = NodeList(numNodes)
+    myNodeList.insertFieldVector2d("position")
+
+    print("field names =",myNodeList.fieldNames)
+
+    pos = myNodeList.getFieldVector2d("position")
 
     for i in range(numNodes):
         pos.setValue(i,Vector2d(posF[i][0], posF[i][1])*0.5*(bmax[1]-bmin[1]))
