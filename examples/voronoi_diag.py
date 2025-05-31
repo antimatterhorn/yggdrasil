@@ -3,30 +3,31 @@ from yggdrasil import *
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
-    commandLine = CommandLineArguments(numNodes = 5,
-                                       bmin = [-1,-1],
-                                       bmax = [1,1])
+    commandLine = CommandLineArguments(numNodes = 100,
+                                       bmin = [-4,-4],
+                                       bmax = [4,4],
+                                       method = "random")
     
+    assert method in ["random", "fibonacci"]
+
     myNodeList = NodeList(numNodes)
     myNodeList.insertFieldVector2d("position")
 
     print("field names =",myNodeList.fieldNames)
 
     pos = myNodeList.getFieldVector2d("position")
-    for i in range(numNodes):
-        pos.setValue(i,Vector2d(random.random() * (bmax[0]-bmin[0]) + bmin[0],
-                  random.random() * (bmax[1]-bmin[1]) + bmin[1]))
+    if method == "random":
+        for i in range(numNodes):
+            pos.setValue(i,Vector2d(random.uniform(bmin[0],bmax[0]), random.uniform(bmin[1],bmax[1])))
+    else:
+        from FibonacciNodeGenerator import FibonacciDisk2d
+        posF = FibonacciDisk2d(numNodes).positions
+        for i in range(numNodes):
+            pos.setValue(i,Vector2d(posF[i][0], posF[i][1])*0.5*(bmax[1]-bmin[1]))
 
     print("Creating VoronoiMesh2d")
     vor = VoronoiMesh2d(pos)
     print(len(vor.getCells()),"cells")
-
-    for cell in vor.getCells():
-        gen = np.array([cell.generator.x, cell.generator.y])
-        verts = np.array([[v.x, v.y] for v in cell.vertices])
-        centroid = np.mean(verts, axis=0)
-        if np.linalg.norm(gen - centroid) > 1.0:
-            print(f"WARNING: generator {gen} far from cell centroid {centroid}")
 
     import matplotlib.pyplot as plt
     from matplotlib.patches import Polygon
