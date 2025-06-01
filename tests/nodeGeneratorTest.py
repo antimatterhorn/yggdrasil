@@ -1,7 +1,5 @@
-import sys
 import numpy as np
 import matplotlib.pyplot as plt
-import random
 from yggdrasil import *
 
 commandLine = CommandLineArguments(method = "Fibonacci",

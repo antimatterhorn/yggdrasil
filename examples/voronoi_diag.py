@@ -1,4 +1,3 @@
-import random
 from yggdrasil import *
 import matplotlib.pyplot as plt
 
