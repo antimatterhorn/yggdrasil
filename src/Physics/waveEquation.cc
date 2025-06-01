@@ -82,19 +82,15 @@ public:
                     insideIds.push_back(i);
             }
         }
+
+        State<dim> state = this->state;
+        state.updateFields(nodeList);
     }
 
     void
     VerifyWaveFields() {
         this->template EnrollFields<double>({"phi", "xi", "maxphi", "phisq", "soundSpeed"});
         this->template EnrollStateFields<double>({"phi", "xi"});
-    }
-
-    virtual void
-    PreStepInitialize() override {
-        State<dim> state = this->state;
-        NodeList* nodeList = this->nodeList;
-        state.updateFields(nodeList);
     }
 
     virtual void
@@ -183,14 +179,15 @@ public:
     FinalizeStep(const State<dim>* finalState) override {
         NodeList* nodeList = this->nodeList;
         int numNodes = nodeList->size();
+        State<dim> state = this->state;
 
         ScalarField* fxi    = finalState->template getField<double>("xi");
         ScalarField* fphi   = finalState->template getField<double>("phi");
 
         ScalarField* xi     = nodeList->getField<double>("xi");
         ScalarField* phi    = nodeList->getField<double>("phi");
-        ScalarField* mphi   = nodeList->getField<double>("maxphi");
-        ScalarField* phis   = nodeList->getField<double>("phisq");
+        ScalarField* mphi   = nodeList->getField<double>("maxphi"); // diagnostic fields for plotting
+        ScalarField* phis   = nodeList->getField<double>("phisq");  // diagnostic fields for plotting
 
         xi->copyValues(fxi);
         phi->copyValues(fphi);
@@ -200,6 +197,9 @@ public:
             mphi->setValue(i,std::max(mphi->getValue(i),phi->getValue(i)*phi->getValue(i)));
             phis->setValue(i,phi->getValue(i)*phi->getValue(i));
         }
+
+        if (finalState != &(state))
+            state = std::move(*finalState);
             
     }
 

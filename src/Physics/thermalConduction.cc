@@ -55,11 +55,11 @@ public:
 
     virtual void ZeroTimeInitialize() override {
         SetConductivity();
+        this->state.updateFields(this->nodeList);
     }
 
     virtual void PreStepInitialize() override {
         SetConductivity();
-        this->state.updateFields(this->nodeList);
     }
 
     virtual void EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {
@@ -157,10 +157,7 @@ public:
         u->copyValues(fu);
 
         if (stateToPush != &(state))
-        {
-            ScalarField* su = state.template getField<double>("specificInternalEnergy");
-            su->copyValues(fu);
-        }
+            state = std::move(*stateToPush);
     }
 
     double getCell(int i, int j, const std::string& fieldName = "pressure") const {
