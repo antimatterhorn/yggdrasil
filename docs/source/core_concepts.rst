@@ -64,6 +64,36 @@ which state vectors the physics package is intended to evolve.
     a problem without any physics classes that use ``density``, Yggdrasil will raise an error, unless you have manually created that Field yourself
     within your problem script.
 
+Generators
+-----------
+Generators create point distributions for use in particle-based simulations or Voronoi mesh generation. Generators return a python list of points
+in 2d or 3d coordinates inside a unitary bounding box or unit circle/sphere for a chosen number of points. The available generators are:
+
+.. code-block:: text
+
+    ConstantDThetaDisk2d
+    FibonacciDisk2d
+    FibonacciSurface3d
+    GlassNodeGenerator2d/3d
+    GlassNodeGenerator3d
+    PoissonDisk2d
+    RandomNodeGenerator1d/2d/3d
+    RecursivePrimitiveRefinementSurface3d
+    ParameterizedSpiralSurface3d
+    RPRPSNodeGenerator3d
+    SEAGenSurface3d
+
+Below is an example generated distribution of points using the ``FibbonaciDisk2d`` generator used as
+seed generators for a Voronoi mesh.
+
+.. image:: fibonacci.png
+   :align: center
+
+.. note::
+    Because all of Yggdrasil's generators return points inside a unitary bounding box or unit circle/sphere,
+    you'll likely want to scale, move, and cull them to fit your particular problem. See the nodeGenerator tests
+    inside the ``tests`` directory for examples.
+
 Physics Packages
 --------------------
 Physics packages are the primary computational engines of Yggdrasil. With a few exceptions,
