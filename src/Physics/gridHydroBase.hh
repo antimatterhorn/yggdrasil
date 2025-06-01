@@ -52,6 +52,9 @@ public:
 
     virtual void PreStepInitialize() override {
         EOSLookup();
+        State<dim> state = this->state;
+        NodeList* nodeList = this->nodeList;
+        state.updateFields(nodeList);
     }
 
     virtual void EvaluateDerivatives(const State<dim>* initialState,
