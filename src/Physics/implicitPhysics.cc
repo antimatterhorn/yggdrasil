@@ -25,14 +25,10 @@ public:
     ~ImplicitPhysics() {}
 
     virtual void
-    PreStepInitialize() override {
+    ZeroTimeInitialize() override {
         State<dim> state = this->state;
         NodeList* nodeList = this->nodeList;
-
-        ScalarField* sy = state.template getField<double>("y");
-        ScalarField* y  = nodeList->template getField<double>("y");
-
-        sy->copyValues(y);
+        state.updateFields(nodeList);
     }
 
     virtual void
@@ -56,11 +52,11 @@ public:
         State<dim> state = this->state;
         NodeList* nodeList = this->nodeList;
 
-        ScalarField* sy = state.template getField<double>("y");
         ScalarField* fy = finalState->template getField<double>("y");
         ScalarField* y  = nodeList->template getField<double>("y");
 
-        sy->copyValues(fy);
         y->copyValues(fy);
+        if (finalState!= &(this->state))
+           state = std::move(*finalState);
     }
 };

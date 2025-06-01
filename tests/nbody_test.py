@@ -37,7 +37,7 @@ if __name__ == "__main__":
     mass        = myNodeList.getFieldDouble("mass")
     for i in range(numNodes):
         mass.setValue(i,1.0)
-        positions.setValue(i,Generator.positions[i])
+        positions.setValue(i,Vector2d(Generator.positions[i][0],Generator.positions[i][1]))
 
     integrator = RungeKutta4Integrator2d(packages=packages,
                                          dtmin=0.5e1,verbose=False)

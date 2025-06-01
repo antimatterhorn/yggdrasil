@@ -27,7 +27,7 @@ public:
     ~ConstantGravity() {}
 
     virtual void
-    PreStepInitialize() override {
+    ZeroTimeInitialize() override {
         State<dim> state = this->state;
         NodeList* nodeList = this->nodeList;
         state.updateFields(nodeList);
@@ -91,12 +91,7 @@ public:
         velocity->copyValues(fvelocity);
 
         if (stateToPush != &(state))
-        {
-            VectorField* sposition       = state.template getField<Vector>("position");
-            VectorField* svelocity       = state.template getField<Vector>("velocity");
-            sposition->copyValues(fposition);
-            svelocity->copyValues(fvelocity);
-        }
+            state = std::move(*stateToPush);
     }
 
     virtual std::string name() const override { return "constantGravity"; }

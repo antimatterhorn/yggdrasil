@@ -24,7 +24,7 @@ public:
     ~NBodyGravity() {}
 
     virtual void
-    PreStepInitialize() override {
+    ZeroTimeInitialize() override {
         State<dim> state = this->state;
         NodeList* nodeList = this->nodeList;
         state.updateFields(nodeList);
@@ -91,6 +91,10 @@ public:
 
         position->copyValues(fposition);
         velocity->copyValues(fvelocity);
+
+        State<dim> state = this->state;
+        if (finalState!= &(this->state))
+           state = std::move(*finalState);
     }
 
     virtual std::string name() const override { return "nBodyGravity"; }

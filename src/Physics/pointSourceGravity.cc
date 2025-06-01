@@ -43,6 +43,13 @@ public:
     ~PointSourceGravity() {}
 
     virtual void
+    ZeroTimeInitialize() override {
+        State<dim> state = this->state;
+        NodeList* nodeList = this->nodeList;
+        state.updateFields(nodeList);
+    }
+
+    virtual void
     EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {
         // Update point source position once per timestep
         if (time != lastUpdateTime) {
@@ -112,12 +119,7 @@ public:
         velocity->copyValues(fvelocity);
 
         if (stateToPush != &(state))
-        {
-            VectorField* sposition       = state.template getField<Vector>("position");
-            VectorField* svelocity       = state.template getField<Vector>("velocity");
-            sposition->copyValues(fposition);
-            svelocity->copyValues(fvelocity);
-        }
+            state = std::move(*stateToPush);
     }
 
     virtual std::string name() const override { return "pointSourceGravity"; }
