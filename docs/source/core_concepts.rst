@@ -190,7 +190,8 @@ Element Meshes
 
 Voronoi Meshes
 ^^^^^^^^^^^^^^^
-Currently, Yggdrasil can construct 2d Voronoi meshes from a Field<Vector<2>>. Unique topology is not guaranteed.
+Currently, Yggdrasil can construct 2d Voronoi meshes from a ``Field<Vector<2>>`` or a ``FieldofVector2d`` if constructed 
+from within Python. Unique topology is not guaranteed.
 See the ``voronoi_diag.py`` example for a use-case. 
 
 Boundary Conditions
