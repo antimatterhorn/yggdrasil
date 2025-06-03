@@ -52,7 +52,9 @@ public:
     }
 
     virtual void
-    ZeroTimeInitialize() {}
+    ZeroTimeInitialize() {
+        state.updateFields(nodeList);
+    }
 
     virtual void
     EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt)  {  }
@@ -75,7 +77,8 @@ public:
                 VectorField* nField = nodeList->template getField<Vector>(fname.name());
                 nField->copyValues(resultVector);
             }
-        }      
+        }  
+        state.updateFields(nodeList);    
         FinalChecks();
     };
 

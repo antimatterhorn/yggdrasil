@@ -35,14 +35,4 @@ public:
             dydt->setValue(i,20.0*(time+dt) - 1.5*(time+dt)*(time+dt));
         }
     }
-
-    virtual void
-    FinalizeStep(const State<dim>* finalState) override {
-        ScalarField* fy       = finalState->template getField<double>("y");
-        ScalarField* y        = this->nodeList->template getField<double>("y");
-
-        y->copyValues(fy);
-        this->PushState(finalState);
-        
-    }
 };

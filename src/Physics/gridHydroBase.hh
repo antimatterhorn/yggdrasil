@@ -158,8 +158,6 @@ public:
             velocity->setValue(i,fvelocity->getValue(i));
             u->setValue(i, std::max(fu->getValue(i), 1e-12));
         }
-
-        this->PushState(finalState);
         
         EOSLookup();
     }

@@ -25,11 +25,6 @@ public:
     ~ImplicitPhysics() {}
 
     virtual void
-    ZeroTimeInitialize() override {
-        this->state.updateFields(this->nodeList);
-    }
-
-    virtual void
     EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {
         int numNodes = this->nodeList->size();
 
@@ -42,14 +37,5 @@ public:
             const double yi = (*y)[i];
             dydt->setValue(i, yi + evalTime * evalTime);
         }
-    }
-
-    virtual void
-    FinalizeStep(const State<dim>* finalState) override {
-        ScalarField* fy = finalState->template getField<double>("y");
-        ScalarField* y  = this->nodeList->template getField<double>("y");
-
-        y->copyValues(fy);
-        this->PushState(finalState);
     }
 };

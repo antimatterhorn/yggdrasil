@@ -43,11 +43,6 @@ public:
     ~PointSourceGravity() {}
 
     virtual void
-    ZeroTimeInitialize() override {
-        this->state.updateFields(this->nodeList);
-    }
-
-    virtual void
     EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {
         // Update point source position once per timestep
         if (time != lastUpdateTime) {
@@ -94,22 +89,6 @@ public:
         double timestep = timestepCoefficient * sqrt(dtmin);
 
         return timestep;
-    }
-
-    virtual void
-    FinalizeStep(const State<dim>* finalState) override {
-        int numNodes = this->nodeList->size();
-
-        VectorField* position       = this->nodeList->template getField<Vector>("position");
-        VectorField* velocity       = this->nodeList->template getField<Vector>("velocity");
-
-        VectorField* fposition       = finalState->template getField<Vector>("position");
-        VectorField* fvelocity       = finalState->template getField<Vector>("velocity");
-
-        position->copyValues(fposition);
-        velocity->copyValues(fvelocity);
-        
-        this->PushState(finalState);
     }
 
     virtual std::string name() const override { return "pointSourceGravity"; }

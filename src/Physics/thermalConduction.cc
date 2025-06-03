@@ -58,7 +58,8 @@ public:
     }
 
     virtual void PreStepInitialize() override {
-        
+        SetConductivity();
+        this->state.updateFields(this->nodeList);
     }
 
     virtual void EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {
@@ -138,19 +139,6 @@ public:
         double timestep = timestepCoefficient * std::sqrt(dtmin);
 
         return timestep;
-    }
-
-    virtual void FinalizeStep(const State<dim>* finalState) override {
-        int numZones = this->nodeList->size();
-        State<dim> state = this->state;
-
-        ScalarField* u      = this->nodeList->template getField<double>("specificInternalEnergy");
-        ScalarField* fu     = finalState->template getField<double>("specificInternalEnergy");
-
-        u->copyValues(fu);
-        SetConductivity();
-
-        this->PushState(finalState);
     }
 
     double getCell(int i, int j, const std::string& fieldName = "pressure") const {

@@ -24,13 +24,6 @@ public:
     ~NBodyGravity() {}
 
     virtual void
-    ZeroTimeInitialize() override {
-        State<dim> state = this->state;
-        NodeList* nodeList = this->nodeList;
-        state.updateFields(nodeList);
-    }
-
-    virtual void
     EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {
         NodeList* nodeList = this->nodeList;
         PhysicalConstants constants = this->constants;
@@ -76,20 +69,6 @@ public:
         double timestep = timestepCoefficient * sqrt(dtmin);
 
         return timestep;
-    }
-
-    virtual void
-    FinalizeStep(const State<dim>* finalState) override {
-        VectorField* fposition  = finalState->template getField<Vector>("position");
-        VectorField* fvelocity  = finalState->template getField<Vector>("velocity");
-
-        VectorField* position   = this->nodeList->template getField<Vector>("position");
-        VectorField* velocity   = this->nodeList->template getField<Vector>("velocity");
-
-        position->copyValues(fposition);
-        velocity->copyValues(fvelocity);
-
-        this->PushState(finalState);
     }
 
     virtual std::string name() const override { return "nBodyGravity"; }

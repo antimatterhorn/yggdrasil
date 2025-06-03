@@ -27,11 +27,6 @@ public:
     ~ConstantGravity() {}
 
     virtual void
-    ZeroTimeInitialize() override {
-        this->state.updateFields(this->nodeList);
-    }
-
-    virtual void
     EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {
         NodeList* nodeList = this->nodeList;
         PhysicalConstants constants = this->constants;
@@ -66,23 +61,6 @@ public:
         double timestep = timestepCoefficient * sqrt(dtmin);
 
         return timestep;
-    }
-
-    virtual void
-    FinalizeStep(const State<dim>* finalState) override {
-        NodeList* nodeList = this->nodeList;
-        int numNodes = nodeList->size();
-
-        VectorField* position       = nodeList->template getField<Vector>("position");
-        VectorField* velocity       = nodeList->template getField<Vector>("velocity");
-
-        VectorField* fposition       = finalState->template getField<Vector>("position");
-        VectorField* fvelocity       = finalState->template getField<Vector>("velocity");
-
-        position->copyValues(fposition);
-        velocity->copyValues(fvelocity);
-
-        this->PushState(finalState);
     }
 
     virtual std::string name() const override { return "constantGravity"; }
