@@ -48,6 +48,9 @@ public:
 
     virtual void ZeroTimeInitialize() override {
         EOSLookup();
+        State<dim> state = this->state;
+        NodeList* nodeList = this->nodeList;
+        state.updateFields(nodeList);
     }
 
     virtual void PreStepInitialize() override {
@@ -158,16 +161,17 @@ public:
         auto* velocity = nodeList->getField<Vector>("velocity");
         auto* u        = nodeList->getField<double>("specificInternalEnergy");
 
-        density->copyValues(fdensity);
-        velocity->copyValues(fvelocity);
-        u->copyValues(fu);
-
         #pragma omp parallel for
         for (int i = 0; i < nodeList->size(); ++i) {
-            density->setValue(i, std::max(density->getValue(i), 1e-12));
-            u->setValue(i, std::max(u->getValue(i), 1e-12));
+            density->setValue(i, std::max(fdensity->getValue(i), 1e-12));
+            velocity->setValue(i,fvelocity->getValue(i));
+            u->setValue(i, std::max(fu->getValue(i), 1e-12));
         }
 
+        State<dim> state = this->state;
+        if (finalState != &(state))
+            state = std::move(*finalState);
+        
         EOSLookup();
     }
 
