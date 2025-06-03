@@ -251,7 +251,7 @@ public:
 
     }
 
-    State<dim> deepCopy() {
+    State<dim> deepCopy() const {
         State<dim> out(this->size());
         out.clone(this);
         return out;

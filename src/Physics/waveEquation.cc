@@ -172,29 +172,19 @@ public:
     }
 
     virtual void
-    FinalizeStep(const State<dim>* finalState) override {
+    FinalChecks() const override {
         int numNodes = this->nodeList->size();
-        State<dim> state = this->state;
-
-        ScalarField* fxi    = finalState->template getField<double>("xi");
-        ScalarField* fphi   = finalState->template getField<double>("phi");
-
+        
         ScalarField* xi     = this->nodeList->template getField<double>("xi");
         ScalarField* phi    = this->nodeList->template getField<double>("phi");
+
         ScalarField* mphi   = this->nodeList->template getField<double>("maxphi"); // diagnostic fields for plotting
         ScalarField* phis   = this->nodeList->template getField<double>("phisq");  // diagnostic fields for plotting
-
-        xi->copyValues(fxi);
-        phi->copyValues(fphi);
         
-
         for (int i=0; i<numNodes; ++i) {
             mphi->setValue(i,std::max(mphi->getValue(i),phi->getValue(i)*phi->getValue(i)));
             phis->setValue(i,phi->getValue(i)*phi->getValue(i));
         }
-
-        this->PushState(finalState);
-            
     }
 
     virtual double 

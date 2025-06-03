@@ -65,8 +65,22 @@ public:
 
     virtual void
     FinalizeStep(const State<dim>* finalState) {
-        PushState(finalState);
+        for (int i = 0; i < finalState->count(); ++i) {
+            FieldBase* FieldToCopy = finalState->getFieldByIndex(i);
+            Name fname = FieldToCopy->getName();
+            if (auto* resultDouble = dynamic_cast<Field<double>*>(FieldToCopy)) {
+                ScalarField* nField = nodeList->template getField<double>(fname.name());
+                nField->copyValues(resultDouble);
+            } else if (auto* resultVector = dynamic_cast<Field<Lin::Vector<dim>>*>(FieldToCopy)) {
+                VectorField* nField = nodeList->template getField<Vector>(fname.name());
+                nField->copyValues(resultVector);
+            }
+        }      
+        FinalChecks();
     };
+
+    virtual void
+    FinalChecks() const {};
 
     virtual void
     PushState(const State<dim>* stateToPush) {
@@ -94,8 +108,8 @@ public:
     virtual NodeList*
     getNodeList() const { return nodeList; }
 
-    virtual State<dim>* 
-    getState() { return &state; }
+    virtual const State<dim>* 
+    getState() const { return &state; }
 
     virtual double
     lastStep() const {return lastDt; }

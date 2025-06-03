@@ -22,7 +22,7 @@ public:
             physics->PreStepInitialize();
             physics->ApplyBoundaries();
 
-            State<dim>* state = physics->getState();
+            const State<dim>* state = physics->getState();
 
             State<dim> k1(state->size());
             State<dim> k2(state->size());

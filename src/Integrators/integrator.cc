@@ -24,7 +24,7 @@ void Integrator<dim>::Step() {
         physics->PreStepInitialize();
         physics->ApplyBoundaries();
 
-        State<dim>* state = physics->getState();
+        const State<dim>* state = physics->getState();
         State<dim> derivatives(state->size());
         derivatives.ghost(state);
 
