@@ -61,7 +61,6 @@ public:
 
     virtual void
     PreStepInitialize() {
-        state.updateFields(nodeList);
         state.updateLastDt(lastDt);
     };
 
@@ -78,12 +77,14 @@ public:
                 nField->copyValues(resultVector);
             }
         } 
-        state.updateFields(nodeList); 
         FinalChecks();
     };
 
     virtual void
     FinalChecks() const {};
+
+    virtual void
+    UpdateState() { state.updateFields(nodeList);};
 
     virtual void
     PushState(const State<dim>* stateToPush) {
@@ -123,10 +124,10 @@ public:
     }
 
     virtual void
-    ApplyBoundaries() {
+    ApplyBoundaries(State<dim>* bState) {
         if(boundaries.size() > 0)
             for (const auto& boundary : boundaries)
-                boundary->ApplyBoundaries(&state,nodeList);
+                boundary->ApplyBoundaries(bState,nodeList);
     }
     
     virtual std::string

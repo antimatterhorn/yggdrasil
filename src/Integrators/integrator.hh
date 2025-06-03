@@ -26,6 +26,7 @@ public:
     virtual double const Time();
     virtual unsigned int Cycle();
     virtual double const Dt();
+    inline std::vector<Physics<dim>*> getPackages() { return packages;};
 };
 
 #include "integrator.cc"

@@ -16,6 +16,8 @@ class Integrator:
         return
     def Cycle(self):
         return
+    def getPackages(self):
+        return "std::vector<Physics<%(dim)s>*>"
     
     dt = PYB11property("double", getter="Dt", doc="timestep")
     

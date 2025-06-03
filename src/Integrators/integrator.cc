@@ -22,7 +22,6 @@ void Integrator<dim>::Step() {
     for (Physics<dim>* physics : packages)
     {
         physics->PreStepInitialize();
-        physics->ApplyBoundaries();
 
         const State<dim>* state = physics->getState();
         State<dim> derivatives(state->size());
@@ -35,9 +34,8 @@ void Integrator<dim>::Step() {
         newState = state->deepCopy();
         newState += derivatives;
 
-        physics->ApplyBoundaries();
+        physics->ApplyBoundaries(&newState);
         physics->FinalizeStep(&newState);
-        physics->ApplyBoundaries();
     }
 
     VoteDt();

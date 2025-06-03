@@ -24,7 +24,6 @@ public:
         for (Physics<dim>* physics : packages) 
         {           
             physics->PreStepInitialize();
-            physics->ApplyBoundaries();
 
             const State<dim>* state  = physics->getState();
             State<dim> interim = state->deepCopy();
@@ -61,9 +60,8 @@ public:
             State<dim> newState = state->deepCopy();
             newState += k1;
 
-            physics->ApplyBoundaries();
+            physics->ApplyBoundaries(&newState);
             physics->FinalizeStep(&newState);
-            physics->ApplyBoundaries();
         }
 
         this->time += dt;

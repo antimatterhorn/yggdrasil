@@ -36,7 +36,7 @@ public:
 
     virtual void
     ApplyBoundaries(State<dim>* state, NodeList* nodeList) override {  
-        int numNodes            = state->size();
+        int numNodes            = nodeList->getNumNodes();
         VectorField* positions  = nodeList->getField<Vector>("position");
         VectorField* velocities = nodeList->getField<Vector>("velocity");
         ScalarField* radii      = nodeList->getField<double>("radius");

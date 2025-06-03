@@ -20,7 +20,6 @@ public:
 
         for (Physics<dim>* physics : packages) {
             physics->PreStepInitialize();
-            physics->ApplyBoundaries();
 
             const State<dim>* state = physics->getState();
 
@@ -65,9 +64,8 @@ public:
                 predicted.swap(newPredicted);  // update for next iteration
             }
 
-            physics->ApplyBoundaries();
+            physics->ApplyBoundaries(&predicted);
             physics->FinalizeStep(&predicted);
-            physics->ApplyBoundaries();
         }
 
         this->time += dt;
