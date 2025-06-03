@@ -46,7 +46,6 @@ public:
             k1 *= 0.5*dt;
             newState += k1;
 
-            physics->ApplyBoundaries();
             physics->FinalizeStep(&newState);
             physics->ApplyBoundaries();
         }

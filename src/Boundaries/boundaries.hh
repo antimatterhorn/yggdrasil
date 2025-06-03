@@ -18,7 +18,7 @@ public:
     virtual ~Boundaries() {}
 
     virtual void
-    ApplyBoundaries(State<dim>& state, NodeList* nodeList) {}
+    ApplyBoundaries(State<dim>* state, NodeList* nodeList) {}
 
 };
 

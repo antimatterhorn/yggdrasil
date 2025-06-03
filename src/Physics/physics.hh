@@ -77,7 +77,8 @@ public:
                 VectorField* nField = nodeList->template getField<Vector>(fname.name());
                 nField->copyValues(resultVector);
             }
-        }   
+        } 
+        state.updateFields(nodeList); 
         FinalChecks();
     };
 
@@ -125,7 +126,7 @@ public:
     ApplyBoundaries() {
         if(boundaries.size() > 0)
             for (const auto& boundary : boundaries)
-                boundary->ApplyBoundaries(state,nodeList);
+                boundary->ApplyBoundaries(&state,nodeList);
     }
     
     virtual std::string

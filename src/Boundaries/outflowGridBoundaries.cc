@@ -129,11 +129,11 @@ public:
     virtual ~OutflowGridBoundaries() = default;
 
     virtual void
-    ApplyBoundaries(State<dim>& state, NodeList* nodeList) override {
+    ApplyBoundaries(State<dim>* state, NodeList* nodeList) override {
         Mesh::Grid<dim>* grid = this->grid;
 
-        for (int i = 0; i < state.count(); ++i) {
-            FieldBase* field = state.getFieldByIndex(i); // Get the field at index i
+        for (int i = 0; i < state->count(); ++i) {
+            FieldBase* field = state->getFieldByIndex(i); // Get the field at index i
             if (typeid(*field) == typeid(ScalarField)) {
                 ScalarField* doubleField = dynamic_cast<ScalarField*>(field);
                 if (doubleField) {
@@ -148,8 +148,8 @@ public:
         }
 
         if (!derivFieldName.empty()) {
-            for (int i = 0; i < state.count(); ++i) {
-                FieldBase* field = state.getFieldByIndex(i);
+            for (int i = 0; i < state->count(); ++i) {
+                FieldBase* field = state->getFieldByIndex(i);
                 if (field->getNameString() == derivFieldName) {
                     if (typeid(*field) == typeid(ScalarField)) {
                         ScalarField* doubleField = dynamic_cast<ScalarField*>(field);

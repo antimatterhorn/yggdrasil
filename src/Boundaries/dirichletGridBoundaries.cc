@@ -132,17 +132,17 @@ public:
     }
 
     virtual void
-    ApplyBoundaries(State<dim>& state, NodeList* nodeList) override {
-        for (int i = 0; i < state.count(); ++i) {
-            FieldBase* field = state.getFieldByIndex(i); // Get the field at index i
+    ApplyBoundaries(State<dim>* state, NodeList* nodeList) override {
+        for (int i = 0; i < state->count(); ++i) {
+            FieldBase* field = state->getFieldByIndex(i); // Get the field at index i
 
             if (dynamic_cast<ScalarField*>(field) != nullptr) {
                 ScalarField* doubleField = dynamic_cast<ScalarField*>(field);
 
                 #pragma omp parallel for
                 for (int j=0; j<ids.size();++j){
-                    int i = ids[j];
-                    doubleField->setValue(i,0);
+                    int k = ids[j];
+                    doubleField->setValue(k,0);
                 }
             
             } else if (dynamic_cast<VectorField*>(field) != nullptr) {
@@ -150,8 +150,8 @@ public:
 
                 #pragma omp parallel for
                 for (int j=0; j<ids.size();++j) {
-                    int i = ids[j];
-                    vectorField->setValue(i,Vector());
+                    int k = ids[j];
+                    vectorField->setValue(k,Vector());
                 }
             
             }

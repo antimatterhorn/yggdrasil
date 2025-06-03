@@ -35,8 +35,8 @@ public:
     virtual ~BoxCollider() {}
 
     virtual void
-    ApplyBoundaries(State<dim>& state, NodeList* nodeList) override {  
-        int numNodes            = state.size();
+    ApplyBoundaries(State<dim>* state, NodeList* nodeList) override {  
+        int numNodes            = state->size();
         VectorField* positions  = nodeList->getField<Vector>("position");
         VectorField* velocities = nodeList->getField<Vector>("velocity");
         ScalarField* radii      = nodeList->getField<double>("radius");
@@ -50,7 +50,7 @@ public:
                     Vector n  = faceNormal(pos);
                     Vector v2 = v1 - 2.0*(v1*n)*n;
                     velocities->setValue(i,v2*elasticity);                 // reflect across the normal
-                    Vector dp = state.getLastDt()*velocities->getValue(i);
+                    Vector dp = state->getLastDt()*velocities->getValue(i);
                     Vector newPos = pos + (0.5*dp);  // move it out of the boundary by a half-step
                     positions->setValue(i,newPos);
                 }

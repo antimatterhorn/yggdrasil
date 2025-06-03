@@ -32,8 +32,8 @@ public:
     virtual ~SphereCollider() {}
 
     virtual void
-    ApplyBoundaries(State<dim>& state, NodeList* nodeList) override {  
-        int numNodes            = state.size();
+    ApplyBoundaries(State<dim>* state, NodeList* nodeList) override {  
+        int numNodes            = state->size();
         VectorField* positions  = nodeList->getField<Vector>("position");
         VectorField* velocities = nodeList->getField<Vector>("velocity");
         ScalarField* radii      = nodeList->getField<double>("radius");
@@ -47,7 +47,6 @@ public:
                     Vector n  = (pos-position).normal();
                     Vector v2 = v1 - 2.0*(v1*n)*n;
                     velocities->setValue(i,v2*elasticity);                 // reflect across the normal
-
                     Vector newPos = pos + (0.1*rad)*n;  // move it out of the boundary
                     positions->setValue(i,newPos);
                 }
