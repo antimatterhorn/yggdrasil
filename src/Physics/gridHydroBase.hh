@@ -58,6 +58,9 @@ public:
         State<dim> state = this->state;
         NodeList* nodeList = this->nodeList;
         state.updateFields(nodeList);
+
+        // this is a double assignment after finalize, but removing it
+        // breaks the whole thing? 
     }
 
     virtual void EvaluateDerivatives(const State<dim>* initialState,
