@@ -50,7 +50,7 @@ public:
     }
 
     virtual void
-    FinalizeStep(const State<dim>* finalState) override {
+    FinalizeStep(State<dim>* finalState) override {
         State<dim> state = this->state;
         NodeList* nodeList = this->nodeList;
 

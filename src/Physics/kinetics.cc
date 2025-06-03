@@ -26,10 +26,15 @@ public:
     ~Kinetics() {}
 
     virtual void
-    PreStepInitialize() override {
-        State<dim> state = this->state;
+    ZeroTimeInitialize() override {
         NodeList* nodeList = this->nodeList;
+        State<dim> state = this->state;
         state.updateFields(nodeList);
+    }
+
+    virtual void
+    PreStepInitialize() override {
+
     }
 
     virtual void
@@ -97,7 +102,10 @@ public:
     }
 
     virtual void
-    FinalizeStep(const State<dim>* finalState) override {
+    FinalizeStep(State<dim>* finalState) override {
+        State<dim> state = this->state;
+        if (finalState != &(state))
+            state = std::move(*finalState);
 
     }
 

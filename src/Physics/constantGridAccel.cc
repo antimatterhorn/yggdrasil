@@ -46,11 +46,11 @@ public:
         return 1e30; // this physics package does not support setting the timestep for now
     }
 
-    virtual void FinalizeStep(const State<dim>* finalState) override {
+    virtual void FinalizeStep(State<dim>* finalState) override {
         PushState(finalState);
     }
 
-    virtual void PushState(const State<dim>* stateToPush) override {
+    virtual void PushState(State<dim>* stateToPush) override {
         NodeList* nodeList = this->nodeList;
         int numZones = nodeList->size();
         State<dim> state = this->state;

@@ -79,7 +79,7 @@ public:
     }
 
     virtual void
-    FinalizeStep(const State<dim>* finalState) override {
+    FinalizeStep(State<dim>* finalState) override {
         NodeList* nodeList = this->nodeList;
         int numNodes = nodeList->size();
 

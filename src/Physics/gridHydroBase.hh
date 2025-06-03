@@ -153,7 +153,7 @@ public:
         return dtmin;
     }
 
-    virtual void FinalizeStep(const State<dim>* finalState) override {
+    virtual void FinalizeStep(State<dim>* finalState) override {
         NodeList* nodeList = this->nodeList;
 
         auto* fdensity  = finalState->template getField<double>("density");

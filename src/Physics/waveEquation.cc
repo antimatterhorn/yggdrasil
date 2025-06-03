@@ -82,9 +82,12 @@ public:
                     insideIds.push_back(i);
             }
         }
+        this->state.updateFields(nodeList);
+    }
 
-        State<dim> state = this->state;
-        state.updateFields(nodeList);
+    virtual void
+    PreStepInitialize() override {
+
     }
 
     void
@@ -103,6 +106,11 @@ public:
 
         ScalarField* DxiDt  = deriv.template getField<double>("xi");
         ScalarField* DphiDt = deriv.template getField<double>("phi");
+
+        if (!DphiDt || !DxiDt) {
+            std::cerr << "ERROR: Derivative fields not initialized!\n";
+            std::exit(1);
+        }
 
         ScalarField* cs     = nodeList->getField<double>("soundSpeed");
 
@@ -176,18 +184,16 @@ public:
     }
 
     virtual void
-    FinalizeStep(const State<dim>* finalState) override {
-        NodeList* nodeList = this->nodeList;
-        int numNodes = nodeList->size();
-        State<dim> state = this->state;
+    FinalizeStep(State<dim>* finalState) override {
+        int numNodes = this->nodeList->size();
 
         ScalarField* fxi    = finalState->template getField<double>("xi");
         ScalarField* fphi   = finalState->template getField<double>("phi");
 
-        ScalarField* xi     = nodeList->getField<double>("xi");
-        ScalarField* phi    = nodeList->getField<double>("phi");
-        ScalarField* mphi   = nodeList->getField<double>("maxphi"); // diagnostic fields for plotting
-        ScalarField* phis   = nodeList->getField<double>("phisq");  // diagnostic fields for plotting
+        ScalarField* xi     = this->nodeList->template getField<double>("xi");
+        ScalarField* phi    = this->nodeList->template getField<double>("phi");
+        ScalarField* mphi   = this->nodeList->template getField<double>("maxphi"); // diagnostic fields for plotting
+        ScalarField* phis   = this->nodeList->template getField<double>("phisq");  // diagnostic fields for plotting
 
         xi->copyValues(fxi);
         phi->copyValues(fphi);
@@ -198,9 +204,12 @@ public:
             phis->setValue(i,phi->getValue(i)*phi->getValue(i));
         }
 
-        if (finalState != &(state))
-            state = std::move(*finalState);
-            
+        std::cout << "[DEBUG] finalState count before move: " << finalState->count() << "\n";
+
+        this->state = std::move(*finalState);
+
+        std::cout << "[DEBUG] finalState count after move: " << finalState->count() << "\n";
+        std::cout << "[DEBUG] this->state count after move: " << this->state.count() << "\n";
     }
 
     virtual double 

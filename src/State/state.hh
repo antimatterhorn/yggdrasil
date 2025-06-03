@@ -155,11 +155,35 @@ public:
         return newState;
     }
 
-    // Overload the = assignment operator to copy the fields from another state
-    State& 
-    operator=(const State& rhs) {
+    State& operator=(const State& rhs) {
+        std::cout << "[State] Copy assignment\n";
         fields = rhs.fields;
         numNodes = rhs.numNodes;
+        lastDt = rhs.lastDt;
+        return *this;
+    }
+
+    // Copy constructor
+    State(const State& rhs)
+    : fields(rhs.fields),
+        numNodes(rhs.numNodes),
+        lastDt(rhs.lastDt) {
+        std::cout << "[State] Copy constructor\n";
+    }
+
+    // Move constructor
+    State(State&& rhs) noexcept
+    : fields(std::move(rhs.fields)),
+        numNodes(std::exchange(rhs.numNodes, 0)),
+        lastDt(std::exchange(rhs.lastDt, 0.0)) {
+        std::cout << "[State] Move constructor\n";
+    }
+
+    State& operator=(State&& rhs) noexcept {
+        std::cout << "[State] Move assignment\n";
+        fields = std::move(rhs.fields);
+        numNodes = std::exchange(rhs.numNodes, 0);
+        lastDt = std::exchange(rhs.lastDt, 0.0);
         return *this;
     }
 

@@ -45,11 +45,11 @@ public:
     template <typename T>
     void
     EnrollStateFields(std::initializer_list<const std::string> fields) {
-        State<dim>* state = &this->state;
         for (const std::string& name : fields) {
             Field<T>* field = nodeList->getField<T>(name);
-            state->template addField<T>(field);
+            state.template addField<T>(field);
         }
+        std::cout << "initial phi field pointer: " << state.template getField<double>("phi") << "\n";
     }
 
     virtual void
@@ -60,18 +60,15 @@ public:
 
     virtual void
     PreStepInitialize() {
-        State<dim> state = this->state;
-        NodeList* nodeList = this->nodeList;
-
-        state.updateFields(nodeList);
+        state.updateFields(nodeList);  //bad!!!
         state.updateLastDt(lastDt);
     };
 
     virtual void
-    FinalizeStep(const State<dim>* finalState) {};
+    FinalizeStep(State<dim>* finalState) {};
 
     virtual void
-    PushState(const State<dim>* stateToPush) {};
+    PushState(State<dim>* stateToPush) {};
 
     virtual void
     VerifyFields(NodeList* nodeList) {
