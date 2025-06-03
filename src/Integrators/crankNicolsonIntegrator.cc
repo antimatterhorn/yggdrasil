@@ -67,6 +67,7 @@ public:
 
             physics->ApplyBoundaries();
             physics->FinalizeStep(&predicted);
+            physics->ApplyBoundaries();
         }
 
         this->time += dt;

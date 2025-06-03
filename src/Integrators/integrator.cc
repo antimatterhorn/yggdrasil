@@ -37,6 +37,7 @@ void Integrator<dim>::Step() {
 
         physics->ApplyBoundaries();
         physics->FinalizeStep(&newState);
+        physics->ApplyBoundaries();
     }
 
     VoteDt();

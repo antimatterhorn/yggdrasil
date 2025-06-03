@@ -77,8 +77,7 @@ public:
                 VectorField* nField = nodeList->template getField<Vector>(fname.name());
                 nField->copyValues(resultVector);
             }
-        }  
-        state.updateFields(nodeList);    
+        }   
         FinalChecks();
     };
 
