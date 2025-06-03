@@ -26,15 +26,12 @@ public:
 
     virtual void
     ZeroTimeInitialize() override {
-        State<dim> state = this->state;
-        NodeList* nodeList = this->nodeList;
-        state.updateFields(nodeList);
+        this->state.updateFields(this->nodeList);
     }
 
     virtual void
     EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {
-        NodeList* nodeList = this->nodeList;
-        int numNodes = nodeList->size();
+        int numNodes = this->nodeList->size();
 
         const double evalTime = time + dt;
 
@@ -49,14 +46,10 @@ public:
 
     virtual void
     FinalizeStep(const State<dim>* finalState) override {
-        State<dim> state = this->state;
-        NodeList* nodeList = this->nodeList;
-
         ScalarField* fy = finalState->template getField<double>("y");
-        ScalarField* y  = nodeList->template getField<double>("y");
+        ScalarField* y  = this->nodeList->template getField<double>("y");
 
         y->copyValues(fy);
-        if (finalState!= &(this->state))
-           state = std::move(*finalState);
+        this->PushState(finalState);
     }
 };

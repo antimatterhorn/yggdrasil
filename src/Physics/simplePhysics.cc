@@ -22,23 +22,10 @@ public:
     ~SimplePhysics() {}
 
     virtual void
-    PreStepInitialize() override {
-        State<dim> state = this->state;
-        NodeList* nodeList = this->nodeList;
-
-        ScalarField* sy       = state.template getField<double>("y");
-        ScalarField* y        = nodeList->template getField<double>("y");
-
-        sy->copyValues(y);
-    }
-
-    virtual void
     EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {
         // extremely simple ode, y(t) = 10*t^2 - 1/2*t^3  -> y'=20*t - 3/2*t^2
-
-        NodeList* nodeList = this->nodeList;
         PhysicalConstants constants = this->constants;
-        int numNodes = nodeList->size();
+        int numNodes = this->nodeList->size();
 
         ScalarField* y        = initialState->template getField<double>("y");
         ScalarField* dydt     = deriv.template getField<double>("y");
@@ -51,15 +38,11 @@ public:
 
     virtual void
     FinalizeStep(const State<dim>* finalState) override {
-        State<dim> state = this->state;
-        NodeList* nodeList = this->nodeList;
-
         ScalarField* fy       = finalState->template getField<double>("y");
-        ScalarField* y        = nodeList->template getField<double>("y");
+        ScalarField* y        = this->nodeList->template getField<double>("y");
 
         y->copyValues(fy);
-        if (finalState!= &(this->state))
-           state = std::move(*finalState);
+        this->PushState(finalState);
         
     }
 };

@@ -70,8 +70,7 @@ public:
 
     virtual void
     ZeroTimeInitialize() override {
-        NodeList* nodeList = this->nodeList;
-        int numNodes = nodeList->size();
+        int numNodes = this->nodeList->size();
         for (int i=0; i<numNodes; ++i) {
             if (ocean) {
                 if (!grid2d->onBoundary(i))
@@ -83,8 +82,7 @@ public:
             }
         }
 
-        State<dim> state = this->state;
-        state.updateFields(nodeList);
+        this->state.updateFields(this->nodeList);
     }
 
     void
@@ -95,8 +93,7 @@ public:
 
     virtual void
     EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {  
-        NodeList* nodeList = this->nodeList;
-        int numNodes = nodeList->size();
+        int numNodes = this->nodeList->size();
         
         ScalarField* xi     = initialState->template getField<double>("xi");
         ScalarField* phi    = initialState->template getField<double>("phi");
@@ -104,7 +101,7 @@ public:
         ScalarField* DxiDt  = deriv.template getField<double>("xi");
         ScalarField* DphiDt = deriv.template getField<double>("phi");
 
-        ScalarField* cs     = nodeList->getField<double>("soundSpeed");
+        ScalarField* cs     = this->nodeList->template getField<double>("soundSpeed");
 
         double local_dtmin = 1e30;
 
@@ -170,24 +167,22 @@ public:
     double
     getCell(int i,int j, std::string fieldName="phi") {
         int idx = (ocean ? grid2d->index(i,j,0) : grid->index(i,j,0));
-        NodeList* nodeList  = this->nodeList;
-        ScalarField* phi    = nodeList->getField<double>(fieldName);
+        ScalarField* phi    = this->nodeList->template getField<double>(fieldName);
         return phi->getValue(idx);
     }
 
     virtual void
     FinalizeStep(const State<dim>* finalState) override {
-        NodeList* nodeList = this->nodeList;
-        int numNodes = nodeList->size();
+        int numNodes = this->nodeList->size();
         State<dim> state = this->state;
 
         ScalarField* fxi    = finalState->template getField<double>("xi");
         ScalarField* fphi   = finalState->template getField<double>("phi");
 
-        ScalarField* xi     = nodeList->getField<double>("xi");
-        ScalarField* phi    = nodeList->getField<double>("phi");
-        ScalarField* mphi   = nodeList->getField<double>("maxphi"); // diagnostic fields for plotting
-        ScalarField* phis   = nodeList->getField<double>("phisq");  // diagnostic fields for plotting
+        ScalarField* xi     = this->nodeList->template getField<double>("xi");
+        ScalarField* phi    = this->nodeList->template getField<double>("phi");
+        ScalarField* mphi   = this->nodeList->template getField<double>("maxphi"); // diagnostic fields for plotting
+        ScalarField* phis   = this->nodeList->template getField<double>("phisq");  // diagnostic fields for plotting
 
         xi->copyValues(fxi);
         phi->copyValues(fphi);
@@ -198,8 +193,7 @@ public:
             phis->setValue(i,phi->getValue(i)*phi->getValue(i));
         }
 
-        if (finalState != &(state))
-            state = std::move(*finalState);
+        this->PushState(finalState);
             
     }
 

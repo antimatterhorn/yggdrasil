@@ -44,9 +44,7 @@ public:
 
     virtual void
     ZeroTimeInitialize() override {
-        State<dim> state = this->state;
-        NodeList* nodeList = this->nodeList;
-        state.updateFields(nodeList);
+        this->state.updateFields(this->nodeList);
     }
 
     virtual void
@@ -100,26 +98,18 @@ public:
 
     virtual void
     FinalizeStep(const State<dim>* finalState) override {
-        PushState(finalState);
-    }
+        int numNodes = this->nodeList->size();
 
-    virtual void
-    PushState(const State<dim>* stateToPush) override {
-        NodeList* nodeList = this->nodeList;
-        int numNodes = nodeList->size();
-        State<dim> state = this->state;
+        VectorField* position       = this->nodeList->template getField<Vector>("position");
+        VectorField* velocity       = this->nodeList->template getField<Vector>("velocity");
 
-        VectorField* position       = nodeList->template getField<Vector>("position");
-        VectorField* velocity       = nodeList->template getField<Vector>("velocity");
-
-        VectorField* fposition       = stateToPush->template getField<Vector>("position");
-        VectorField* fvelocity       = stateToPush->template getField<Vector>("velocity");
+        VectorField* fposition       = finalState->template getField<Vector>("position");
+        VectorField* fvelocity       = finalState->template getField<Vector>("velocity");
 
         position->copyValues(fposition);
         velocity->copyValues(fvelocity);
-
-        if (stateToPush != &(state))
-            state = std::move(*stateToPush);
+        
+        this->PushState(finalState);
     }
 
     virtual std::string name() const override { return "pointSourceGravity"; }

@@ -26,23 +26,15 @@ public:
     ~Kinetics() {}
 
     virtual void
-    PreStepInitialize() override {
-        State<dim> state = this->state;
-        NodeList* nodeList = this->nodeList;
-        state.updateFields(nodeList);
-    }
-
-    virtual void
     EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {
         if (time != timeVisited) {
-            NodeList* nodeList = this->nodeList;
             PhysicalConstants constants = this->constants;
-            int numNodes = nodeList->size();
+            int numNodes = this->nodeList->size();
 
-            ScalarField* mass           = nodeList->getField<double>("mass");
-            ScalarField* radius         = nodeList->getField<double>("radius");
+            ScalarField* mass           = this->nodeList->template getField<double>("mass");
+            ScalarField* radius         = this->nodeList->template getField<double>("radius");
             VectorField* position       = initialState->template getField<Vector>("position");
-            VectorField* velocity       = nodeList->getField<Vector>("velocity");
+            VectorField* velocity       = this->nodeList->template getField<Vector>("velocity");
 
             //VectorField* dxdt           = deriv.template getField<Vector>("position");
             double local_dtmin = 1e30;
@@ -94,11 +86,6 @@ public:
         double timestep = timestepCoefficient * sqrt(dtmin);
 
         return timestep;
-    }
-
-    virtual void
-    FinalizeStep(const State<dim>* finalState) override {
-
     }
 
     virtual std::string name() const override { return "kinetics"; }

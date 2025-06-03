@@ -53,16 +53,6 @@ public:
         state.updateFields(nodeList);
     }
 
-    virtual void PreStepInitialize() override {
-        EOSLookup();
-        State<dim> state = this->state;
-        NodeList* nodeList = this->nodeList;
-        state.updateFields(nodeList);
-
-        // this is a double assignment after finalize, but removing it
-        // breaks the whole thing? 
-    }
-
     virtual void EvaluateDerivatives(const State<dim>* initialState,
                                      State<dim>& deriv,
                                      const double time,
@@ -154,26 +144,22 @@ public:
     }
 
     virtual void FinalizeStep(const State<dim>* finalState) override {
-        NodeList* nodeList = this->nodeList;
-
         auto* fdensity  = finalState->template getField<double>("density");
         auto* fvelocity = finalState->template getField<Vector>("velocity");
         auto* fu        = finalState->template getField<double>("specificInternalEnergy");
 
-        auto* density  = nodeList->getField<double>("density");
-        auto* velocity = nodeList->getField<Vector>("velocity");
-        auto* u        = nodeList->getField<double>("specificInternalEnergy");
+        auto* density  = this->nodeList->template getField<double>("density");
+        auto* velocity = this->nodeList->template getField<Vector>("velocity");
+        auto* u        = this->nodeList->template getField<double>("specificInternalEnergy");
 
         #pragma omp parallel for
-        for (int i = 0; i < nodeList->size(); ++i) {
+        for (int i = 0; i < this->nodeList->size(); ++i) {
             density->setValue(i, std::max(fdensity->getValue(i), 1e-12));
             velocity->setValue(i,fvelocity->getValue(i));
             u->setValue(i, std::max(fu->getValue(i), 1e-12));
         }
 
-        State<dim> state = this->state;
-        if (finalState != &(state))
-            state = std::move(*finalState);
+        this->PushState(finalState);
         
         EOSLookup();
     }

@@ -80,21 +80,16 @@ public:
 
     virtual void
     FinalizeStep(const State<dim>* finalState) override {
-        NodeList* nodeList = this->nodeList;
-        int numNodes = nodeList->size();
-
         VectorField* fposition  = finalState->template getField<Vector>("position");
         VectorField* fvelocity  = finalState->template getField<Vector>("velocity");
 
-        VectorField* position   = nodeList->template getField<Vector>("position");
-        VectorField* velocity   = nodeList->template getField<Vector>("velocity");
+        VectorField* position   = this->nodeList->template getField<Vector>("position");
+        VectorField* velocity   = this->nodeList->template getField<Vector>("velocity");
 
         position->copyValues(fposition);
         velocity->copyValues(fvelocity);
 
-        State<dim> state = this->state;
-        if (finalState!= &(this->state))
-           state = std::move(*finalState);
+        this->PushState(finalState);
     }
 
     virtual std::string name() const override { return "nBodyGravity"; }

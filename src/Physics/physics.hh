@@ -45,10 +45,9 @@ public:
     template <typename T>
     void
     EnrollStateFields(std::initializer_list<const std::string> fields) {
-        State<dim>* state = &this->state;
         for (const std::string& name : fields) {
             Field<T>* field = nodeList->getField<T>(name);
-            state->template addField<T>(field);
+            state.template addField<T>(field);
         }
     }
 
@@ -60,18 +59,21 @@ public:
 
     virtual void
     PreStepInitialize() {
-        State<dim> state = this->state;
-        NodeList* nodeList = this->nodeList;
-
         state.updateFields(nodeList);
         state.updateLastDt(lastDt);
     };
 
     virtual void
-    FinalizeStep(const State<dim>* finalState) {};
+    FinalizeStep(const State<dim>* finalState) {
+        PushState(finalState);
+    };
 
     virtual void
-    PushState(const State<dim>* stateToPush) {};
+    PushState(const State<dim>* stateToPush) {
+        state = std::move(*stateToPush); // this cannot work with const
+        // come back to this later when you want to experience real pain
+        // for now, prestepInitialize will take care of this nonsense.
+    };
 
     virtual void
     VerifyFields(NodeList* nodeList) {

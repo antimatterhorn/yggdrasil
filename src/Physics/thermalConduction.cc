@@ -31,13 +31,12 @@ public:
     }
 
     void SetConductivity() {
-        NodeList* nodeList  = this->nodeList;
-        int numZones        = nodeList->size();
+        int numZones = this->nodeList->size();
 
-        ScalarField* rho           = nodeList->getField<double>("density");
-        ScalarField* u             = nodeList->getField<double>("specificInternalEnergy");
-        ScalarField* T             = nodeList->getField<double>("temperature");
-        ScalarField* X             = nodeList->getField<double>("conductivity");
+        ScalarField* rho           = this->nodeList->template getField<double>("density");
+        ScalarField* u             = this->nodeList->template getField<double>("specificInternalEnergy");
+        ScalarField* T             = this->nodeList->template getField<double>("temperature");
+        ScalarField* X             = this->nodeList->template getField<double>("conductivity");
         // looping and using scalar methods for speed
         for (int i = 0 ; i < numZones ; ++i) SetConductivity(rho,u,T,X,i);
     }
@@ -59,17 +58,16 @@ public:
     }
 
     virtual void PreStepInitialize() override {
-        SetConductivity();
+        
     }
 
     virtual void EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {
-        NodeList* nodeList = this->nodeList;
-        int numZones = nodeList->size();
+        int numZones = this->nodeList->size();
 
-        ScalarField* rho    = nodeList->getField<double>("density");
+        ScalarField* rho    = this->nodeList->template getField<double>("density");
         ScalarField* u      = initialState->template getField<double>("specificInternalEnergy");
-        ScalarField* T      = nodeList->getField<double>("temperature");
-        ScalarField* X      = nodeList->getField<double>("conductivity");
+        ScalarField* T      = this->nodeList->template getField<double>("temperature");
+        ScalarField* X      = this->nodeList->template getField<double>("conductivity");
 
         ScalarField* dudt   = deriv.template getField<double>("specificInternalEnergy");
 
@@ -143,21 +141,16 @@ public:
     }
 
     virtual void FinalizeStep(const State<dim>* finalState) override {
-        PushState(finalState);
-    }
-
-    virtual void PushState(const State<dim>* stateToPush) override {
-        NodeList* nodeList = this->nodeList;
-        int numZones = nodeList->size();
+        int numZones = this->nodeList->size();
         State<dim> state = this->state;
 
-        ScalarField* u      = nodeList->getField<double>("specificInternalEnergy");
-        ScalarField* fu     = stateToPush->template getField<double>("specificInternalEnergy");
+        ScalarField* u      = this->nodeList->template getField<double>("specificInternalEnergy");
+        ScalarField* fu     = finalState->template getField<double>("specificInternalEnergy");
 
         u->copyValues(fu);
+        SetConductivity();
 
-        if (stateToPush != &(state))
-            state = std::move(*stateToPush);
+        this->PushState(finalState);
     }
 
     double getCell(int i, int j, const std::string& fieldName = "pressure") const {

@@ -25,10 +25,6 @@ public:
         this->template EnrollStateFields<Vector>({"velocity"});
     }
 
-    virtual void PreStepInitialize() override {
-        this->state.updateFields(this->nodeList);
-    }
-
     virtual void EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {
         NodeList* nodeList = this->nodeList;
         int numZones = nodeList->size();
@@ -47,23 +43,15 @@ public:
     }
 
     virtual void FinalizeStep(const State<dim>* finalState) override {
-        PushState(finalState);
-    }
-
-    virtual void PushState(const State<dim>* stateToPush) override {
         NodeList* nodeList = this->nodeList;
         int numZones = nodeList->size();
-        State<dim> state = this->state;
 
         VectorField* velocity = nodeList->template getField<Vector>("velocity");
-        VectorField* fvelocity = stateToPush->template getField<Vector>("velocity");
+        VectorField* fvelocity = finalState->template getField<Vector>("velocity");
 
         velocity->copyValues(fvelocity);
 
-        if (stateToPush != &state) {
-            VectorField* svelocity = state.template getField<Vector>("velocity");
-            svelocity->copyValues(fvelocity);
-        }
+        this->PushState(finalState);
     }
 
     virtual std::string name() const override { return "constantGridAccel"; }
