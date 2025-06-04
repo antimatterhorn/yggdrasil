@@ -103,6 +103,7 @@ def run():
     if (not animate):
         out = []
         controller.Step(150)
+        out.append(integrator.Time())
         for i in range(numNodes):
             out.append(pos[i].y)
         return out
@@ -112,5 +113,4 @@ def run():
 
 
 if __name__ == "__main__":
-    output = run()
-    print(output)
+    print(run())

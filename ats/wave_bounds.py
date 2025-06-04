@@ -77,6 +77,7 @@ def run():
     else:
         out = []
         controller.Step(cycles)
+        out.append(integrator.Time())
         rgb_grid = np.zeros((ny, nx))
         max_values = []
         for j in range(ny):
@@ -90,5 +91,4 @@ def run():
 
 
 if __name__ == "__main__":
-    output = run()
-    print(output)
+    print(run())
