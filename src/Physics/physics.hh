@@ -53,7 +53,7 @@ public:
 
     virtual void
     ZeroTimeInitialize() {
-        state.updateFields(nodeList);
+        UpdateState();
     }
 
     virtual void
@@ -81,17 +81,13 @@ public:
     };
 
     virtual void
-    FinalChecks() const {};
+    FinalChecks() {};
 
     virtual void
-    UpdateState() { state.updateFields(nodeList);};
-
-    virtual void
-    PushState(const State<dim>* stateToPush) {
-        state = std::move(*stateToPush); // this cannot work with const
-        // come back to this later when you want to experience real pain
-        // for now, prestepInitialize will take care of this nonsense.
-    };
+    UpdateState() { state.updateFields(nodeList);}; 
+    // you should not need to UpdateState() inside an integrator or physics package
+    // since the controller calls it at the end of every step, however, if you roll
+    // your own controller, this could get tricky.
 
     virtual void
     VerifyFields(NodeList* nodeList) {

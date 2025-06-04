@@ -34,6 +34,7 @@ public:
 
         VectorField* position       = initialState->template getField<Vector>("position");
         VectorField* acceleration   = nodeList->getField<Vector>("acceleration");
+        // since the acceleration is literally constant, we keep it on the nodeList
         VectorField* velocity       = initialState->template getField<Vector>("velocity");
 
         VectorField* dxdt           = deriv.template getField<Vector>("position");

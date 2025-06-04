@@ -42,18 +42,6 @@ public:
         return 1e30; // this physics package does not support setting the timestep for now
     }
 
-    virtual void FinalizeStep(const State<dim>* finalState) override {
-        NodeList* nodeList = this->nodeList;
-        int numZones = nodeList->size();
-
-        VectorField* velocity = nodeList->template getField<Vector>("velocity");
-        VectorField* fvelocity = finalState->template getField<Vector>("velocity");
-
-        velocity->copyValues(fvelocity);
-
-        this->PushState(finalState);
-    }
-
     virtual std::string name() const override { return "constantGridAccel"; }
     virtual std::string description() const override {
         return "Constant acceleration in the grid"; }

@@ -34,12 +34,8 @@ public:
 
     virtual void
     ZeroTimeInitialize() override {      
-        NodeList* nodeList = this->nodeList;
-        Field<Lin::Vector<dim>>* v  = nodeList->getField<Lin::Vector<dim>>("velocity");
-        Field<double>* rho          = nodeList->getField<double>("density");
-        Field<double>* u            = nodeList->getField<double>("specificInternalEnergy");
-
         EOSLookup();
+        this->UpdateState();
     }
 
     virtual void EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {
@@ -93,21 +89,7 @@ public:
 
 
     virtual void
-    FinalizeStep(const State<dim>* finalState) override {
-        NodeList* nodeList = this->nodeList;
-
-        Field<double>* fdensity                 = finalState->template getField<double>("density");
-        Field<Lin::Vector<dim>>* fvelocity      = finalState->template getField<Lin::Vector<dim>>("velocity");
-        Field<double>* fu                       = finalState->template getField<double>("specificInternalEnergy");
-
-        Field<double>* density                  = nodeList->getField<double>("density");
-        Field<Lin::Vector<dim>>* velocity       = nodeList->getField<Lin::Vector<dim>>("velocity");
-        Field<double>* u                        = nodeList->getField<double>("specificInternalEnergy");
-
-        density->copyValues(fdensity);
-        velocity->copyValues(fvelocity);
-        u->copyValues(fu);
-
+    FinalChecks() override {
         EOSLookup();
     }
 

@@ -172,7 +172,7 @@ public:
     }
 
     virtual void
-    FinalChecks() const override {
+    FinalChecks() override {
         int numNodes = this->nodeList->size();
         
         ScalarField* xi     = this->nodeList->template getField<double>("xi");

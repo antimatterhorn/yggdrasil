@@ -80,6 +80,11 @@ public:
         this->lastDt = dt;
     }
 
+    virtual void
+    FinalizeStep(const State<dim>* finalState) override {
+        // don't do anything with the state since kinetics modifies nodelist directly
+    };
+
     virtual double
     EstimateTimestep() const override {
         double timestepCoefficient = 0.25; // Adjust as needed
