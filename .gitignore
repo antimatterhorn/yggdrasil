@@ -5,6 +5,7 @@
 /src/*/__pycache__
 /tests/__pycache__
 /examples/__pycache__
+/ats/__pycache__
 .vscode
 *.aux
 *.dvi
