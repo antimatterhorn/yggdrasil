@@ -53,7 +53,6 @@ public:
         mUnitTsec(unitTsec),
         mUnitTeK(unitTeK),
         mUnitCcou(unitCcou) {
-            std::cout << "constants constructed" << std::endl;
             GGravity = GMKS / (mUnitLm * mUnitLm * mUnitLm / (mUnitMkg * mUnitTsec * mUnitTsec));
     }
 
