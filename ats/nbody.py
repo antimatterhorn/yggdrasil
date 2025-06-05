@@ -56,7 +56,7 @@ def run():
     else:
         out = []
         controller.Step(cycles)
-        out.append(integrator.Time())
+        out.append(integrator.time)
         for i in range(numNodes):
             out.append(positions[i].y)
         return out

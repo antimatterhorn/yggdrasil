@@ -50,7 +50,7 @@ def run():
     controller.Step(cycles)
 
     ys = []
-    ys.append(integrator.Time())
+    ys.append(integrator.time)
     position = myNodeList.getFieldVector2d("position")
     for i in range(nx*ny):
         if position[i].y == ((ny/2.0)+(dy/2.0)):
