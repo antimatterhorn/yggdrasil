@@ -1,4 +1,6 @@
 from yggdrasil import *
+from Mesh import Grid2d
+from Boundaries import DirichletGridBoundaries2d
 
 commandLine = CommandLineArguments(nx = 5,
                                    ny = 8,

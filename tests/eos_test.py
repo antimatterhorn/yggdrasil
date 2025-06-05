@@ -2,6 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from yggdrasil import *
+from EOS import *
+from MieGruneisenMaterials import *
+from TillotsonMaterials import *
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(nrho = 50,

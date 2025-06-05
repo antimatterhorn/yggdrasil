@@ -1,5 +1,6 @@
 from yggdrasil import *
 from Animation import *
+from Physics import ConstantGravity2d,Kinetics2d
 
 if __name__ == "__main__":
     animate = True

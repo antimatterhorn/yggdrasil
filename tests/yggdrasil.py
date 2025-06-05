@@ -21,7 +21,7 @@ from CodeVersion import *
 #from Mesh import *
 from DataBase import *
 from LinearAlgebra import *
-from Physics import *
+#from Physics import *
 from State import *
 #from EOS import *
 #from Opac import *
