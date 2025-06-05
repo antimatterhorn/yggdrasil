@@ -1,6 +1,10 @@
 from yggdrasil import *
 from Animation import *
 from math import sin,cos
+from Utilities import HarmonicOscillator,SiloDump 
+from Physics import WaveEquation2d
+from Mesh import Grid2d
+from Boundaries import DirichletGridBoundaries2d
 
 class oscillate:
     def __init__(self,nodeList,grid,width,height,workCycle=1):
@@ -35,7 +39,7 @@ class SpkOscillator:
         idx = self.grid.index(j,i,0)
         self.phi.setValue(idx,a)
 
-from Utilities import HarmonicOscillator,SiloDump 
+
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,

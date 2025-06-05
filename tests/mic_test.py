@@ -1,6 +1,9 @@
 from yggdrasil import *
 from Animation import *
 from math import sin,cos
+from Utilities import Microphone,Speaker
+from Mesh import Grid2d
+from Physics import WaveEquation2d
 
 class oscillate:
     def __init__(self,nodeList,grid,width,height,workCycle=1):
@@ -28,7 +31,7 @@ class SpkOscillator:
         #print(cycle*1e-4,a)
         self.phi.setValue(0,a)
 
-from Utilities import Microphone,Speaker
+
 
 if __name__ == "__main__":
     # ------------------------------------------------
@@ -60,8 +63,7 @@ if __name__ == "__main__":
     # Create the integrator and assign packages to it
     # ------------------------------------------------
     integrator = RungeKutta2Integrator2d(packages=packages,
-                              dtmin=0.05,
-                              boundaries=[])
+                              dtmin=0.05)
     print(integrator)
 
     print("numNodes =",myNodeList.numNodes)

@@ -1,6 +1,7 @@
 from yggdrasil import *
 from Animation import *
-
+from Physics import NBodyGravity2d
+from RandomNodeGenerator import RandomNodeGenerator2d
 
 class dumpState:
     def __init__(self,nodeList,workCycle=1,G=1):
@@ -15,7 +16,6 @@ class dumpState:
 
 
 if __name__ == "__main__":
-    from RandomNodeGenerator import RandomNodeGenerator2d
     bounds = [[-1,-1],[1,1]]
     numNodes = 3
     Generator = RandomNodeGenerator2d(numNodes=numNodes,bounds=bounds)

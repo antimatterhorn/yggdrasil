@@ -1,5 +1,9 @@
 from yggdrasil import *
-from math import sqrt
+import numpy as np
+from math import atan2,cos,sqrt
+import matplotlib.pyplot as plt
+from Physics import PointSourceGravity2d
+
 class dumpState:
     def __init__(self,nodeList,workCycle=1,G=1):
         self.nodeList = nodeList
@@ -47,8 +51,7 @@ if __name__ == "__main__":
     dump = dumpState(myNodeList,workCycle=2000,G=constants.G)
     periodicWork = [dump]
 
-    import numpy as np
-    from math import atan2,cos
+
 
     r0 = 2.0
     t0 = atan2(0,-2)
@@ -64,9 +67,6 @@ if __name__ == "__main__":
     controller.Step(30000000)
     #now plot the orbit
     
-    import matplotlib.pyplot as plt
-
-
     x_values, y_values = zip(*dump.dump)
 
     plt.plot(x_values, y_values, 'o')  
