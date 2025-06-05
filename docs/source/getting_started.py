@@ -1,5 +1,6 @@
 from yggdrasil import *
-from Animation import *
+from Animation import AnimateScatter
+from Physics import ConstantGravity2d,Kinetics2d
 
 if __name__ == "__main__":
     constants = MKS()
@@ -9,10 +10,10 @@ if __name__ == "__main__":
     gravVec = Vector2d(0, -9.8)
 
     constantGravity = ConstantGravity2d(myNodeList, constants, gravVec)
-    kinetics = Kinetics2d(myNodeList,constants)
-    packages = [constantGravity,kinetics]
+    kinetics        = Kinetics2d(myNodeList,constants)
+    packages        = [constantGravity,kinetics]
     # Packages_created
-    integrator = RungeKutta4Integrator2d(packages=packages, dtmin=0.01, verbose=False)
+    integrator  = RungeKutta4Integrator2d(packages=packages, dtmin=0.01, verbose=False)
     print(integrator)
     # Integrator_created
     rad     = myNodeList.getFieldDouble("radius")
