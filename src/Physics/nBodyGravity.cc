@@ -1,8 +1,8 @@
-#include "physics.hh"
+#include "kinematics.hh"
 #include <iostream>
 
 template <int dim>
-class NBodyGravity : public Physics<dim> {
+class NBodyGravity : public Kinematics<dim> {
 protected:
     double dtmin;
     double plummerLength;
@@ -12,14 +12,8 @@ public:
     using ScalarField = Field<double>;
 
     NBodyGravity(NodeList* nodeList, PhysicalConstants& constants, double plummerLength) :
-        Physics<dim>(nodeList,constants),
-        plummerLength(plummerLength) {
-
-        int numNodes = nodeList->size();
-        this->template EnrollFields<double>({"mass"});
-        this->template EnrollFields<Vector>({"acceleration", "velocity", "position"});
-        this->template EnrollStateFields<Vector>({"velocity", "position"});
-    }
+        Kinematics<dim>(nodeList,constants),
+        plummerLength(plummerLength) {}
 
     ~NBodyGravity() {}
 

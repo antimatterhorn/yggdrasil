@@ -15,7 +15,7 @@ at least, and some may also override ``PrestepInitialize`` and ``FinalizeStep`` 
 
 Let's use ``constantGravity.cc`` in the ``src/Physics`` directory as an example of a derived class that overrides only the derivatives.
 
-.. literalinclude:: ../../src/Physics/constantGravity.cc
+.. literalinclude:: constantGravity.cc
    :language: c++
    :linenos:
    :lines: 4-27
@@ -34,7 +34,7 @@ Fields whose derivatives we want to iterate throughout an integration step
 on the ``State`` object. For that reason, we do not assign ``acceleration`` to the ``State`` 
 object for this physics class since it never changes.
 
-.. literalinclude:: ../../src/Physics/constantGravity.cc
+.. literalinclude:: constantGravity.cc
    :language: c++
    :linenos:
    :lines: 29-57

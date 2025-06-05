@@ -1,8 +1,8 @@
-#include "kinematics.hh"
+#include "physics.hh"
 #include <iostream>
 
 template <int dim>
-class ConstantGravity : public Kinematics<dim> {
+class ConstantGravity : public Physics<dim> {
 protected:
     Lin::Vector<dim> gravityVector;
     double dtmin;
@@ -12,12 +12,16 @@ public:
     using ScalarField = Field<double>;
 
     ConstantGravity(NodeList* nodeList, PhysicalConstants& constants, Vector& gravityVector) :
-        Kinematics<dim>(nodeList,constants),
+        Physics<dim>(nodeList,constants),
         gravityVector(gravityVector) {
 
         int numNodes = nodeList->size();
+        this->template EnrollFields<Vector>({"acceleration", "velocity", "position"});
+        
         for (int i=0; i<numNodes; ++i)
             nodeList->getField<Vector>("acceleration")->setValue(i,gravityVector);
+
+        this->template EnrollStateFields<Vector>({"velocity", "position"});
     }
 
     ~ConstantGravity() {}

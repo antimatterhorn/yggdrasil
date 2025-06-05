@@ -1,8 +1,8 @@
-#include "physics.hh"
+#include "kinematics.hh"
 #include <iostream>
 
 template <int dim>
-class PointSourceGravity : public Physics<dim> {
+class PointSourceGravity : public Kinematics<dim> {
 protected:
     Lin::Vector<dim> pointSourceLocation;
     Lin::Vector<dim> pointSourceVelocity;
@@ -19,16 +19,10 @@ public:
                         Vector& pointSourceLocation,
                         Vector& pointSourceVelocity,
                         double pointSourceMass) :
-        Physics<dim>(nodeList,constants),
+        Kinematics<dim>(nodeList,constants),
         pointSourceLocation(pointSourceLocation),
         pointSourceVelocity(pointSourceVelocity),
-        pointSourceMass(pointSourceMass) {
-        
-
-        int numNodes = nodeList->size();
-        this->template EnrollFields<Vector>({"acceleration", "velocity", "position"});
-        this->template EnrollStateFields<Vector>({"velocity", "position"});
-    }
+        pointSourceMass(pointSourceMass) { }
     
     ~PointSourceGravity() {}
 
