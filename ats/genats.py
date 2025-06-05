@@ -1,9 +1,7 @@
-# genats.py
-
 import importlib
-import scripts  # assumes scripts.py defines a `tests` list
+import scripts 
 
-def main():
+def generate():
     results = {}
     for name in scripts.tests:
         print(f"Running {name}...")
@@ -25,4 +23,4 @@ def main():
     print("Done. Reference outputs saved to ats_reference.txt")
 
 if __name__ == "__main__":
-    main()
+    generate()

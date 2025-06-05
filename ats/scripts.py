@@ -3,5 +3,6 @@ tests = {
     "kinetics_grav",
     "wave_bounds",
     "nbody",
-    "hllesod"   
+    "hllesod",
+    "orbit"  
 }

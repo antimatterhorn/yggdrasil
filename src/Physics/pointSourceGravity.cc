@@ -28,17 +28,7 @@ public:
         int numNodes = nodeList->size();
         this->template EnrollFields<Vector>({"acceleration", "velocity", "position"});
         this->template EnrollStateFields<Vector>({"velocity", "position"});
-        
-        std::cout << "point source mass: "<< pointSourceMass<<"\n";
     }
-
-    // PointSourceGravity(NodeList* nodeList,
-    //         PhysicalConstants& constants,
-    //         Vector& pointSourceLocation,
-    //         double pointSourceMass) :
-    //     PointSourceGravity(nodeList, constants, pointSourceLocation, Vector::zero(), pointSourceMass) {}
-    // This can't work since it has to be a pointer to a vector and nobody is holding it!
-
     
     ~PointSourceGravity() {}
 
