@@ -1,6 +1,7 @@
 from yggdrasil import *
 import matplotlib.pyplot as plt
 from Mesh import VoronoiMesh2d
+from numpy import sqrt
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(numNodes = 100,
@@ -8,7 +9,8 @@ if __name__ == "__main__":
                                        bmax = [4,4],
                                        method = "random")
     
-    assert method in ["random", "fibonacci", "glass", "constantDTheta", "poisson", "glassDisk"]
+    assert method in ["random", "fibonacci", "glass", 
+                        "constantDTheta", "poisson", "glassDisk", "lattice"]
 
 
     if method == "random":
@@ -31,6 +33,9 @@ if __name__ == "__main__":
     elif method == "glassDisk":
         from GlassNodeGenerator import GlassDisk2d
         posF = GlassDisk2d(numNodes).positions
+    elif method == "lattice":
+        from LatticeNodeGenerator import Lattice2d
+        posF = Lattice2d(int(sqrt(numNodes)),int(sqrt(numNodes))).positions
 
     myNodeList = NodeList(numNodes)
     myNodeList.insertFieldVector2d("position")
