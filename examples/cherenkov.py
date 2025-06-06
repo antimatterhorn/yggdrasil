@@ -1,6 +1,9 @@
 from yggdrasil import *
 from Animation import *
 from math import sin,cos
+from Mesh import Grid2d
+from Physics import WaveEquation2d
+from Boundaries import PeriodicGridBoundaries2d
 
 class oscillate:
     def __init__(self,nodeList,grid,cs,width,height,workCycle=1):

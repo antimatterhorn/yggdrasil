@@ -1,9 +1,10 @@
+from yggdrasil import *
 import matplotlib.pyplot as plt
 import numpy as np
 from math import *
 from random import randrange
 
-from yggdrasil import StringArt, Vector2d
+from Calculators import StringArt
 from PyImage import PyImage
 from PIL import Image,ImageOps
 

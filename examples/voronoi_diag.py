@@ -1,5 +1,6 @@
 from yggdrasil import *
 import matplotlib.pyplot as plt
+from Mesh import VoronoiMesh2d
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(numNodes = 100,

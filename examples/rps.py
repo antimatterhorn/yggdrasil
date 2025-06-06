@@ -4,6 +4,7 @@ sys.path.append("../build/src/Utilities")
 from yggdrasil import *
 from RPS import *
 from Animation import *
+from Mesh import Grid2d
 
 commandLine = CommandLineArguments(nx = 100,
                                     ny = 100,

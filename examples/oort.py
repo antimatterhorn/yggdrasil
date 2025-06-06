@@ -2,6 +2,7 @@ from yggdrasil import *
 import numpy as np
 import random
 from math import sin,cos
+from Physics import PointSourceGravity2d
 
 class minPeri:
     def __init__(self,nodeList,workCycle=1,G=1):

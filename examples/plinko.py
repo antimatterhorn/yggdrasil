@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
 import random
+from Physics import ConstantGravity2d, Kinetics2d
+from Boundaries import SphereCollider2d, BoxCollider2d
 
 def AnimateScatter(bounds, stepper, positions, colliders, frames=100, interval=50):
     """

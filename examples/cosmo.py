@@ -1,4 +1,5 @@
 from yggdrasil import *
+from Calculators import Cosmology
 
 z       = 10
 omega_m = 0.3
