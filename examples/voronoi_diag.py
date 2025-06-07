@@ -10,7 +10,8 @@ if __name__ == "__main__":
                                        method = "random")
     
     assert method in ["random", "fibonacci", "glass", 
-                        "constantDTheta", "poisson", "glassDisk", "lattice"]
+                        "constantDTheta", "poisson", 
+                        "glassDisk", "poissonDisk", "lattice"]
 
 
     if method == "random":
@@ -22,17 +23,23 @@ if __name__ == "__main__":
     elif method == "glass":
         from GlassNodeGenerator import GlassNodeGenerator2d
         posF = GlassNodeGenerator2d(numNodes).positions
+        numNodes = len(posF) 
     elif method == "constantDTheta":
         from ConstantDThetaGenerator import ConstantDThetaDisk2d
         posF = ConstantDThetaDisk2d(numNodes).positions
         numNodes = len(posF) # needs to be fixed because constantDTheta may overfill
-    elif method == "poisson":
+    elif method == "poissonDisk":
         from PoissonNodeGenerator import PoissonDisk2d
         posF = PoissonDisk2d(numNodes).positions
-        numNodes = len(posF) # needs to be fixed because constantDTheta may overfill
+        numNodes = len(posF) 
+    elif method == "poisson":
+        from PoissonNodeGenerator import PoissonNodeGenerator2d
+        posF = PoissonNodeGenerator2d(numNodes).positions
+        numNodes = len(posF) 
     elif method == "glassDisk":
         from GlassNodeGenerator import GlassDisk2d
         posF = GlassDisk2d(numNodes).positions
+        numNodes = len(posF)
     elif method == "lattice":
         from LatticeNodeGenerator import Lattice2d
         posF = Lattice2d(int(sqrt(numNodes)),int(sqrt(numNodes))).positions

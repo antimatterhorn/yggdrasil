@@ -3,6 +3,7 @@ from LinearAlgebra import *
 from Trees import *
 from numpy import sqrt
 import random
+from progressBar import ProgressBar
 
 class GlassDisk2d:
     def __init__(self, numNodes, overSample = 1):
@@ -20,34 +21,54 @@ class GlassDisk2d:
         dmin = mean_spacing * 0.8
         radius = mean_spacing * 2.0
 
-        x = random.uniform(self.bounds[0][0], self.bounds[1][0])
-        y = random.uniform(self.bounds[0][1], self.bounds[1][1])
-        pfield.addValue(Vector2d(x,y)) # initial seed point
+        rm = 2
+        while rm > 1:
+            x = random.uniform(self.bounds[0][0], self.bounds[1][0])
+            y = random.uniform(self.bounds[0][1], self.bounds[1][1])
+            r = Vector2d(x,y)
+            rm = r.magnitude
+        pfield.addValue(r) # initial seed point
         self.positions.append([x,y])
-        for i in range(numNodes-1):
+        for i in range(numNodes - 1):
+            ProgressBar((i+1)/numNodes,"Generating Glass Disk Nodes")
             tree = KDTree2d(pfield)
-            nbrs = numNodes
-            next = (0,0)
-            decay = (1.0 - i / numNodes)
+            next = None
+            decay = 1.0 - i / numNodes
             local_radius = radius * decay**0.5
             dist = 0
-            for j in range(self.trials):
+
+            for _ in range(self.trials):
                 x = random.uniform(self.bounds[0][0], self.bounds[1][0])
                 y = random.uniform(self.bounds[0][1], self.bounds[1][1])
-                if sqrt(x*x+y*y) > 1: continue
-                tn = tree.findNearestNeighbors(Vector2d(x, y), dmin)
-                if tn: continue  # too close to an existing point, skip
-                tn_big = tree.findNearestNeighbors(Vector2d(x, y), local_radius)
-                if len(tn_big) > 0:                    
+                candidate = Vector2d(x, y)
+                if candidate.magnitude > 1: continue
+                if tree.findNearestNeighbors(candidate, dmin):
+                    continue  # too close
+
+                tn_big = tree.findNearestNeighbors(candidate, local_radius)
+                if tn_big:
                     for nbr in tn_big:
-                        d = (Vector2d(x,y)-pfield[nbr]).magnitude()
+                        d = (candidate - pfield[nbr]).magnitude
                         if d > dist:
-                            next = (x,y)
-                else:  
-                    next = (x,y)
-                    continue   # didn't find any neighbors
-            pfield.addValue(Vector2d(next[0],next[1]))
-            self.positions.append([next[0],next[1]])
+                            next = [candidate.x,candidate.y]
+                            dist = d
+                else:
+                    next = [candidate.x,candidate.y]
+                    break  # accept immediately if no nearby points
+
+            if next is not None:
+                pfield.addValue(Vector2d(next[0],next[1]))
+                self.positions.append(next)
+            else:
+                # fallback: generate random until it fits
+                while True:
+                    x = random.uniform(self.bounds[0][0], self.bounds[1][0])
+                    y = random.uniform(self.bounds[0][1], self.bounds[1][1])
+                    candidate = Vector2d(x, y)
+                    if not tree.findNearestNeighbors(candidate, dmin):
+                        pfield.addValue(candidate)
+                        self.positions.append([x, y])
+                        break
 
 class GlassNodeGenerator2d:
     def __init__(self, numNodes, overSample = 1):
@@ -69,23 +90,46 @@ class GlassNodeGenerator2d:
         y = random.uniform(self.bounds[0][1], self.bounds[1][1])
         pfield.addValue(Vector2d(x,y)) # initial seed point
         self.positions.append([x,y])
-        for i in range(numNodes-1):
+        for i in range(numNodes - 1):
+            ProgressBar((i+1)/numNodes,"Generating Glass Nodes")
             tree = KDTree2d(pfield)
-            nbrs = numNodes
-            next = (0,0)
-            decay = (1.0 - i / numNodes)
+            next = None
+            decay = 1.0 - i / numNodes
             local_radius = radius * decay**0.5
-            for j in range(self.trials):
+            dist = 0
+
+            for _ in range(self.trials):
                 x = random.uniform(self.bounds[0][0], self.bounds[1][0])
                 y = random.uniform(self.bounds[0][1], self.bounds[1][1])
-                tn = tree.findNearestNeighbors(Vector2d(x, y), dmin)
-                if tn: continue  # too close to an existing point, skip
-                tn_big = tree.findNearestNeighbors(Vector2d(x, y), local_radius)
-                if len(tn_big) < nbrs:
-                    nbrs = len(tn)
-                    next = (x,y)
-            pfield.addValue(Vector2d(next[0],next[1]))
-            self.positions.append([next[0],next[1]])
+                candidate = Vector2d(x, y)
+
+                if tree.findNearestNeighbors(candidate, dmin):
+                    continue  # too close
+
+                tn_big = tree.findNearestNeighbors(candidate, local_radius)
+                if tn_big:
+                    for nbr in tn_big:
+                        d = (candidate - pfield[nbr]).magnitude
+                        if d > dist:
+                            next = [candidate.x,candidate.y]
+                            dist = d
+                else:
+                    next = [candidate.x,candidate.y]
+                    break  # accept immediately if no nearby points
+
+            if next is not None:
+                pfield.addValue(Vector2d(next[0],next[1]))
+                self.positions.append(next)
+            else:
+                # fallback: generate random until it fits
+                while True:
+                    x = random.uniform(self.bounds[0][0], self.bounds[1][0])
+                    y = random.uniform(self.bounds[0][1], self.bounds[1][1])
+                    candidate = Vector2d(x, y)
+                    if not tree.findNearestNeighbors(candidate, dmin):
+                        pfield.addValue(candidate)
+                        self.positions.append([x, y])
+                        break
 
 class GlassNodeGenerator3d:
     def __init__(self, numNodes):
