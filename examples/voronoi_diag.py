@@ -55,12 +55,29 @@ if __name__ == "__main__":
     from matplotlib.patches import Polygon
     import matplotlib.collections as mc
 
+    from matplotlib import colormaps
+    from matplotlib.colors import Normalize
+    from matplotlib.patches import Polygon
+    from matplotlib.colors import TwoSlopeNorm
+
+
     fig, ax = plt.subplots(figsize=(6, 6))
 
-    for cell in vor.getCells():
+    # Compute cell areas
+    cells = vor.getCells()
+    areas = [cell.area for cell in cells]
+    mean_area = sum(areas) / len(areas)
+    # Or to center at mean:
+    norm = TwoSlopeNorm(vmin=min(areas), vcenter=mean_area, vmax=max(areas))
+
+    # norm = Normalize(vmin=min(areas), vmax=max(areas))
+    cmap = colormaps["bwr"]
+
+    for cell, area in zip(cells, areas):
         verts = [(v.x, v.y) for v in cell.vertices]
         if len(verts) >= 3:
-            poly = Polygon(verts, edgecolor='black', facecolor='lightblue', alpha=0.4)
+            color = cmap(norm(area))
+            poly = Polygon(verts, edgecolor='black', facecolor=color, alpha=0.7)
             ax.add_patch(poly)
 
         # Optionally mark the generator point
@@ -70,5 +87,11 @@ if __name__ == "__main__":
     ax.set_xlim(bmin[0], bmax[0])
     ax.set_ylim(bmin[1], bmax[1])
     ax.set_aspect('equal')
-    plt.title("Voronoi Mesh")
+    plt.title("Voronoi Mesh Colored by Area")
+
+    # Add a colorbar
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])  # Required for matplotlib < 3.1
+    plt.colorbar(sm, ax=ax, label="Cell Area")
+
     plt.show()

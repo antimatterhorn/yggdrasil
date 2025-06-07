@@ -4,8 +4,9 @@ from PYB11Generator import *
 class VoronoiCell:
     def pyinit(self, generator = "Lin::Vector<%(dim)s>", vertices = "std::vector<Lin::Vector<%(dim)s>>"):
         return
-    generator = PYB11property("Lin::Vector<%(dim)s>", getter="getGenerator")
-    vertices = PYB11property("std::vector<Lin::Vector<%(dim)s>>&", getter="getVertices")
+    generator   = PYB11property("Lin::Vector<%(dim)s>", getter="getGenerator")
+    vertices    = PYB11property("std::vector<Lin::Vector<%(dim)s>>&", getter="getVertices")
+    area        = PYB11property("double", getter="area", doc="The cell area.")
 
 VoronoiCell2d = PYB11TemplateClass(VoronoiCell,
                               template_parameters = ("2"),

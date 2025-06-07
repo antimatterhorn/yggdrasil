@@ -20,6 +20,19 @@ class VoronoiCell {
 
         Vector getGenerator() const { return generator; }
         const std::vector<Vector>& getVertices() const { return vertices; }
+
+        double area() const {
+        double A = 0.0;
+        size_t N = vertices.size();
+        if (dim == 2) {
+            for (size_t i = 0; i < N; ++i) {
+                const Vector& p1 = vertices[i];
+                const Vector& p2 = vertices[(i + 1) % N];
+                A += p1.x() * p2.y() - p2.x() * p1.y();
+            }
+        }
+        return 0.5 * std::abs(A);
+    }
 };
   
 
