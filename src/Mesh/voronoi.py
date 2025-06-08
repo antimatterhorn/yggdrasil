@@ -7,6 +7,7 @@ class VoronoiCell:
     generator   = PYB11property("Lin::Vector<%(dim)s>", getter="getGenerator")
     vertices    = PYB11property("std::vector<Lin::Vector<%(dim)s>>&", getter="getVertices")
     area        = PYB11property("double", getter="area", doc="The cell area.")
+    centroid    = PYB11property("Lin::Vector<%(dim)s>", getter="centroid")
 
 VoronoiCell2d = PYB11TemplateClass(VoronoiCell,
                               template_parameters = ("2"),

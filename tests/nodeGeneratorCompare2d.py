@@ -40,11 +40,11 @@ method = FibonacciDisk2d
 xs,ys = stDev(method)
 scatter3 = ax.plot(xs, ys, c="blue", label="Fibonacci")
 
-from GlassNodeGenerator import GlassNodeGenerator2d
-method  = GlassNodeGenerator2d
+# from GlassNodeGenerator import GlassNodeGenerator2d
+# method  = GlassNodeGenerator2d
 
-xs,ys = stDev(method)
-scatter4 = ax.plot(xs, ys, c="black", label="Glass")
+# xs,ys = stDev(method)
+# scatter4 = ax.plot(xs, ys, c="black", label="Glass")
 
 from ConstantDThetaGenerator import ConstantDThetaDisk2d
 method  = ConstantDThetaDisk2d
@@ -57,6 +57,12 @@ method   = PoissonDisk2d
 
 xs,ys = stDev(method)
 scatter4 = ax.plot(xs, ys, c="red", label="Poisson")
+
+from CVTNodeGenerator import CVTDiskGenerator2d
+method   = CVTDiskGenerator2d
+
+xs,ys = stDev(method)
+scatter4 = ax.plot(xs, ys, c="black", label="CVT")
 
 ax.set_xlabel("number of points")
 ax.set_ylabel("standard deviation")

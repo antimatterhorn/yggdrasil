@@ -11,7 +11,8 @@ if __name__ == "__main__":
     
     assert method in ["random", "fibonacci", "glass", 
                         "constantDTheta", "poisson", 
-                        "glassDisk", "poissonDisk", "lattice"]
+                        "glassDisk", "poissonDisk", "lattice",
+                        "cvt", "cvtDisk"]
 
 
     if method == "random":
@@ -35,6 +36,14 @@ if __name__ == "__main__":
     elif method == "poisson":
         from PoissonNodeGenerator import PoissonNodeGenerator2d
         posF = PoissonNodeGenerator2d(numNodes).positions
+        numNodes = len(posF) 
+    elif method == "cvt":
+        from CVTNodeGenerator import CVTNodeGenerator2d
+        posF = CVTNodeGenerator2d(numNodes).positions
+        numNodes = len(posF) 
+    elif method == "cvtDisk":
+        from CVTNodeGenerator import CVTDiskGenerator2d
+        posF = CVTDiskGenerator2d(numNodes).positions
         numNodes = len(posF) 
     elif method == "glassDisk":
         from GlassNodeGenerator import GlassDisk2d
