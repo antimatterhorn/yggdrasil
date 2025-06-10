@@ -2,23 +2,28 @@ from yggdrasil import *
 from numpy import pi
 from random import random
 from Physics import PhaseCoupling2d, Kinetics2d
-from RandomNodeGenerator import RandomNodeGenerator2d
+from PoissonNodeGenerator import PoissonNodeGenerator2d
 from Animation import AnimateScatter
 
 if __name__ == "__main__":
-    commandLine = CommandLineArguments(numNodes = 100,
+    commandLine = CommandLineArguments(numNodes = 200,
                                        couplingConstant = 0.1,
                                        lightFraction = 0.2)
     
     constants = MKS()
-    myNodeList = NodeList(numNodes)
 
+
+
+
+    dist = PoissonNodeGenerator2d(numNodes).positions
+    numNodes = len(dist)
+    myNodeList = NodeList(numNodes)
     phaseCoupling = PhaseCoupling2d(myNodeList, constants, 
-                                    couplingConstant = couplingConstant, lightFraction = lightFraction)
+                                couplingConstant = couplingConstant, lightFraction = lightFraction)
     kinetics = Kinetics2d(myNodeList,constants)
     packages = [phaseCoupling,kinetics]
 
-    myNodeList.updatePositions2d(RandomNodeGenerator2d(numNodes).positions)
+    myNodeList.updatePositions2d(dist)
 
     rad = myNodeList.getFieldDouble("radius")
     mass = myNodeList.getFieldDouble("mass")
