@@ -12,7 +12,7 @@ if __name__ == "__main__":
     assert method in ["random", "fibonacci", "glass", 
                         "constantDTheta", "poisson", 
                         "glassDisk", "poissonDisk", "lattice",
-                        "cvt", "cvtDisk"]
+                        "cvt", "cvtDisk","hcp"]
 
 
     if method == "random":
@@ -40,6 +40,10 @@ if __name__ == "__main__":
     elif method == "cvt":
         from CVTNodeGenerator import CVTNodeGenerator2d
         posF = CVTNodeGenerator2d(numNodes).positions
+        numNodes = len(posF)
+    elif method == "hcp":
+        from HCPNodeGenerator import HCPNodeGenerator2d
+        posF = HCPNodeGenerator2d(int(sqrt(numNodes)),int(sqrt(numNodes))).positions
         numNodes = len(posF) 
     elif method == "cvtDisk":
         from CVTNodeGenerator import CVTDiskGenerator2d
