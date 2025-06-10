@@ -168,6 +168,8 @@ FEMesh<dim>::buildFromObj(const std::string& filepath, const std::string& axes) 
     } else {
         throw std::runtime_error("buildFromObj is only implemented for 2D FEMesh");
     }
+
+    computeConnectivityMap();
 }
 
 template <int dim>
@@ -218,6 +220,32 @@ FEMesh<dim>::writeVTK(const std::string& filepath) const {
     file << "SCALARS area double 1\nLOOKUP_TABLE default\n";
     for (const auto& e : elements) file << e->computeArea(nodes) << "\n";
 }
+
+template <int dim>
+void FEMesh<dim>::computeConnectivityMap() {
+    connectivityMap.clear();
+    nodeToElementMap.clear();
+
+    for (size_t ei = 0; ei < elements.size(); ++ei) {
+        const auto& nodeIds = elements[ei]->nodeIndices();
+        connectivityMap.push_back(nodeIds);
+
+        for (size_t nodeId : nodeIds) {
+            nodeToElementMap[nodeId].push_back(ei);
+        }
+    }
+}
+
+template <int dim>
+const std::vector<std::vector<size_t>>& FEMesh<dim>::getConnectivityMap() const {
+    return connectivityMap;
+}
+
+template <int dim>
+const std::unordered_map<size_t, std::vector<size_t>>& FEMesh<dim>::getNodeToElementMap() const {
+    return nodeToElementMap;
+}
+
 
 // Explicit instantiations
 template class FEMesh<2>;

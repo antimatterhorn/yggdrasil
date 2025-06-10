@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "../Math/vectorMath.hh"
+#include "basisFunction.hh"
 #include "elementType.hh"
 #include <stdexcept>
 #include <Eigen/Dense>
@@ -23,6 +24,7 @@ namespace Mesh {
 
         ElementType type() const { return mType; }
         const std::vector<size_t>& nodeIndices() const { return mNodeIndices; }
+        virtual const BasisFunction& getBasisFunction() const = 0;
 
     protected:
         ElementType mType;
@@ -87,6 +89,12 @@ namespace Mesh {
             Eigen::MatrixXd Ke = k * area * Bmat.transpose() * Bmat;
         
             return Ke;  // 3x3 matrix
+        }
+
+        const BasisFunction& 
+        getBasisFunction() const override {
+            static TriangleBasisFunction basis;
+            return basis;
         }
     };
 
@@ -187,6 +195,13 @@ namespace Mesh {
         
             return Ke;
         }
+
+        const BasisFunction& 
+        getBasisFunction() const override {
+            static QuadBasisFunction basis;
+            return basis;
+        }
+
         
     };
         

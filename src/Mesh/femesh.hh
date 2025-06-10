@@ -25,6 +25,9 @@ namespace Mesh {
         std::unordered_map<size_t, std::vector<size_t>> neighbors;
         std::vector<size_t> boundaryNodes;
 
+        std::vector<std::vector<size_t>> connectivityMap;
+        std::unordered_map<size_t, std::vector<size_t>> nodeToElementMap;
+
     public:
         using Vector = Lin::Vector<dim>;
         using VectorField = Field<Vector>;
@@ -51,6 +54,10 @@ namespace Mesh {
 
         void buildFromObj(const std::string& filepath, const std::string& axes);
         void writeVTK(const std::string& filepath) const;
+
+        void computeConnectivityMap();
+        const std::vector<std::vector<size_t>>& getConnectivityMap() const;
+        const std::unordered_map<size_t, std::vector<size_t>>& getNodeToElementMap() const;
     };
 }
 

@@ -1,4 +1,5 @@
 from yggdrasil import *
+from Mesh import FEMesh2d
 
 commandLine = CommandLineArguments()
 
