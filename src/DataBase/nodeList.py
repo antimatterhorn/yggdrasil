@@ -25,6 +25,9 @@ class NodeList:
     @PYB11returnpolicy("reference")
     def position(self):
         return
+    @PYB11template("dim")
+    def updatePositions(self, py_positions="std::vector<std::array>&"):
+        return
     numNodes = PYB11property("int", getter="getNumNodes", doc="The number of nodes in the nodeList.")
     count = PYB11property("int", getter="getFieldCount", doc="The number of fields in the nodeList.")
     fieldNames = PYB11property("std::vector<std::string>", getter="fieldNames", doc="The names of fields in the nodeList.")
@@ -57,3 +60,9 @@ class NodeList:
                                 template_parameters = ("Lin::Vector<2>"))
     insertFieldVector3d = PYB11TemplateMethod(insertField,
                                 template_parameters = ("Lin::Vector<3>"))
+    updatePositions1d = PYB11TemplateMethod(updatePositions,
+                                template_parameters = ("1"))
+    updatePositions2d  = PYB11TemplateMethod(updatePositions,
+                                template_parameters  =  ("2"))
+    updatePositions3d = PYB11TemplateMethod(updatePositions,
+                                template_parameters  = ("3"))

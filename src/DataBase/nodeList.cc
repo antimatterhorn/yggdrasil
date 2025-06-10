@@ -116,5 +116,8 @@ Field<Lin::Vector<dim>>* NodeList::position() const {
     return nullptr;
 }
 
+template void NodeList::updatePositions<1>(const std::vector<std::array<double, 1>>&);
+template void NodeList::updatePositions<2>(const std::vector<std::array<double, 2>>&);
+template void NodeList::updatePositions<3>(const std::vector<std::array<double, 3>>&);
 
 #endif

@@ -13,7 +13,8 @@ PYB11includes = ['"physics.hh"',
                 '"gridHydroHLLC.cc"',
                 '"kinetics.cc"',
                 '"fem.cc"',
-                '"thermalConduction.cc"']
+                '"thermalConduction.cc"',
+                '"phaseCoupling.cc"']
 
 from physics import *
 from constantGravity import *
@@ -30,3 +31,4 @@ from gridHydroHLLC import *
 from kinetics import *
 from fem import *
 from thermalConduction import *
+from phaseCoupling import *

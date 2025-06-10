@@ -49,6 +49,23 @@ public:
     std::vector<std::string> fieldNames() const;
     Field<int>& nodes();
     unsigned int size() const;
+
+    template <int dim>
+    void updatePositions(const std::vector<std::array<double, dim>>& py_positions) {
+        Field<Lin::Vector<dim>>& posField = *this->position<dim>();
+
+        if (py_positions.size() != posField.size()) {
+            throw std::runtime_error("updatePosition: size mismatch between input and field");
+        }
+
+        for (size_t i = 0; i < py_positions.size(); ++i) {
+            Lin::Vector<dim> v;
+            for (int d = 0; d < dim; ++d) {
+                v[d] = py_positions[i][d];
+            }
+            posField.setValue(i, v);
+        }
+    }
 };
 
 #include "nodeList.cc" // Include the template implementation

@@ -81,31 +81,55 @@ def AnimateGrid2d(bounds, update_method, threeColors=False, frames=100, interval
 # Example usage:
 # AnimateGrid2d((10, 10), update_method, save_as='animation.mp4')
 
-def AnimateScatter(bounds, stepper, positions, frames=100, interval=50, save_as=None):
+def AnimateScatter(bounds, stepper, positions, frames=100, interval=50, save_as=None,
+                   get_color_field=None, cmap='viridis', color_limits=None, background=None):
     """
-    Custom implementation of animate scatter just for this test.
-    """
-    fig, ax = plt.subplots()
+    Animate a scatter plot of points, optionally colored by a field value.
 
+    Parameters:
+    - bounds: (xmin, xmax, ymin, ymax)
+    - stepper: object with Step() method
+    - positions: object with .size() and indexable Vector-like values (.x, .y)
+    - frames: number of animation frames
+    - interval: milliseconds between frames
+    - save_as: filename to save animation
+    - get_color_field: callable i -> float value, used to color each point
+    - cmap: matplotlib colormap name
+    - color_limits: tuple (vmin, vmax) for color normalization
+    - background: optional color string or RGB tuple (sets axes and figure background)
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from matplotlib.animation import FuncAnimation
+    from matplotlib.colors import Normalize
+
+    fig, ax = plt.subplots()
     ax.set_xlim(bounds[0], bounds[1])
     ax.set_ylim(bounds[2], bounds[3])
 
-    scat = ax.scatter([], [], label='Nodes')
+    if background:
+        fig.patch.set_facecolor(background)
+        ax.set_facecolor(background)
 
-    ax.legend()
+    scat = ax.scatter([], [], c=[], cmap=cmap)
+    norm = Normalize(*color_limits) if color_limits else None
 
     def init():
-        scat.set_offsets(np.empty((0, 2)))  # Initialize with empty 2D array
+        scat.set_offsets(np.empty((0, 2)))
         return scat,
 
     def update(frame):
-        stepper.Step()  # Execute one step of the simulation
+        stepper.Step()
 
         points = [positions[i] for i in range(positions.size())]
-        x = [p.x for p in points]
-        y = [p.y for p in points]
+        xy = np.array([[p.x, p.y] for p in points])
+        scat.set_offsets(xy)
 
-        scat.set_offsets(np.c_[x, y])
+        if get_color_field:
+            color_values = np.array([get_color_field(i) for i in range(positions.size())])
+            scat.set_array(color_values)
+            if color_limits:
+                scat.set_clim(*color_limits)
 
         return scat,
 
@@ -116,6 +140,7 @@ def AnimateScatter(bounds, stepper, positions, frames=100, interval=50, save_as=
         print(f'Animation saved as {save_as}')
     else:
         plt.show()
+
 
 
 class AnimationUpdateMethod2d:
