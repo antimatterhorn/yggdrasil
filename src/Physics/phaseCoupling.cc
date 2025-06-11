@@ -66,7 +66,8 @@ public:
         int numNodes = nodeList->size();
         for(int i=0; i<numNodes; ++i) {
             phase->setValue(i, mod2pi(phase->getValue(i)));
-            str->setValue(i, (fabs(sin(phase->getValue(i))) > (1.0-lightFraction)));  // this is a boolean disguised as a double
+            double strength = (lightFraction == 0 ? sin(phase->getValue(i)) : (fabs(sin(phase->getValue(i))) > (1.0-lightFraction)));
+            str->setValue(i,strength);  // this is a boolean disguised as a double
         }
     }
 
