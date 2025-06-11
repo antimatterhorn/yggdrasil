@@ -24,7 +24,7 @@ namespace Mesh {
 
         ElementType type() const { return mType; }
         const std::vector<size_t>& nodeIndices() const { return mNodeIndices; }
-        virtual const BasisFunction& getBasisFunction() const = 0;
+        virtual const BasisFunction<dim>& getBasisFunction() const = 0;
 
     protected:
         ElementType mType;
@@ -91,7 +91,7 @@ namespace Mesh {
             return Ke;  // 3x3 matrix
         }
 
-        const BasisFunction& 
+        const BasisFunction<2>& 
         getBasisFunction() const override {
             static TriangleBasisFunction basis;
             return basis;
@@ -196,7 +196,7 @@ namespace Mesh {
             return Ke;
         }
 
-        const BasisFunction& 
+        const BasisFunction<2>& 
         getBasisFunction() const override {
             static QuadBasisFunction basis;
             return basis;
