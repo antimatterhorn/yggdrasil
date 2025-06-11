@@ -83,6 +83,7 @@ public:
             #pragma omp parallel for
             for(int i=0; i<numNodes; ++i) {
                 Vector xi = x->getValue(i);
+                dph->setValue(i, omega->getValue(i));
                 std::vector<int> neighbors  = tree.findNearestNeighbors(xi, searchRadius);
                 double norm = std::max(1, (int)neighbors.size());
                 for(int j=0; j<neighbors.size(); ++j) {

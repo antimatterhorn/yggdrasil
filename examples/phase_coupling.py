@@ -18,8 +18,8 @@ if __name__ == "__main__":
                                        nx = 50,
                                        ny = 50,
                                        couplingConstant = 0.1,
-                                       lightFraction = 0,
-                                       searchRadius = 0,
+                                       lightFraction = 0.0,
+                                       searchRadius = 0.0,
                                        dtmin = 0.01)
     
     constants = MKS()
@@ -41,7 +41,7 @@ if __name__ == "__main__":
         phase.setValue(i,random()*2*pi)
         omega.setValue(i,random()*0.1+1.0)
 
-    integrator  = Integrator2d(packages=packages, dtmin=dtmin, verbose=False)
+    integrator  = RungeKutta2Integrator2d(packages=packages, dtmin=dtmin, verbose=False)
 
     controller = Controller(integrator=integrator, periodicWork=[], statStep=10)
 
