@@ -18,15 +18,20 @@ if __name__ == "__main__":
                                        nx = 50,
                                        ny = 50,
                                        couplingConstant = 0.1,
-                                       lightFraction = 0)
+                                       lightFraction = 0,
+                                       searchRadius = 0,
+                                       dtmin = 0.01)
     
     constants = MKS()
     numNodes = nx*ny
     myNodeList = NodeList(numNodes)
     mesh = Grid2d(nx,ny,1,1)
     phaseCoupling = PhaseCoupling2d(myNodeList, constants, 
-                                couplingConstant = couplingConstant, lightFraction = lightFraction)
+                                couplingConstant = couplingConstant, lightFraction = lightFraction,
+                                searchRadius = searchRadius)
     packages = [phaseCoupling]
+
+    mesh.assignPositions(myNodeList)
 
     phase = myNodeList.getFieldDouble("kphase")
     pos = myNodeList.getFieldVector2d("position")
@@ -36,7 +41,7 @@ if __name__ == "__main__":
         phase.setValue(i,random()*2*pi)
         omega.setValue(i,random()*0.1+1.0)
 
-    integrator  = Integrator2d(packages=packages, dtmin=0.01, verbose=False)
+    integrator  = Integrator2d(packages=packages, dtmin=dtmin, verbose=False)
 
     controller = Controller(integrator=integrator, periodicWork=[], statStep=10)
 

@@ -1,6 +1,7 @@
 #include "physics.hh"
 #include <iostream>
 #include <cmath>
+#include "../Trees/kdTree.hh"
 
 // Kuramoto, Yoshiki (1975). H. Araki (ed.). 
 // Lecture Notes in Physics, 
@@ -11,7 +12,7 @@ template <int dim>
 class PhaseCoupling : public Physics<dim> {
 protected:
     double couplingConstant, lightFraction;
-
+    double searchRadius=0;
     inline double mod2pi(double x) {
         double twopi = 2.0 * M_PI;
         double result = std::fmod(x, twopi);
@@ -28,7 +29,22 @@ public:
         Physics<dim>(nodeList,constants), 
         couplingConstant(couplingConstant),
         lightFraction(lightFraction) {
+        Enroll();
+    }
 
+    PhaseCoupling(NodeList* nodeList,
+                        PhysicalConstants& constants, 
+                        double couplingConstant, double lightFraction,
+                        double searchRadius) :
+        Physics<dim>(nodeList,constants), 
+        couplingConstant(couplingConstant),
+        lightFraction(lightFraction),
+        searchRadius(searchRadius) {
+        Enroll();
+    }
+
+    void
+    Enroll() {
         this->template EnrollFields<double>({"kphase","kstrength","komega"});
         this->template EnrollFields<Vector>({"position"});  // let kinetics handle the evo of this field
         this->template EnrollStateFields<double>({"kphase"});
@@ -45,13 +61,37 @@ public:
         auto* omega     = nodeList->getField<double>("komega");
 
         int numNodes = nodeList->size();
-        for(int i=0; i<numNodes; ++i) {
-            dph->setValue(i, omega->getValue(i));
-            for(int j=0; j<numNodes; ++j) {
-                if (j!=i) {
-                    double xij = (x->getValue(i)-x->getValue(j)).magnitude();
-                    double K = couplingConstant/(xij+1e-5);
-                    dph->setValue(i, dph->getValue(i) + K*sin(phase->getValue(j)-phase->getValue(i))/(numNodes-1));
+        if (searchRadius == 0) {
+            #pragma omp parallel for
+            for(int i=0; i<numNodes; ++i) {
+                Vector xi = x->getValue(i);
+                dph->setValue(i, omega->getValue(i));
+                for(int j=0; j<numNodes; ++j) {
+                    if (j!=i) {
+                        Vector xj = x->getValue(j);
+                        double xij = std::max((xi - xj).magnitude(), 0.05);
+                        double K = couplingConstant / xij;
+                        double pi = phase->getValue(i);
+                        double pj = phase->getValue(j);
+                        dph->setValue(i, dph->getValue(i) + K*sin(pj-pi)/(numNodes-1));
+                    }
+                }
+            }
+        }
+        else {
+            KDTree tree(x);
+            #pragma omp parallel for
+            for(int i=0; i<numNodes; ++i) {
+                Vector xi = x->getValue(i);
+                std::vector<int> neighbors  = tree.findNearestNeighbors(xi, searchRadius);
+                double norm = std::max(1, (int)neighbors.size());
+                for(int j=0; j<neighbors.size(); ++j) {
+                    Vector xj = x->getValue(neighbors[j]);
+                    double xij = std::max((xi - xj).magnitude(), 0.05);
+                    double K = couplingConstant / xij;
+                    double pi = phase->getValue(i);
+                    double pj = phase->getValue(neighbors[j]);
+                    dph->setValue(i, dph->getValue(i) + K*sin(pj-pi)/norm);
                 }
             }
         }

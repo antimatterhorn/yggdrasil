@@ -9,6 +9,13 @@ class PhaseCoupling(Physics):
                couplingConstant="double",
                lightFraction="double"):
         return
+    def pyinit1(self,
+               nodeList="NodeList*",
+               constants="PhysicalConstants&",
+               couplingConstant="double",
+               lightFraction="double",
+               searchRadius="double"):
+        return
 
 PhaseCoupling1d = PYB11TemplateClass(PhaseCoupling,
                               template_parameters = ("1"),
