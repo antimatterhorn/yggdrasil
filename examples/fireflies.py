@@ -4,17 +4,22 @@ from random import random
 from Physics import PhaseCoupling2d, Kinetics2d
 from PoissonNodeGenerator import PoissonNodeGenerator2d
 from Animation import AnimateScatter
+from matplotlib.colors import LinearSegmentedColormap
+
+# Define your custom colormap: blue -> black -> red
+colors = [(0, 0, 0), (0.7, 1, 0)]  # Blue, Black, Red
+cmap = LinearSegmentedColormap.from_list('green_black', colors, N=256)
 
 class light:
     def __init__(self,field,frac):
         self.field = field
         self.frac = frac
     def __call__(self,i):
-        return int(abs(self.field[i]) > (1.0-self.frac))
+        return int(self.field[i] > (1.0-self.frac))
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(numNodes = 200,
-                                       couplingConstant = 0.1,
+                                       couplingConstant = 0.2,
                                        lightFraction = 0.2,
                                        statStep = 1000)
     
@@ -54,7 +59,7 @@ if __name__ == "__main__":
     bounds = (-1, 1, -1, 1)
     AnimateScatter(bounds, stepper=controller, positions=pos, 
                    get_color_field=lambda i: lightFrac(i),
-                   cmap='plasma',
+                   cmap=cmap,
                    color_limits=(0.0, 1.0),
                    background="black",  # or "#202020" or (0.1, 0.1, 0.1))
                     )
