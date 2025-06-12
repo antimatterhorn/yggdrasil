@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #ifndef VTKMESHWRITER_HH
 #define VTKMESHWRITER_HH
 

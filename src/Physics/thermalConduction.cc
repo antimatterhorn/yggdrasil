@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #include "physics.hh"
 #include "../EOS/equationOfState.hh"
 #include "../EOS/opacityModel.hh"

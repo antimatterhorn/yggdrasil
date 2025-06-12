@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #ifndef NAME_CC
 #define NAME_CC
 

@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #include "../Math/vectorMath.hh"
 #include <iostream>
 #include "../Utilities/progressBar.hh"

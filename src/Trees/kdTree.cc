@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #ifndef KDTREE_CC
 #define KDTREE_CC
 

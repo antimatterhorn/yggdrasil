@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #ifndef HYDRO_HH
 #define HYDRO_HH
 

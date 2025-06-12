@@ -1,3 +1,4 @@
+// Copyright (C) 2025  Cody Raskin
 
 #ifndef PHYSICALCONSTANTS_HH
 #define PHYSICALCONSTANTS_HH

@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #include "hydro.hh"
 #include "../Mesh/grid.hh"
 #include <iostream>

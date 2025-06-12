@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #ifndef FIELD_HH
 #define FIELD_HH
 

@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #include <vector>
 #include "gridBoundaries.hh"
 #include "../Math/vectorMath.hh"

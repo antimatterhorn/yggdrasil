@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #ifndef TENSORMATH_HH
 #define TENSORMATH_HH
 

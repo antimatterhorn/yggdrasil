@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 /*
 This simulates a kind of reaction diffusion model with rock-paper-scissors rules.
 Not general enough to be used for anything physical. 

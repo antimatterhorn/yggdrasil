@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #ifndef GRIDBOUNDARIES_HH
 #define GRIDBOUNDARIES_HH
 

@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #ifndef IMPORTDEPTHMAP_CC
 #define IMPORTDEPTHMAP_CC
 

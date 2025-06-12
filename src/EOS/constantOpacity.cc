@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #include "opacityModel.hh"
 
 class ConstantOpacity : public OpacityModel {

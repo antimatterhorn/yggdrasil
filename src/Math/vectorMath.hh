@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #ifndef VECTORMATH_HH
 #define VECTORMATH_HH
 

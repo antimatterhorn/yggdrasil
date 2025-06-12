@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #ifndef FEMESH_CC
 #define FEMESH_CC
 

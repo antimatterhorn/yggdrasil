@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #include "physics.hh"
 #include "../Mesh/grid.hh"
 #include "../IO/importDepthMap.hh"

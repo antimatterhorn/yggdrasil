@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #ifndef PHYSICS_HH
 #define PHYSICS_HH
 

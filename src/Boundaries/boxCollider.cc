@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #include <vector>
 #include "../Physics/physics.hh"
 #include "../DataBase/nodeList.hh"

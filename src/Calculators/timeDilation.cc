@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 /*
 calculates the velocity required and earth time passed to travel to a distant
 place at relativistic speeds with some moving reference frame travel time.

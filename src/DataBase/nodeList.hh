@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #ifndef NODELIST_HH
 #define NODELIST_HH
 

@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #include <iostream>
 
 #include <cmath> // for round

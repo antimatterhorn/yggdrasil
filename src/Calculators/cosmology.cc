@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 /*
 calculates a cosmology for a given redshift and cosmological parameters
 */

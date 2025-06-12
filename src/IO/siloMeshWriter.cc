@@ -1,3 +1,5 @@
+// Copyright (C) 2025  Cody Raskin
+
 #ifndef SILOMESHWRITER_CC
 #define SILOMESHWRITER_CC
 
