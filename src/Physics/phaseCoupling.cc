@@ -11,7 +11,7 @@
 template <int dim>
 class PhaseCoupling : public Physics<dim> {
 protected:
-    double couplingConstant, lightFraction;
+    double couplingConstant, dtmin;
     double searchRadius=0;
     inline double mod2pi(double x) {
         double twopi = 2.0 * M_PI;
@@ -25,20 +25,18 @@ public:
 
     PhaseCoupling(NodeList* nodeList,
                         PhysicalConstants& constants, 
-                        double couplingConstant, double lightFraction) :
+                        double couplingConstant) :
         Physics<dim>(nodeList,constants), 
-        couplingConstant(couplingConstant),
-        lightFraction(lightFraction) {
+        couplingConstant(couplingConstant) {
         Enroll();
     }
 
     PhaseCoupling(NodeList* nodeList,
                         PhysicalConstants& constants, 
-                        double couplingConstant, double lightFraction,
+                        double couplingConstant,
                         double searchRadius) :
         Physics<dim>(nodeList,constants), 
         couplingConstant(couplingConstant),
-        lightFraction(lightFraction),
         searchRadius(searchRadius) {
         Enroll();
     }
@@ -60,32 +58,40 @@ public:
         auto* x         = nodeList->getField<Vector>("position");
         auto* omega     = nodeList->getField<double>("komega");
 
+        double local_dtmin = 1e30;
+
         int numNodes = nodeList->size();
         KDTree tree(x);  // this isn't zero cost, but it also isn't extremely expensive
-        #pragma omp parallel for
+        #pragma omp parallel for reduction(min:local_dtmin)
         for(int i=0; i<numNodes; ++i) {
             Vector xi = x->getValue(i);
             dph->setValue(i, omega->getValue(i));
             std::vector<int> neighbors  = tree.findNearestNeighbors(xi, searchRadius);
             int nbrs = (searchRadius == 0? numNodes : neighbors.size());
             double norm = (searchRadius == 0? (numNodes-1) : std::max(1, (int)neighbors.size()));
-            for(int j=0; j<nbrs; ++j) {
-                int k = (searchRadius == 0? j : neighbors[j]);
-                double pd = pdot(phase, x, i, k);
-                dph->setValue(i, dph->getValue(i) + pd/norm);
+            for(int k=0; k<nbrs; ++k) {
+                int j = (searchRadius == 0? k : neighbors[k]);
+                Vector xj = x->getValue(j);
+                double xij = std::max((xi - xj).magnitude(), 0.005);
+                double K = couplingConstant / xij;
+                double pi = phase->getValue(i);
+                double pj = phase->getValue(j);
+
+                dph->setValue(i, dph->getValue(i) + K*sin(pj-pi)/norm);
+                local_dtmin = std::min(local_dtmin,1/K);
             }
         }
+
+        dtmin = local_dtmin;
+        this->lastDt = dt;
     }
 
-    double pdot(ScalarField *phase, VectorField *pos, int i, int j) {
-        Vector xi = pos->getValue(i);
-        Vector xj = pos->getValue(j);
-        double xij = std::max((xi - xj).magnitude(), 0.005);
-        double K = couplingConstant / xij;
-        double pi = phase->getValue(i);
-        double pj = phase->getValue(j);
+    virtual double
+    EstimateTimestep() const override {
+        double timestepCoefficient = 1.0; // Adjust as needed
+        double timestep = timestepCoefficient * dtmin;
 
-        return K*sin(pj-pi);
+        return timestep;
     }
 
     virtual void
@@ -97,9 +103,13 @@ public:
         int numNodes = nodeList->size();
         for(int i=0; i<numNodes; ++i) {
             phase->setValue(i, mod2pi(phase->getValue(i)));
-            double strength = (lightFraction == 0 ? sin(phase->getValue(i)) : (fabs(sin(phase->getValue(i))) > (1.0-lightFraction)));
+            double strength = sin(phase->getValue(i));
             str->setValue(i,strength);  // this is a boolean disguised as a double
         }
     }
+
+    virtual std::string name() const override { return "phaseCoupling"; }
+    virtual std::string description() const override {
+        return "Kuramoto Phase Coupling"; }
 
 };

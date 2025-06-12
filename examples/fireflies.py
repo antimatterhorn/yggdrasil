@@ -5,10 +5,18 @@ from Physics import PhaseCoupling2d, Kinetics2d
 from PoissonNodeGenerator import PoissonNodeGenerator2d
 from Animation import AnimateScatter
 
+class light:
+    def __init__(self,field,frac):
+        self.field = field
+        self.frac = frac
+    def __call__(self,i):
+        return int(abs(self.field[i]) > (1.0-self.frac))
+
 if __name__ == "__main__":
     commandLine = CommandLineArguments(numNodes = 200,
                                        couplingConstant = 0.1,
-                                       lightFraction = 0.2)
+                                       lightFraction = 0.2,
+                                       statStep = 1000)
     
     constants = MKS()
 
@@ -19,7 +27,7 @@ if __name__ == "__main__":
     numNodes = len(dist)
     myNodeList = NodeList(numNodes)
     phaseCoupling = PhaseCoupling2d(myNodeList, constants, 
-                                couplingConstant = couplingConstant, lightFraction = lightFraction)
+                                couplingConstant = couplingConstant)
     kinetics = Kinetics2d(myNodeList,constants)
     packages = [phaseCoupling,kinetics]
 
@@ -37,13 +45,15 @@ if __name__ == "__main__":
         phase.setValue(i,random()*2*pi)
         omega.setValue(i,random()*0.1+1.0)
 
-    integrator  = Integrator2d(packages=packages, dtmin=0.1, verbose=False)
+    integrator  = Integrator2d(packages=packages, dtmin=.001, verbose=False)
 
-    controller = Controller(integrator=integrator, periodicWork=[], statStep=1000)
+    controller = Controller(integrator=integrator, periodicWork=[], statStep=statStep)
+
+    lightFrac = light(strength,lightFraction)
 
     bounds = (-1, 1, -1, 1)
     AnimateScatter(bounds, stepper=controller, positions=pos, 
-                   get_color_field=lambda i: strength[i],
+                   get_color_field=lambda i: lightFrac(i),
                    cmap='plasma',
                    color_limits=(0.0, 1.0),
                    background="black",  # or "#202020" or (0.1, 0.1, 0.1))

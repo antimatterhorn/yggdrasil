@@ -1,5 +1,5 @@
 from yggdrasil import *
-from numpy import pi
+from numpy import pi,sqrt
 from random import random
 from Physics import PhaseCoupling2d
 from Mesh import Grid2d
@@ -18,16 +18,18 @@ if __name__ == "__main__":
                                        nx = 50,
                                        ny = 50,
                                        couplingConstant = 0.1,
-                                       lightFraction = 0.0,
                                        searchRadius = 5,
-                                       dtmin = 0.1)
+                                       dtmin = 0.001)
     
     constants = MKS()
     numNodes = nx*ny
     myNodeList = NodeList(numNodes)
-    mesh = Grid2d(nx,ny,1,1)
+    mesh = Grid2d(nx,ny,1.0/nx,1.0/ny)
+
+    searchRadius = searchRadius/sqrt(nx*nx + ny*ny)
+
     phaseCoupling = PhaseCoupling2d(myNodeList, constants, 
-                                couplingConstant = couplingConstant, lightFraction = lightFraction,
+                                couplingConstant = couplingConstant,
                                 searchRadius = searchRadius)
     packages = [phaseCoupling]
 

@@ -6,14 +6,12 @@ class PhaseCoupling(Physics):
     def pyinit(self,
                nodeList="NodeList*",
                constants="PhysicalConstants&",
-               couplingConstant="double",
-               lightFraction="double"):
+               couplingConstant="double"):
         return
     def pyinit1(self,
                nodeList="NodeList*",
                constants="PhysicalConstants&",
                couplingConstant="double",
-               lightFraction="double",
                searchRadius="double"):
         return
 
