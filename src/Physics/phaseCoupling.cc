@@ -61,30 +61,18 @@ public:
         auto* omega     = nodeList->getField<double>("komega");
 
         int numNodes = nodeList->size();
-        if (searchRadius == 0) {
-            #pragma omp parallel for
-            for(int i=0; i<numNodes; ++i) {
-                dph->setValue(i, omega->getValue(i));
-                for(int j=0; j<numNodes; ++j) {
-                    if (j!=i) {
-                        double pd = pdot(phase, x, i, j);
-                        dph->setValue(i, dph->getValue(i) + pd/(numNodes-1));
-                    }
-                }
-            }
-        }
-        else {
-            KDTree tree(x);
-            #pragma omp parallel for
-            for(int i=0; i<numNodes; ++i) {
-                Vector xi = x->getValue(i);
-                dph->setValue(i, omega->getValue(i));
-                std::vector<int> neighbors  = tree.findNearestNeighbors(xi, searchRadius);
-                double norm = std::max(1, (int)neighbors.size());
-                for(int j=0; j<neighbors.size(); ++j) {
-                    double pd = pdot(phase, x, i, neighbors[j]);
-                    dph->setValue(i, dph->getValue(i) + pd/norm);
-                }
+        KDTree tree(x);  // this isn't zero cost, but it also isn't extremely expensive
+        #pragma omp parallel for
+        for(int i=0; i<numNodes; ++i) {
+            Vector xi = x->getValue(i);
+            dph->setValue(i, omega->getValue(i));
+            std::vector<int> neighbors  = tree.findNearestNeighbors(xi, searchRadius);
+            int nbrs = (searchRadius == 0? numNodes : neighbors.size());
+            double norm = (searchRadius == 0? (numNodes-1) : std::max(1, (int)neighbors.size()));
+            for(int j=0; j<nbrs; ++j) {
+                int k = (searchRadius == 0? j : neighbors[j]);
+                double pd = pdot(phase, x, i, k);
+                dph->setValue(i, dph->getValue(i) + pd/norm);
             }
         }
     }

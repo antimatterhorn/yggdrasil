@@ -19,8 +19,8 @@ if __name__ == "__main__":
                                        ny = 50,
                                        couplingConstant = 0.1,
                                        lightFraction = 0.0,
-                                       searchRadius = 0.0,
-                                       dtmin = 0.01)
+                                       searchRadius = 5,
+                                       dtmin = 0.1)
     
     constants = MKS()
     numNodes = nx*ny
