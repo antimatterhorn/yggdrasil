@@ -13,13 +13,18 @@ class GetStrength:
         id = self.mesh.index(i,j,0)
         return self.field[id]
 
+from matplotlib.colors import LinearSegmentedColormap
+colors = [(1,0,0), (0, 0, 0), (0,0,1)]  # Red -> Black -> Blue
+cmap = LinearSegmentedColormap.from_list('rbbl', colors, N=256)
+
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
                                        nx = 50,
                                        ny = 50,
                                        couplingConstant = 0.1,
                                        searchRadius = 5,
-                                       dtmin = 0.001)
+                                       dtmin = 0.001,
+                                       save_as=None)
     
     constants = MKS()
     numNodes = nx*ny
@@ -57,6 +62,6 @@ if __name__ == "__main__":
                                                 stepper=controller.Step,
                                                 title=title,
                                                 fieldName="phi")
-        AnimateGrid2d(bounds,update_method,extremis=[-1,1],cmap="plasma",frames=1000)
+        AnimateGrid2d(bounds,update_method,extremis=[-1,1],cmap=cmap,frames=400,save_as=save_as)
     else:
         controller.Step(5000)

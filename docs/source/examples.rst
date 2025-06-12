@@ -35,6 +35,14 @@ Creates the instructions for (and previews) an image made from strings stretched
    :width: 50%
    :align: center
 
+phase_coupling.py
+---------------------
+Simulates harmonic oscillators coupled via a Kuramoto coupling parameter. This example is 10,000 oscillators (100x100) initialized with a random
+phase and coupling strength of 20%. 
+
+.. image:: phase.gif
+   :align: center
+
 plinko.py
 -----------------
 Simulates the Plinko game.
