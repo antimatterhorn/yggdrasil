@@ -72,11 +72,15 @@ in 2d or 3d coordinates inside a unitary bounding box or unit circle/sphere for 
 .. code-block:: text
 
     ConstantDThetaDisk2d
+    CVTNodeGenerator2d
+    CVTDiskGenerator2d
     FibonacciDisk2d
     FibonacciSurface3d
     GlassNodeGenerator2d/3d
-    GlassNodeGenerator3d
+    HCPNodeGenerator2d
+    Lattice2d/3d
     PoissonDisk2d
+    PoissonNodeGenerator2d
     RandomNodeGenerator1d/2d/3d
     RecursivePrimitiveRefinementSurface3d
     ParameterizedSpiralSurface3d
@@ -107,15 +111,17 @@ The current list of available physics packages and their constructors is
 .. code-block:: text
 
     ConstantGravityXd(nodeList,constants,gravityVector)
+    ConstantGridAccelXd(nodeList,constants,gravityVector)
     EulerHydroXd(nodeList,constants,eos,grid)
     FEMXd(nodeList,constants,mesh)
     GridHydroHLLXd(nodeList,constants,eos,grid)
     KineticsXd(nodeList,constants)
     NBodyGravityXd(nodeList,constants,plummerLength)
+    PhaseCouplingXd(nodeList,constants,couplingConstant,[searchRadius])
     PointSourceGravityXd(nodeList,constants,pointSourceLocation,pointSourceVelocity,pointSourceMass)
     RockPaperScissors(grid,A,D)
-    WaveEquationXd(nodeList,constants,grid,C)
-    WaveEquationXd(nodeList,constants,grid,depthMap)
+    ThermalConduction(nodeList,constants,eos,opac,grid)
+    WaveEquationXd(nodeList,constants,grid,[C,depthMap])
 
 For each of these, replace the ``Xd`` with your desired dimensionality (1d,2d,3d). Consult the
 python class definitions in the ``src/Physics`` directory for specific implementation details.
