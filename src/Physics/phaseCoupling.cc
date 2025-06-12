@@ -64,16 +64,11 @@ public:
         if (searchRadius == 0) {
             #pragma omp parallel for
             for(int i=0; i<numNodes; ++i) {
-                Vector xi = x->getValue(i);
                 dph->setValue(i, omega->getValue(i));
                 for(int j=0; j<numNodes; ++j) {
                     if (j!=i) {
-                        Vector xj = x->getValue(j);
-                        double xij = std::max((xi - xj).magnitude(), 0.05);
-                        double K = couplingConstant / xij;
-                        double pi = phase->getValue(i);
-                        double pj = phase->getValue(j);
-                        dph->setValue(i, dph->getValue(i) + K*sin(pj-pi)/(numNodes-1));
+                        double pd = pdot(phase, x, i, j);
+                        dph->setValue(i, dph->getValue(i) + pd/(numNodes-1));
                     }
                 }
             }
@@ -87,15 +82,22 @@ public:
                 std::vector<int> neighbors  = tree.findNearestNeighbors(xi, searchRadius);
                 double norm = std::max(1, (int)neighbors.size());
                 for(int j=0; j<neighbors.size(); ++j) {
-                    Vector xj = x->getValue(neighbors[j]);
-                    double xij = std::max((xi - xj).magnitude(), 0.05);
-                    double K = couplingConstant / xij;
-                    double pi = phase->getValue(i);
-                    double pj = phase->getValue(neighbors[j]);
-                    dph->setValue(i, dph->getValue(i) + K*sin(pj-pi)/norm);
+                    double pd = pdot(phase, x, i, neighbors[j]);
+                    dph->setValue(i, dph->getValue(i) + pd/norm);
                 }
             }
         }
+    }
+
+    double pdot(ScalarField *phase, VectorField *pos, int i, int j) {
+        Vector xi = pos->getValue(i);
+        Vector xj = pos->getValue(j);
+        double xij = std::max((xi - xj).magnitude(), 0.005);
+        double K = couplingConstant / xij;
+        double pi = phase->getValue(i);
+        double pj = phase->getValue(j);
+
+        return K*sin(pj-pi);
     }
 
     virtual void
