@@ -6,8 +6,7 @@ from PoissonNodeGenerator import PoissonNodeGenerator2d
 from Animation import AnimateScatter
 from matplotlib.colors import LinearSegmentedColormap
 
-# Define your custom colormap: blue -> black -> red
-colors = [(0, 0, 0), (0.7, 1, 0)]  # Blue, Black, Red
+colors = [(0, 0, 0), (0.7, 1, 0)]  # Black -> Green
 cmap = LinearSegmentedColormap.from_list('green_black', colors, N=256)
 
 class light:
