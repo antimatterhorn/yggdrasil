@@ -82,6 +82,6 @@ if __name__ == "__main__":
     femesh = vor.generateDualFEMesh()
     print("Created FEMesh")
 
-    femesh.writeVTK("fibonacci.vtk")
-    # print("FEMesh has", len(femesh.getNodes()), "nodes")
-    # print("FEMesh has", len(femesh.getElements()), "elements")
+    #femesh.writeVTK("fibonacci.vtk")
+    print("FEMesh has", len(femesh.getNodes()), "nodes")
+    print(femesh.getElementInfo())
