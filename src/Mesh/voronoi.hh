@@ -4,7 +4,7 @@
 
 #include "../Math/vectorMath.hh"
 #include "../DataBase/field.hh"
-
+#include "femesh.hh"
 
 namespace Mesh { 
 
@@ -80,8 +80,6 @@ private:
     Field<Vector> generators;
     std::vector<VoronoiCell<dim>> cells;
 
-
-
     // Core helpers:
     std::vector<std::pair<Vector, Vector>> getBisectingHyperplanes(int i);
     std::vector<Vector> intersectHalfSpaces(const std::vector<std::pair<Vector, Vector>>& planes);
@@ -95,7 +93,8 @@ public:
     void generateMesh();
 
     const std::vector<VoronoiCell<dim>>& getCells() const { return cells; }
-
+    FEMesh<dim> generateDualFEMesh() const;
 
 };
+
 }

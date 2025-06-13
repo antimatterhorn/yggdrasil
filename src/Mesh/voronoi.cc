@@ -100,7 +100,59 @@ void VoronoiMesh<dim>::generateMesh() {
     }
 }
 
+template <int dim>
+FEMesh<dim> VoronoiMesh<dim>::generateDualFEMesh() const {
+    if constexpr (dim != 2) {
+        throw std::runtime_error("generateDualFEMesh is only implemented for dim = 2");
+    } else {
+        FEMesh<2> dualMesh;
+        const size_t n = generators.size();
+
+        // Add all generator nodes to the dual FEMesh
+        for (size_t i = 0; i < n; ++i) {
+            dualMesh.addNode(generators[i]);
+        }
+
+        // Use quantized (rounded) coordinates to avoid floating-point mismatch
+        auto quantize = [](double x) {
+            return static_cast<int64_t>(std::round(x * 1e6));  // Adjust precision as needed
+        };
+
+        std::map<std::pair<int64_t, int64_t>, std::vector<size_t>> vertexToGenerators;
+
+        // Build a mapping from each Voronoi vertex to all generators (cell indices) that share it
+        for (size_t i = 0; i < cells.size(); ++i) {
+            for (const auto& v : cells[i].getVertices()) {
+                std::pair<int64_t, int64_t> key = {quantize(v.x()), quantize(v.y())};
+                vertexToGenerators[key].push_back(i);
+            }
+        }
+
+        // For each shared Voronoi vertex, build triangles between its associated generators
+        for (const auto& [key, genIndices] : vertexToGenerators) {
+            if (genIndices.size() >= 3) {
+                // Build triangle fan from first generator
+                for (size_t i = 1; i + 1 < genIndices.size(); ++i) {
+                    std::vector<size_t> tri = {
+                        genIndices[0],
+                        genIndices[i],
+                        genIndices[i + 1]
+                    };
+                    dualMesh.addElement(ElementType::Triangle, tri);
+                }
+            }
+        }
+
+        std::cout << "Returning FEMesh with " << dualMesh.getNodes().size()
+                  << " nodes and " << dualMesh.getElements().size() << " elements\n";
+
+        return dualMesh;
+    }
+}
+
+
 }
 
 template class Mesh::VoronoiCell<2>;
 template class Mesh::VoronoiCell<3>;
+

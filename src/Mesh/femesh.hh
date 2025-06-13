@@ -60,6 +60,8 @@ namespace Mesh {
         void computeConnectivityMap();
         const std::vector<std::vector<size_t>>& getConnectivityMap() const;
         const std::unordered_map<size_t, std::vector<size_t>>& getNodeToElementMap() const;
+
+        FEMesh(const FEMesh& other) = default;
     };
 }
 
