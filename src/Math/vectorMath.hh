@@ -68,6 +68,7 @@ public:
     double mag2() const;
     double magnitude() const;
     Vector<dim> normal() const;
+    Vector<dim> unit() const { return normal();};
 
     static Vector<dim> one();
     static Vector<dim> zero();
