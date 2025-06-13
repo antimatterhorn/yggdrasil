@@ -1,5 +1,4 @@
-// Copyright (C) 2025  Cody Raskin
-
+// GridHydroHLLC.hh
 #pragma once
 #include "gridHydroBase.hh"
 #include "HLL.cc"
@@ -28,8 +27,8 @@ public:
         auto neighborsL = this->grid->getNeighboringCells(iL);
         auto neighborsR = this->grid->getNeighboringCells(iR);
 
-        int iLL = neighborsL[2 * axis];  // cell before iL in axis
-        int iRR = neighborsR[2 * axis + 1];  // cell after iR in axis
+        int iLL = neighborsL[2 * axis];
+        int iRR = neighborsR[2 * axis + 1];
 
         auto minmod = [](double a, double b) {
             return (a * b <= 0.0) ? 0.0 : ((std::abs(a) < std::abs(b)) ? a : b);
@@ -50,7 +49,7 @@ public:
         Vector vL0 = v.getValue(iL);
         Vector vR0 = v.getValue(iR);
 
-        // Slopes
+        // Slopes (minmod-limited)
         double srhoL = minmod(rho.getValue(iL) - rho.getValue(iLL), rho.getValue(iR) - rho.getValue(iL));
         double srhoR = minmod(rho.getValue(iR) - rho.getValue(iL), rho.getValue(iRR) - rho.getValue(iR));
 
@@ -60,7 +59,18 @@ public:
         Vector svL = minmodVec(v.getValue(iL) - v.getValue(iLL), v.getValue(iR) - v.getValue(iL));
         Vector svR = minmodVec(v.getValue(iR) - v.getValue(iL), v.getValue(iRR) - v.getValue(iR));
 
-        // Reconstruct states at the interface
+        // Optional: clamp slope values to avoid overshoots
+        const double slopeLimiterMax = 10.0;
+        srhoL = std::clamp(srhoL, -slopeLimiterMax, slopeLimiterMax);
+        srhoR = std::clamp(srhoR, -slopeLimiterMax, slopeLimiterMax);
+        suL = std::clamp(suL, -slopeLimiterMax, slopeLimiterMax);
+        suR = std::clamp(suR, -slopeLimiterMax, slopeLimiterMax);
+        for (int d = 0; d < dim; ++d) {
+            svL[d] = std::clamp(svL[d], -slopeLimiterMax, slopeLimiterMax);
+            svR[d] = std::clamp(svR[d], -slopeLimiterMax, slopeLimiterMax);
+        }
+
+        // Reconstruct states at interface
         double rhoL = rhoL0 + 0.5 * srhoL;
         double rhoR = rhoR0 - 0.5 * srhoR;
         double uL   = uL0   + 0.5 * suL;
@@ -68,10 +78,16 @@ public:
         Vector vL   = vL0   + 0.5 * svL;
         Vector vR   = vR0   - 0.5 * svR;
 
+        // Clamp to physical floors
         rhoL = std::max(rhoL, 1e-12);
         rhoR = std::max(rhoR, 1e-12);
-        uL = std::max(uL, 1e-12);
-        uR = std::max(uR, 1e-12);
+        uL = std::clamp(uL, 1e-12, 1e4);
+        uR = std::clamp(uR, 1e-12, 1e4);
+
+        // Clamp reconstructed velocities
+        const double vmax = 1e3;
+        if (vL.magnitude() > vmax) vL = vL.unit() * vmax;
+        if (vR.magnitude() > vmax) vR = vR.unit() * vmax;
 
         double pL = p.getValue(iL);
         double pR = p.getValue(iR);
@@ -79,6 +95,6 @@ public:
         double cR = cs.getValue(iR);
 
         return computeHLLCFluxFromStates<dim>(rhoL, vL, uL, pL, cL,
-                                            rhoR, vR, uR, pR, cR, axis);
+                                              rhoR, vR, uR, pR, cR, axis);
     }
 };

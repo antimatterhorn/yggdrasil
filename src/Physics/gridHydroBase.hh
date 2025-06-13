@@ -154,11 +154,29 @@ public:
         auto* velocity = this->nodeList->template getField<Vector>("velocity");
         auto* u        = this->nodeList->template getField<double>("specificInternalEnergy");
 
+        const double rho_floor = 1e-12;
+        const double v_max = 1e3;
+        const double u_max = 1e4;
+
         #pragma omp parallel for
         for (int i = 0; i < this->nodeList->size(); ++i) {
-            density->setValue(i, std::max(fdensity->getValue(i), 1e-12));
-            velocity->setValue(i,fvelocity->getValue(i));
-            u->setValue(i, std::max(fu->getValue(i), 1e-12));
+            double rhoi = std::max(fdensity->getValue(i), rho_floor);
+            Vector vi = fvelocity->getValue(i);
+            double ui = std::max(fu->getValue(i), rho_floor);
+
+            // Clamp velocity if rho is near floor
+            if (rhoi <= 1.1 * rho_floor)
+                vi = Vector::zero();
+            else if (vi.magnitude() > v_max)
+                vi = vi.normal() * v_max;
+
+            // Clamp energy if absurd
+            if (ui > u_max)
+                ui = u_max;
+
+            density->setValue(i, rhoi);
+            velocity->setValue(i, vi);
+            u->setValue(i, ui);
         }
         
         EOSLookup();

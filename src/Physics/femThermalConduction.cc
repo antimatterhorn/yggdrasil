@@ -27,10 +27,8 @@ public:
         ScalarField* temperature = state->template getField<double>("temperature");
         ScalarField* dTdt        = deriv.template getField<double>("temperature");
 
-        ScalarField rhs("rhs", this->nodeList);
-        ScalarField mass("mass", this->nodeList);
-        rhs.setAll(0.0);
-        mass.setAll(0.0);
+        ScalarField rhs("rhs", this->nodeList.size());
+        ScalarField mass("mass", this->nodeList.size());
 
         for (size_t e = 0; e < elements.size(); ++e) {
             const auto& elem = *elements[e];

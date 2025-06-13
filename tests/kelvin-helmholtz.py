@@ -9,7 +9,7 @@ if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
                                         siloDump = False,
                                         cycles = 3000,
-                                        nx = 100,
+                                        nx = 200,
                                         ny = 100,
                                         dx = 0.01,
                                         dy = 0.01,
@@ -51,22 +51,23 @@ if __name__ == "__main__":
             x = pos.x
             y = pos.y
 
-            if j < ny // 4:
-                rho = 1.0
-                vx = -3.0
-            elif j < 3 * ny // 4:
+            if y < 0.25:
                 rho = 2.0
-                vx = 3.0
+                vx = 0.5
+            elif y > 0.75:
+                rho = 2.0
+                vx = -0.5
             else:
                 rho = 1.0
-                vx = -3.0
+                vx = 0.0
 
-            # Sinusoidal perturbation (centered in y)
-            a = 0.01 * np.sin(4 * np.pi * i / nx) * np.exp(-((j - ny // 2) / (0.1 * ny))**2)
+            # Sinusoidal vertical velocity perturbation (everywhere)
+            vy = 0.01 * np.sin(4 * np.pi * x)
 
-            velocity.setValue(idx, Vector2d(vx, a))
+            velocity.setValue(idx, Vector2d(vx, vy))
             density.setValue(idx, rho)
             energy.setValue(idx, p0 / ((gamma - 1.0) * rho))
+
 
     periodicWork = []
 
