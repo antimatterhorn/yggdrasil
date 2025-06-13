@@ -1,4 +1,6 @@
 from yggdrasil import *
+from Mesh import Grid3d
+from Trees import KDTree3d
 
 commandLine = CommandLineArguments(nx = 10,
                                    ny = 10,

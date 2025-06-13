@@ -21,6 +21,6 @@ if __name__ == "__main__":
     for i, cell in enumerate(cells):
         try:
             c = cell.centroid
-            print(f"Cell {i} centroid = ({c.x}, {c.y})")
+            print(f"Cell {i} centroid = ({c})")
         except Exception as e:
             print(f"Error in centroid for cell {i}: {e}")
