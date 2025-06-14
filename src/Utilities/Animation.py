@@ -82,7 +82,7 @@ def AnimateGrid2d(bounds, update_method, threeColors=False, frames=100, interval
 # AnimateGrid2d((10, 10), update_method, save_as='animation.mp4')
 
 def AnimateScatter(bounds, stepper, positions, frames=100, interval=50, save_as=None,
-                   get_color_field=None, cmap='viridis', color_limits=None, background=None):
+                   get_color_field=None, cmap='plasma', color_limits=None, background=None):
     """
     Animate a scatter plot of points, optionally colored by a field value.
 
@@ -111,7 +111,7 @@ def AnimateScatter(bounds, stepper, positions, frames=100, interval=50, save_as=
         fig.patch.set_facecolor(background)
         ax.set_facecolor(background)
 
-    scat = ax.scatter([], [], c=[], cmap=cmap)
+    scat = ax.scatter([], [])
     norm = Normalize(*color_limits) if color_limits else None
 
     def init():
@@ -128,6 +128,7 @@ def AnimateScatter(bounds, stepper, positions, frames=100, interval=50, save_as=
         if get_color_field:
             color_values = np.array([get_color_field(i) for i in range(positions.size())])
             scat.set_array(color_values)
+            scat.set_cmap(cmap)
             if color_limits:
                 scat.set_clim(*color_limits)
 
