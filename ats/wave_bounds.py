@@ -85,7 +85,7 @@ def run():
             for i in range(nx):
                 rgb_grid[j, i] = waveEqn.getCell2d(i % nx, j % ny, "maxphi")
                 if i == nx // 2:
-                    maxi = rgb_grid[j, i]
+                    maxi = float(rgb_grid[j, i])
             max_values.append(maxi)
         return max_values
 
