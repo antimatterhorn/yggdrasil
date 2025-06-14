@@ -38,6 +38,14 @@ public:
     template <typename T>
     Field<T>* getField(const std::string& name) const;
 
+    inline FieldBase* 
+    getFieldByIndex(int index) const {
+        if (index < 0 || index >= _fields.size()) {
+            return nullptr; // Return nullptr if index is out of range
+        }
+        return _fields[index].get(); // Return the raw pointer to the field at index
+    }
+
     Field<double>* mass() const;
 
     template <int dim>

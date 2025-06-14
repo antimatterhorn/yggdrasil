@@ -84,6 +84,7 @@ Field<T>* NodeList::getFieldByName(const Name& name) const {
             }
         }
     }
+    //std::cout << "No field on this NodeList with name " << name.name() << std::endl;
     return nullptr;
 }
 

@@ -84,7 +84,8 @@ public:
             }
         }
 
-        this->state.updateFields(this->nodeList);
+        this->UpdateState();
+        this->InitializeBoundaries();
     }
 
     void

@@ -7,7 +7,9 @@ PYB11includes = ['"boundaries.hh"',
                  '"outflowGridBoundaries.cc"',
                  '"dirichletGridBoundaries.cc"',
                  '"sphereCollider.cc"',
-                 '"boxCollider.cc"']
+                 '"boxCollider.cc"',
+                 '"constraint.hh"',
+                 '"motionConstraint.cc"']
 
 from boundaries import *
 from collider import *
@@ -18,3 +20,5 @@ from outflowGridBoundaries import *
 from dirichletGridBoundaries import *
 from sphereCollider import *
 from boxCollider import *
+from constraint import *
+from motionConstraint import *

@@ -56,6 +56,13 @@ public:
     virtual void
     ZeroTimeInitialize() {
         UpdateState();
+        InitializeBoundaries();
+    }
+
+    virtual void
+    InitializeBoundaries() {
+        for (Boundaries<dim>* boundary : boundaries)
+            boundary->ZeroTimeInitialize();
     }
 
     virtual void

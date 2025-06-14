@@ -29,6 +29,7 @@ public:
                 }
             }
         }
+        std::cout << "No field in this State with name " << name.name() << std::endl;
         return nullptr; // Return nullptr if no matching field is found
     }
 

@@ -52,7 +52,8 @@ public:
         EOSLookup();
         State<dim> state = this->state;
         NodeList* nodeList = this->nodeList;
-        state.updateFields(nodeList);
+        this->UpdateState();
+        this->InitializeBoundaries();
     }
 
     virtual void EvaluateDerivatives(const State<dim>* initialState,
