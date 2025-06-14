@@ -28,14 +28,16 @@ public:
         VectorField* copyPos  = copyState.template getField<Vector>("position");
         VectorField* velocity = state->template getField<Vector>("velocity");
         VectorField* copyVel  = copyState.template getField<Vector>("velocity");
-        
+
+
         for (int i = 0; i < nodeIndices.size(); ++i) {
             int index = nodeIndices[i];
             Vector newPos = position->getValue(index);
             Vector newVel = velocity->getValue(index);
             for (int d=0; d<dim; d++) {
-                newPos[d] = (direction[d] ? copyPos->getValue(i)[d] : position->getValue(index)[d]);
-                newVel[d] = (direction[d] ? 0.0 : velocity->getValue(index)[d]);
+                if (direction[d]==0) continue;
+                newPos[d] = copyPos->getValue(i)[d];
+                newVel[d] = 0.0;
             }
             position->setValue(index, newPos);
             velocity->setValue(index, newVel);
