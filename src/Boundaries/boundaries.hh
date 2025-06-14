@@ -17,6 +17,8 @@ public:
     
     virtual ~Boundaries() {}
 
+    virtual void ZeroTimeInitialize() {}
+
     virtual void
     ApplyBoundaries(State<dim>* state, NodeList* nodeList) {}
 
