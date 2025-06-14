@@ -39,8 +39,7 @@ public:
     void
     EnrollFields(std::initializer_list<const std::string> fields) {
         for (const std::string& name : fields) {
-            if (nodeList->getField<T>(name) == nullptr)
-                nodeList->insertField<T>(name);
+            nodeList->insertField<T>(name);
         }
     }
 

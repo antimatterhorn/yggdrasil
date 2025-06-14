@@ -69,9 +69,11 @@ unsigned int NodeList::size() const {
 // Template Implementations
 template <typename T>
 void NodeList::insertField(const std::string& name) {
-    auto newField = std::make_shared<Field<T>>(name, this->size());
-    _extraFields.push_back(newField);
-    addField(newField);
+    if (getField<T>(name) == nullptr) {
+        auto newField = std::make_shared<Field<T>>(name, this->size());
+        _extraFields.push_back(newField);
+        addField(newField);
+    }
 }
 
 template <typename T>
