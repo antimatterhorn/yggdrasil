@@ -3,7 +3,7 @@ from Animation import *
 from Mesh import Grid2d
 from Physics import GridHydroHLLC2d
 from EOS import IdealGasEOS
-from Boundaries import PeriodicGridBoundaries2d
+from Boundaries import PeriodicGridBoundary2d
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     print("numNodes =",myNodeList.numNodes)
     print("field names =",myNodeList.fieldNames)
 
-    box = PeriodicGridBoundaries2d(grid=myGrid)
+    box = PeriodicGridBoundary2d(grid=myGrid)
     hydro.addBoundary(box)
 
     integrator = RungeKutta4Integrator2d([hydro],dtmin=dtmin,verbose=intVerbose)

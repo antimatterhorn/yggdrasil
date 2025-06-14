@@ -3,7 +3,7 @@ from Animation import *
 from math import sin,cos
 from Mesh import Grid2d
 from Physics import WaveEquation2d
-from Boundaries import OutflowGridBoundaries2d, DirichletGridBoundaries2d
+from Boundaries import OutflowGridBoundary2d, DirichletGridBoundary2d
 
 class oscillate:
     def __init__(self,nodeList,grid,width,height,workCycle=1):
@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
     packages = [waveEqn]
 
-    box = DirichletGridBoundaries2d(grid=grid)
+    box = DirichletGridBoundary2d(grid=grid)
     box.addBox(Vector2d(16,20),Vector2d(20,44))
     box.addBox(Vector2d(16,20),Vector2d(96,24))
     box.addBox(Vector2d(20,44),Vector2d(52,48))

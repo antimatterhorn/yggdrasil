@@ -6,10 +6,10 @@
 #include "../Math/vectorMath.hh"
 #include "../Type/physicalConstants.hh"
 #include "../State/state.hh"
-#include "../Boundaries/boundaries.hh"
+#include "../Boundaries/boundary.hh"
 
 template <int dim>
-class Boundaries; // forward declaration
+class Boundary; // forward declaration
 
 template <int dim>
 class Physics {
@@ -18,7 +18,7 @@ protected:
     PhysicalConstants& constants;
     State<dim> state;
     double lastDt;
-    std::vector<Boundaries<dim>*> boundaries;
+    std::vector<Boundary<dim>*> boundaries;
 public:
     using Vector = Lin::Vector<dim>;
     using VectorField = Field<Vector>;
@@ -61,7 +61,7 @@ public:
 
     virtual void
     InitializeBoundaries() {
-        for (Boundaries<dim>* boundary : boundaries)
+        for (Boundary<dim>* boundary : boundaries)
             boundary->ZeroTimeInitialize();
     }
 
@@ -124,7 +124,7 @@ public:
     lastStep() const {return lastDt; }
 
     virtual void
-    addBoundary(Boundaries<dim>* boundary){
+    addBoundary(Boundary<dim>* boundary){
         boundaries.push_back(boundary);
     }
 

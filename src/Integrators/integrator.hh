@@ -6,7 +6,7 @@
 #include <iostream>
 #include "../Math/vectorMath.hh"
 #include "../State/state.hh"
-#include "../Boundaries/boundaries.hh"
+#include "../Boundaries/boundary.hh"
 
 template <int dim>
 class Physics; // forward declaration

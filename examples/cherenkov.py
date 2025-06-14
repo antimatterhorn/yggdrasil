@@ -3,7 +3,7 @@ from Animation import *
 from math import sin,cos
 from Mesh import Grid2d
 from Physics import WaveEquation2d
-from Boundaries import PeriodicGridBoundaries2d
+from Boundaries import PeriodicGridBoundary2d
 
 class oscillate:
     def __init__(self,nodeList,grid,cs,width,height,workCycle=1):
@@ -57,8 +57,8 @@ if __name__ == "__main__":
     print(waveEqn)
     packages = [waveEqn]
 
-    # Create boundaries
-    pm = PeriodicGridBoundaries2d(grid=grid)
+    # Create Boundary
+    pm = PeriodicGridBoundary2d(grid=grid)
     waveEqn.addBoundary(pm)
 
     # ------------------------------------------------

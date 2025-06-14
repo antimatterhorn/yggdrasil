@@ -1,12 +1,12 @@
 // Copyright (C) 2025  Cody Raskin
 
 #include <vector>
-#include "gridBoundaries.hh"
+#include "gridBoundary.hh"
 #include "../Math/vectorMath.hh"
 
-// Base class for Grid Boundaries
+// Base class for Grid Boundary
 template <int dim>
-class DirichletGridBoundaries : public GridBoundaries<dim> {
+class DirichletGridBoundary : public GridBoundary<dim> {
 protected:
     std::vector<int> ids;
     Mesh::Grid<dim>* grid;
@@ -22,11 +22,11 @@ public:
     using VectorField = Field<Vector>;
     using ScalarField = Field<double>;
 
-    DirichletGridBoundaries(Mesh::Grid<dim>* grid) : 
-        GridBoundaries<dim>(grid),
+    DirichletGridBoundary(Mesh::Grid<dim>* grid) : 
+        GridBoundary<dim>(grid),
         grid(grid) {}
     
-    virtual ~DirichletGridBoundaries() {}
+    virtual ~DirichletGridBoundary() {}
 
     virtual void
     addBox(Vector p1, Vector p2){

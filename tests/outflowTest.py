@@ -2,7 +2,7 @@ from yggdrasil import *
 from Animation import *
 from math import sqrt
 from Physics import WaveEquation2d
-from Boundaries import PeriodicGridBoundaries2d
+from Boundaries import OutflowGridBoundary2d
 from Mesh import Grid2d
 
 from matplotlib.colors import LinearSegmentedColormap
@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
     packages = [waveEqn]
 
-    pm = PeriodicGridBoundaries2d(grid=grid)
+    pm = OutflowGridBoundary2d(grid=grid)
     waveEqn.addBoundary(pm)
 
     integrator = RungeKutta4Integrator2d(packages=packages,dtmin=0.01)

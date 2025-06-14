@@ -1,11 +1,11 @@
 // Copyright (C) 2025  Cody Raskin
 
 #include <vector>
-#include "gridBoundaries.hh"
+#include "gridBoundary.hh"
 
-// Base class for Grid Boundaries
+// Base class for Grid Boundary
 template <int dim>
-class OutflowGridBoundaries : public GridBoundaries<dim> {
+class OutflowGridBoundary : public GridBoundary<dim> {
 protected:
     std::vector<std::vector<int>> boundaryIds;
     std::string derivFieldName;
@@ -14,8 +14,8 @@ public:
     using VectorField = Field<Vector>;
     using ScalarField = Field<double>;
 
-    OutflowGridBoundaries(Mesh::Grid<dim>* grid) : 
-        GridBoundaries<dim>(grid) {
+    OutflowGridBoundary(Mesh::Grid<dim>* grid) : 
+        GridBoundary<dim>(grid) {
         if (dim == 1) {
             std::vector<int> leftIds = grid->leftMost();  
             std::vector<int> leftcol;
@@ -123,12 +123,12 @@ public:
         }
     }
 
-    OutflowGridBoundaries(Mesh::Grid<dim>* grid, std::string derivative) : 
-        OutflowGridBoundaries<dim>(grid){
+    OutflowGridBoundary(Mesh::Grid<dim>* grid, std::string derivative) : 
+        OutflowGridBoundary<dim>(grid){
         derivFieldName = derivative;
     }
     
-    virtual ~OutflowGridBoundaries() = default;
+    virtual ~OutflowGridBoundary() = default;
 
     virtual void
     ApplyBoundaries(State<dim>* state, NodeList* nodeList) override {

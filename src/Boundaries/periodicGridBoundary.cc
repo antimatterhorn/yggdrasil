@@ -1,11 +1,11 @@
 // Copyright (C) 2025  Cody Raskin
 
 #include <vector>
-#include "gridBoundaries.hh"
+#include "gridBoundary.hh"
 
-// Base class for Grid Boundaries
+// Base class for Grid Boundary
 template <int dim>
-class PeriodicGridBoundaries : public GridBoundaries<dim> {
+class PeriodicGridBoundary : public GridBoundary<dim> {
 protected:
     std::vector<std::vector<int>> boundaryLists;
 public:
@@ -13,8 +13,8 @@ public:
     using VectorField = Field<Vector>;
     using ScalarField = Field<double>;
     
-    PeriodicGridBoundaries(Mesh::Grid<dim>* grid) : 
-        GridBoundaries<dim>(grid) {
+    PeriodicGridBoundary(Mesh::Grid<dim>* grid) : 
+        GridBoundary<dim>(grid) {
         if (dim == 1) {
             std::vector<int> leftIds = grid->leftMost();  
             std::vector<int> leftcol;
@@ -130,7 +130,7 @@ public:
         }
     }
     
-    virtual ~PeriodicGridBoundaries() = default;
+    virtual ~PeriodicGridBoundary() = default;
     
     virtual void
     ApplyBoundaries(State<dim>* state, NodeList* nodeList) override {

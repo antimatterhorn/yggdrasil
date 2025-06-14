@@ -2,14 +2,14 @@
 
 #pragma once
 
-#include "boundaries.hh"
+#include "boundary.hh"
 #include "../DataBase/nodeList.hh"
 #include "../DataBase/field.hh"
 #include <vector>
 
 // Base class for Grid Boundaries
 template <int dim>
-class Constraint : public Boundaries<dim> {
+class Constraint : public Boundary<dim> {
 protected:
     NodeList* nodeList;
     std::vector<int> nodeIndices;

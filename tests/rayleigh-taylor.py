@@ -4,7 +4,7 @@ from Animation import *
 from Mesh import Grid2d
 from Physics import GridHydroHLLE2d, ConstantGridAccel2d
 from EOS import IdealGasEOS
-from Boundaries import ReflectingGridBoundaries2d
+from Boundaries import ReflectingGridBoundary2d
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     hydro = GridHydroHLLE2d(myNodeList,constants,eos,myGrid)
 
-    box = ReflectingGridBoundaries2d(grid=myGrid)
+    box = ReflectingGridBoundary2d(grid=myGrid)
     hydro.addBoundary(box)
 
     gravityVector = Vector2d(0.,-10)

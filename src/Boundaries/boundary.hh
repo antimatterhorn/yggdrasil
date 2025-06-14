@@ -1,5 +1,4 @@
-#ifndef BOUNDARIES_HH
-#define BOUNDARIES_HH
+#pragma once
 
 #include <vector>
 #include "../Physics/physics.hh"
@@ -9,13 +8,13 @@ class Physics;
 
 // Base class for Grid Boundaries
 template <int dim>
-class Boundaries {
+class Boundary {
 protected:
 
 public:
-    Boundaries() {}
+    Boundary() {}
     
-    virtual ~Boundaries() {}
+    virtual ~Boundary() {}
 
     virtual void ZeroTimeInitialize() {}
 
@@ -23,5 +22,3 @@ public:
     ApplyBoundaries(State<dim>* state, NodeList* nodeList) {}
 
 };
-
-#endif // BOUNDARIES_HH

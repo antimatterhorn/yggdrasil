@@ -1,8 +1,8 @@
 from PYB11Generator import *
-from boundaries import *
+from boundary import *
 
 @PYB11template("dim")
-class Collider(Boundaries):
+class Collider(Boundary):
     def pyinit(self):
         return
     

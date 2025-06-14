@@ -1,11 +1,11 @@
 // Copyright (C) 2025  Cody Raskin
 
 #include <vector>
-#include "gridBoundaries.hh"
+#include "gridBoundary.hh"
 
-// Base class for Grid Boundaries
+// Base class for Grid Boundary
 template <int dim>
-class ReflectingGridBoundaries : public GridBoundaries<dim> {
+class ReflectingGridBoundary : public GridBoundary<dim> {
 protected:
     std::vector<std::vector<int>> boundaryLists;
     std::vector<std::vector<int>> interiorLists;
@@ -14,8 +14,8 @@ public:
     using VectorField = Field<Vector>;
     using ScalarField = Field<double>;
 
-    ReflectingGridBoundaries(Mesh::Grid<dim>* grid) : 
-        GridBoundaries<dim>(grid) {
+    ReflectingGridBoundary(Mesh::Grid<dim>* grid) : 
+        GridBoundary<dim>(grid) {
         if constexpr (dim == 1) {
             boundaryLists.push_back(grid->leftMost());
             interiorLists.push_back({1});
@@ -87,7 +87,7 @@ public:
         }        
     }
 
-    virtual ~ReflectingGridBoundaries() = default;
+    virtual ~ReflectingGridBoundary() = default;
 
     virtual void ApplyBoundaries(State<dim>* state, NodeList* nodeList) override {
         for (int i = 0; i < state->count(); ++i) {

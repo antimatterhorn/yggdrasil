@@ -18,7 +18,7 @@ def run():
 
     hydro = GridHydroHLLE2d(myNodeList,constants,eos,myGrid)
 
-    box = ReflectingGridBoundaries2d(grid=myGrid)
+    box = ReflectingGridBoundary2d(grid=myGrid)
     hydro.addBoundary(box)
 
     integrator = RungeKutta4Integrator2d([hydro],dtmin=dtmin,verbose=False)

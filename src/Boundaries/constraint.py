@@ -1,8 +1,8 @@
 from PYB11Generator import *
-from boundaries import *
+from boundary import *
 
 @PYB11template("dim")
-class Constraint(Boundaries):
+class Constraint(Boundary):
     def pyinit(self,nodeList="NodeList*", nodeIndicies="std::vector<int>"):
         return
     
