@@ -10,6 +10,7 @@ class NodeList:
     @PYB11template("typename T")
     def insertField(self,name="std::string"):
         return
+    @PYB11cppname("getFieldOrThrow")
     @PYB11template("typename T")
     @PYB11returnpolicy("reference")
     def getField(self,name="std::string"):

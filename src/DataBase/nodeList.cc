@@ -95,6 +95,13 @@ Field<T>* NodeList::getField(const std::string& name) const {
     return getFieldByName<T>(Name(name));
 }
 
+template<typename T>
+Field<T>* NodeList::getFieldOrThrow(const std::string& name) const {
+    Field<T>* ptr = getFieldByName<T>(Name(name));
+    if (!ptr) throw pybind11::key_error("Field '" + name + "' not found in NodeList.");
+    return ptr;
+}
+
 template <int dim>
 Field<Lin::Vector<dim>>* NodeList::velocity() const {
     for (const auto& fieldPtr : _fields) {

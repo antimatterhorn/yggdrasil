@@ -38,6 +38,9 @@ public:
     template <typename T>
     Field<T>* getField(const std::string& name) const;
 
+    template <typename T>
+    Field<T>* getFieldOrThrow(const std::string& name) const;
+
     inline FieldBase* 
     getFieldByIndex(int index) const {
         if (index < 0 || index >= _fields.size()) {
