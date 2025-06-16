@@ -14,7 +14,8 @@ PYB11includes = ['"physics.hh"',
                 '"kinetics.cc"',
                 '"fem.cc"',
                 '"thermalConduction.cc"',
-                '"phaseCoupling.cc"']
+                '"phaseCoupling.cc"',
+                '"treeGravity.cc"']
 
 from physics import *
 from constantGravity import *
@@ -32,3 +33,4 @@ from kinetics import *
 from fem import *
 from thermalConduction import *
 from phaseCoupling import *
+from treeGravity import *
