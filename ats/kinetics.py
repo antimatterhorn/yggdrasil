@@ -21,7 +21,7 @@ def run():
     rad = myNodeList.getFieldDouble("radius")
     mass = myNodeList.getFieldDouble("mass")
     for i in range(numNodes):
-        rad.setValue(i,2)
+        rad.setValue(i,0.5)
         mass.setValue(i,0.2)
 
     pos = myNodeList.getFieldVector2d("position")
