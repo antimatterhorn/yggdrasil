@@ -45,7 +45,7 @@ if __name__ == "__main__":
         velocity.setValue(i,Vector2d(velGenerator.positions[i][0],velGenerator.positions[i][1]))
 
     integrator = RungeKutta4Integrator2d(packages=packages,
-                                         dtmin=0.5e1,verbose=False)
+                                         dtmin=0.1,verbose=False)
   
 
     dump = dumpState(myNodeList,workCycle=1000,G=constants.G)
