@@ -2,6 +2,7 @@
 Physics,N-body gravity,FEM,
 ,Gravity point sources,HLLC hydro,
 ,Constant direction gravity,Conduction,
+,Tree gravity,
 ,Particle kinetics,,
 ,Acoustic wave solvers,,
 ,Shallow wave solvers,,

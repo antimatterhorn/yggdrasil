@@ -1,3 +1,4 @@
+PYB11Generator
 matplotlib
 decorator
 setuptools
