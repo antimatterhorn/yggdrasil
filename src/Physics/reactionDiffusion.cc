@@ -11,6 +11,7 @@ class ReactionDiffusion : public Physics<2> {
 protected:
     Mesh::Grid<2>* grid;
     double A,D;
+    std::vector<int> insideIds;
 public:
     using Vector = Lin::Vector<2>;
     using VectorField = Field<Vector>;
@@ -34,6 +35,18 @@ public:
     ~ReactionDiffusion() {}
 
     virtual void
+    ZeroTimeInitialize() override {
+        int numNodes = this->nodeList->size();
+        for (int i=0; i<numNodes; ++i) {
+            if (!grid->onBoundary(i))
+                insideIds.push_back(i);
+        }
+
+        this->UpdateState();
+        this->InitializeBoundaries();
+    }
+
+    virtual void
     EvaluateDerivatives(const State<2>* initialState, State<2>& deriv, const double time, const double dt) override {
         auto* c1 = initialState->template getField<double>("c1");
         auto* c2 = initialState->template getField<double>("c2");
@@ -45,51 +58,56 @@ public:
 
         auto* rho = deriv.template getField<double>("density");
 
-        const int sx = grid->size_x();
-        const int sy = grid->size_y();
+        const int nx = grid->size_x();
+        const int ny = grid->size_y();
+        const double dx = grid->dx;
+        const double dy = grid->dy;
 
-        #pragma omp parallel for collapse(2)
-        for (int j = 0; j < sy; ++j) {
-            for (int i = 0; i < sx; ++i) {
-                int idx = grid->index(i, j);
+        #pragma omp parallel for
+        for (int p = 0; p < insideIds.size(); ++p) {
+            int idx = insideIds[p];
 
-                double u[3] = { c1->getValue(idx), c2->getValue(idx), c3->getValue(idx) };
-                double dudt[3] = { 0.0, 0.0, 0.0 };
+            auto [ix, iy, _] = grid->indexToCoordinates(idx);
 
-                // Compute total density
-                double r = u[0] + u[1] + u[2];
-                rho->setValue(idx, r);
+            double u[3] = {
+                c1->getValue(idx),
+                c2->getValue(idx),
+                c3->getValue(idx)
+            };
+            double dudt[3] = { 0.0, 0.0, 0.0 };
 
-                // Diffusion term for each component
-                for (int c = 0; c < 3; ++c) {
-                    double del = 0.0;
-                    for (int dj = -1; dj <= 1; ++dj) {
-                        for (int di = -1; di <= 1; ++di) {
-                            int ii = (i + di + sx) % sx;
-                            int jj = (j + dj + sy) % sy;
-                            int nidx = grid->index(ii, jj);
+            // Compute total density
+            double r = u[0] + u[1] + u[2];
+            rho->setValue(idx, r);
 
-                            double fac = (di != 0 && dj != 0) ? 0.05 : 0.2;
-                            del += fac * (
-                                (c == 0 ? c1->getValue(nidx) :
-                                (c == 1 ? c2->getValue(nidx) : c3->getValue(nidx)))
-                            );
-                        }
+            // Diffusion term for each component
+            for (int c = 0; c < 3; ++c) {
+                double del = 0.0;
+
+                auto get = [&](int i, int j) -> double {
+                    if (i < 0 || i >= nx || j < 0 || j >= ny) return u[c];  // clamp or mirror at boundary
+                    int nid = grid->index(i, j);
+                    return (c == 0 ? c1->getValue(nid) :
+                        (c == 1 ? c2->getValue(nid) :
+                                    c3->getValue(nid)));
+                };
+
+                for (int dj = -1; dj <= 1; ++dj) {
+                    for (int di = -1; di <= 1; ++di) {
+                        if (di == 0 && dj == 0) continue;
+                        double fac = (di != 0 && dj != 0) ? 0.05 : 0.2;
+                        del += fac * get(ix + di, iy + dj);
                     }
-
-                    // Logistic and cyclic reaction terms
-                    double competitor = u[(c + 1) % 3];
-                    dudt[c] = D * del + u[c] * (1.0 - r) - A * u[c] * competitor;
                 }
 
-                // Store result in derivative state
-                dc1->setValue(idx, dudt[0]);
-                dc2->setValue(idx, dudt[1]);
-                dc3->setValue(idx, dudt[2]);
+                dudt[c] = D * del + u[c] * (1.0 - r) - A * u[c] * u[(c + 1) % 3];
             }
+
+            dc1->setValue(idx, dudt[0]);
+            dc2->setValue(idx, dudt[1]);
+            dc3->setValue(idx, dudt[2]);
         }
     }
-
 
     virtual double
     EstimateTimestep() const override {
