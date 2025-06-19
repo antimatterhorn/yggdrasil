@@ -80,23 +80,16 @@ public:
             double r = u[0] + u[1] + u[2];
             rho->setValue(idx, r);
 
+            std::vector<ScalarField*> fields = { c1, c2, c3 };
             // Diffusion term for each component
             for (int c = 0; c < 3; ++c) {
                 double del = 0.0;
-
-                auto get = [&](int i, int j) -> double {
-                    if (i < 0 || i >= nx || j < 0 || j >= ny) return u[c];  // clamp or mirror at boundary
-                    int nid = grid->index(i, j);
-                    return (c == 0 ? c1->getValue(nid) :
-                        (c == 1 ? c2->getValue(nid) :
-                                    c3->getValue(nid)));
-                };
 
                 for (int dj = -1; dj <= 1; ++dj) {
                     for (int di = -1; di <= 1; ++di) {
                         if (di == 0 && dj == 0) continue;
                         double fac = (di != 0 && dj != 0) ? 0.05 : 0.2;
-                        del += fac * get(ix + di, iy + dj);
+                        del += fac * fields[c]->getValue(grid->index(ix + di, iy + dj));
                     }
                 }
 
