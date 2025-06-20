@@ -1,7 +1,6 @@
 // Copyright (C) 2025  Cody Raskin
 
-#ifndef GRID_HH
-#define GRID_HH
+#pragma once
 
 #include <vector>
 #include <string>
@@ -16,6 +15,7 @@ namespace Mesh {
         std::vector<std::shared_ptr<FieldBase>> _extraFields;
         std::vector<int> lm,rm,tm,bm,fm,km;
     public:
+        using Vector = Lin::Vector<dim>;
         int nx; // Number of grid cells in x-direction
         int ny; // Number of grid cells in y-direction
         int nz; // Number of grid cells in z-direction
@@ -24,7 +24,7 @@ namespace Mesh {
         double dy; // Grid spacing in y-direction
         double dz; // Grid spacing in z-direction
 
-        Field<Lin::Vector<dim>> gridPositions;
+        Field<Vector> gridPositions;
 
         Grid(int num_cells_x, double spacing_x);
         Grid(int num_cells_x, int num_cells_y, double spacing_x, double spacing_y);
@@ -94,10 +94,56 @@ namespace Mesh {
 
         template <typename T>
         Field<T>* getField(const std::string& name);
+
+        template <typename T>
+        T laplacian(int idx, Field<T>* field) const;
+
+        Vector gradient(int idx, Field<double>* field) const {
+            Vector grad;
+
+            if constexpr (dim == 1) {
+                double dx = this->dx;
+                int left = idx - 1;
+                int right = idx + 1;
+                grad[0] = (field->getValue(right) - field->getValue(left)) / (2.0 * dx);
+            }
+
+            if constexpr (dim == 2) {
+                auto [ix, iy, _] = this->indexToCoordinates(idx);
+                double dx = this->dx;
+                double dy = this->dy;
+
+                int iL = this->index(ix - 1, iy);
+                int iR = this->index(ix + 1, iy);
+                int iB = this->index(ix, iy - 1);
+                int iT = this->index(ix, iy + 1);
+
+                grad[0] = (field->getValue(iR) - field->getValue(iL)) / (2.0 * dx);
+                grad[1] = (field->getValue(iT) - field->getValue(iB)) / (2.0 * dy);
+            }
+
+            if constexpr (dim == 3) {
+                auto [ix, iy, iz] = this->indexToCoordinates(idx);
+                double dx = this->dx;
+                double dy = this->dy;
+                double dz = this->dz;
+
+                int iL = this->index(ix - 1, iy, iz);
+                int iR = this->index(ix + 1, iy, iz);
+                int iB = this->index(ix, iy - 1, iz);
+                int iT = this->index(ix, iy + 1, iz);
+                int iD = this->index(ix, iy, iz - 1);
+                int iU = this->index(ix, iy, iz + 1);
+
+                grad[0] = (field->getValue(iR) - field->getValue(iL)) / (2.0 * dx);
+                grad[1] = (field->getValue(iT) - field->getValue(iB)) / (2.0 * dy);
+                grad[2] = (field->getValue(iU) - field->getValue(iD)) / (2.0 * dz);
+            }
+
+            return grad;
+        }
     };
 }
 
 
 #include "grid.cc"
-
-#endif // GRID_HH

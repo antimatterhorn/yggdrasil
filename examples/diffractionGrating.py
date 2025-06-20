@@ -90,6 +90,6 @@ if __name__ == "__main__":
                                                 stepper=controller.Step,
                                                 title=title,
                                                 fieldName="maxphi") # change to 'phi' to view full wave
-        AnimateGrid2d(bounds,update_method,extremis=[0,2],frames=cycles,cmap='plasma')
+        AnimateGrid2d(bounds,update_method,extremis=[0,0.1],frames=cycles,cmap='plasma')
     else:
         controller.Step(cycles)

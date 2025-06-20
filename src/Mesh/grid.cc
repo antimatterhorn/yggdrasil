@@ -296,6 +296,52 @@ namespace Mesh {
         }
         return nullptr;
     }
+
+    template <int dim>
+    template <typename T>
+    T Grid<dim>::laplacian(int idx, Field<T>* field) const {
+        if constexpr (dim == 1) {
+            double dx = this->dx;
+            int left  = idx - 1;
+            int right = idx + 1;
+            return (field->getValue(right) - 2.0 * field->getValue(idx) + field->getValue(left)) / (dx * dx);
+        }
+
+        if constexpr (dim == 2) {
+            auto [ix, iy, _] = this->indexToCoordinates(idx);
+            double dx = this->dx;
+            double dy = this->dy;
+
+            int iL = this->index(ix - 1, iy);
+            int iR = this->index(ix + 1, iy);
+            int iB = this->index(ix, iy - 1);
+            int iT = this->index(ix, iy + 1);
+
+            T center = field->getValue(idx);
+            return (field->getValue(iR) - 2.0 * center + field->getValue(iL)) / (dx * dx) +
+                (field->getValue(iT) - 2.0 * center + field->getValue(iB)) / (dy * dy);
+        }
+
+        if constexpr (dim == 3) {
+            auto [ix, iy, iz] = this->indexToCoordinates(idx);
+            double dx = this->dx;
+            double dy = this->dy;
+            double dz = this->dz;
+
+            int iL = this->index(ix - 1, iy, iz);
+            int iR = this->index(ix + 1, iy, iz);
+            int iB = this->index(ix, iy - 1, iz);
+            int iT = this->index(ix, iy + 1, iz);
+            int iD = this->index(ix, iy, iz - 1);
+            int iU = this->index(ix, iy, iz + 1);
+
+            T center = field->getValue(idx);
+            return (field->getValue(iR) - 2.0 * center + field->getValue(iL)) / (dx * dx) +
+                (field->getValue(iT) - 2.0 * center + field->getValue(iB)) / (dy * dy) +
+                (field->getValue(iU) - 2.0 * center + field->getValue(iD)) / (dz * dz);
+        }
+    }
+
 }
 
 
