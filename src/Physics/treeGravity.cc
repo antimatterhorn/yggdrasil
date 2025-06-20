@@ -15,8 +15,6 @@ public:
     using VectorField = Field<Vector>;
     using ScalarField = Field<double>;
 
-
-
     TreeGravity(NodeList* nodeList, PhysicalConstants& constants, double plummerLength) :
         Kinematics<dim>(nodeList, constants),
         plummerLength(plummerLength) {}
@@ -66,8 +64,8 @@ public:
 
     virtual double
     EstimateTimestep() const override {
-        double timestepCoefficient = 1e-2;
-        return timestepCoefficient * std::sqrt(dtmin);
+        double timestepCoefficient = 0.1;
+        return timestepCoefficient * dtmin;
     }
 
     virtual std::string name() const override { return "treeGravity"; }
