@@ -5,6 +5,7 @@ from Physics import GridHydroKT2d,GridHydroHLLC2d,GridHydroHLLE2d
 from EOS import IdealGasEOS
 from Boundaries import PeriodicGridBoundary2d
 from Utilities import SiloDump
+from math import log
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
@@ -12,8 +13,8 @@ if __name__ == "__main__":
                                         cycles = 3000,
                                         nx = 100,
                                         ny = 100,
-                                        dx = 0.01,
-                                        dy = 0.01,
+                                        dx = 1,
+                                        dy = 1,
                                         dtmin = 0.1e-7,
                                         intVerbose = False)
 
@@ -48,6 +49,8 @@ if __name__ == "__main__":
 
     loc = [3/2*nx//2,ny//2]
 
+    a = 2.0/log(2)
+
     for j in range(ny):
         for i in range(nx):
             idx = myGrid.index(i, j, 0)
@@ -57,11 +60,14 @@ if __name__ == "__main__":
 
             r = np.sqrt((i-loc[0])**2 + (j-loc[1])**2)
 
-            if r < 2.0:
-                rho = 10
+
+
+            if r <= 2.0:
+                rho = 5
                 vx = 0
             else:
-                rho = 1
+                rho = 10*np.exp(-r/a)
+                if rho < 1: rho = 1
                 vx = 5
 
             velocity.setValue(idx, Vector2d(vx, 0))
@@ -77,7 +83,7 @@ if __name__ == "__main__":
                                 dumpCycle=50)
         periodicWork += [meshWriter]
 
-    controller = Controller(integrator=integrator,periodicWork=periodicWork,statStep=1)
+    controller = Controller(integrator=integrator,periodicWork=periodicWork,statStep=20)
 
     if(animate):
         title = MakeTitle(controller,"time","time")
