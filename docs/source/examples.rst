@@ -51,7 +51,7 @@ Simulates the Plinko game.
     :width: 50%
     :align: center
 
-rps.py
+reactionDiffusion.py
 -----------------
 Simulates the destruction of chemical mixtures in a rock-paper-scissors-like reaction setup, where A->B->C->A. In this case,
 A is blue, B is green, and C is red.
