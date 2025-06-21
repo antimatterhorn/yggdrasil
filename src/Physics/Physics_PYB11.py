@@ -11,6 +11,7 @@ PYB11includes = ['"physics.hh"',
                 '"eulerHydro.cc"',
                 '"gridHydroHLLE.cc"',
                 '"gridHydroHLLC.cc"',
+                '"gridHydroKT.cc"',
                 '"kinetics.cc"',
                 '"fem.cc"',
                 '"thermalConduction.cc"',
@@ -30,6 +31,7 @@ from implicitPhysics import *
 from eulerHydro import *
 from gridHydroHLLE import *
 from gridHydroHLLC import *
+from gridHydroKT import *
 from kinetics import *
 from fem import *
 from thermalConduction import *

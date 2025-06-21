@@ -1,7 +1,7 @@
 from yggdrasil import *
 from Animation import *
 from Mesh import Grid2d
-from Physics import GridHydroHLLC2d
+from Physics import GridHydroKT2d,GridHydroHLLC2d,GridHydroHLLE2d
 from EOS import IdealGasEOS
 from Boundaries import PeriodicGridBoundary2d
 
@@ -27,7 +27,8 @@ if __name__ == "__main__":
     eos = IdealGasEOS(1.4,constants)
     print(eos,"gamma =",eos.gamma)
 
-    hydro = GridHydroHLLC2d(myNodeList,constants,eos,myGrid) 
+    hydro = GridHydroKT2d(myNodeList,constants,eos,myGrid) 
+    #hydro = GridHydroHLLE2d(myNodeList,constants,eos,myGrid) 
     print("numNodes =",myNodeList.numNodes)
     print("field names =",myNodeList.fieldNames)
 
@@ -51,6 +52,8 @@ if __name__ == "__main__":
             x = pos.x
             y = pos.y
 
+            y0 = j * dy
+
             if j < ny // 4:
                 rho = 1.0
                 vx = -3.0
@@ -61,8 +64,8 @@ if __name__ == "__main__":
                 rho = 1.0
                 vx = -3.0
 
-            # Sinusoidal perturbation (centered in y)
-            a = 0.01 * np.sin(4 * np.pi * i / nx) * np.exp(-((j - ny // 2) / (0.1 * ny))**2)
+            a = 1 * np.sin(4 * np.pi * x)
+
 
             velocity.setValue(idx, Vector2d(vx, a))
             density.setValue(idx, rho)

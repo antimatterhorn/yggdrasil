@@ -2,7 +2,7 @@ from yggdrasil import *
 import matplotlib.pyplot as plt
 from Animation import *
 from Mesh import Grid2d
-from Physics import GridHydroHLLE2d, ConstantGridAccel2d
+from Physics import GridHydroKT2d, ConstantGridAccel2d
 from EOS import IdealGasEOS
 from Boundaries import ReflectingGridBoundary2d
 
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     eos = IdealGasEOS(1.4,constants)
     print(eos,"gamma =",eos.gamma)
 
-    hydro = GridHydroHLLE2d(myNodeList,constants,eos,myGrid)
+    hydro = GridHydroKT2d(myNodeList,constants,eos,myGrid)
 
     box = ReflectingGridBoundary2d(grid=myGrid)
     hydro.addBoundary(box)
