@@ -47,7 +47,7 @@ if __name__ == "__main__":
     p0 = 2.5
     gamma = eos.gamma
 
-    loc = [3/2*nx//2,ny//2]
+    loc = [int(nx//2),int(ny//2)]
 
     a = 2.0/log(2)
 
@@ -60,15 +60,16 @@ if __name__ == "__main__":
 
             r = np.sqrt((i-loc[0])**2 + (j-loc[1])**2)
 
-
-
             if r <= 2.0:
-                rho = 5
-                vx = 0
-            else:
-                rho = 10*np.exp(-r/a)
-                if rho < 1: rho = 1
+                rho = 10
                 vx = 5
+            else:
+                rho = 20*np.exp(-r/a)
+                if rho < 1: 
+                    rho = 1
+                    vx = 0
+                else:
+                    vx = 5
 
             velocity.setValue(idx, Vector2d(vx, 0))
             density.setValue(idx, rho)
@@ -89,7 +90,7 @@ if __name__ == "__main__":
         title = MakeTitle(controller,"time","time")
 
         bounds = (nx,ny)
-        update_method = AnimationUpdateMethod2d(call=hydro.getCell2d,
+        update_method = AnimationUpdateMethod2d(call = hydro.getCell2d,
                                                 stepper=controller.Step,
                                                 title=title,
                                                 fieldName="density")

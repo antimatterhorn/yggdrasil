@@ -139,9 +139,9 @@ public:
         }
 
         HLLFlux<dim> flux;
-        flux.mass = (aPlus * FL.mass - aMinus * FR.mass + aPlus * aMinus * (qR.rho - qL.rho)) / denom;
-        flux.momentum = (FL.momentum * aPlus - FR.momentum * aMinus + aPlus * aMinus * (qR.mom - qL.mom)) / denom;
-        flux.energy = (aPlus * FL.energy - aMinus * FR.energy + aPlus * aMinus * (qR.E - qL.E)) / denom;
+        flux.mass       = (aPlus*FL.mass - aMinus*FR.mass + aPlus*aMinus * (qR.rho - qL.rho)) / denom;
+        flux.momentum   = (FL.momentum*aPlus - FR.momentum*aMinus + aPlus*aMinus * (qR.mom - qL.mom)) / denom;
+        flux.energy     = (aPlus*FL.energy - aMinus*FR.energy + aPlus*aMinus * (qR.E - qL.E)) / denom;
 
         return flux;
     }

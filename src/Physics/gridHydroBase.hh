@@ -181,6 +181,12 @@ public:
         return field->getValue(idx);
     }
 
+    virtual double getCellComponent(int i, int j, int component, const std::string& fieldName) const {
+        int idx = grid->index(i, j, 0);
+        auto* field = this->nodeList->template getField<Vector>(fieldName);
+        return field->getValue(idx)[component];
+    }
+
     // To be implemented by derived class
     virtual HLLFlux<dim> computeFlux(int iL, int iR, int axis,
                                      const Field<double>& rho,
