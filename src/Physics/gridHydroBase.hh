@@ -48,7 +48,8 @@ public:
 
     virtual ~GridHydroBase() {}
 
-    virtual void ZeroTimeInitialize() override {
+    virtual void 
+    ZeroTimeInitialize() override {
         EOSLookup();
         State<dim> state = this->state;
         NodeList* nodeList = this->nodeList;
@@ -56,7 +57,8 @@ public:
         this->InitializeBoundaries();
     }
 
-    virtual void EvaluateDerivatives(const State<dim>* initialState,
+    virtual void 
+    EvaluateDerivatives(const State<dim>* initialState,
                                      State<dim>& deriv,
                                      const double time,
                                      const double dt) override {
@@ -142,11 +144,13 @@ public:
         dtmin = local_dtmin;
     }
 
-    virtual double EstimateTimestep() const override {
+    virtual double 
+    EstimateTimestep() const override {
         return dtmin;
     }
 
-    virtual void FinalizeStep(const State<dim>* finalState) override {
+    virtual void 
+    FinalizeStep(const State<dim>* finalState) override {
         auto* fdensity  = finalState->template getField<double>("density");
         auto* fvelocity = finalState->template getField<Vector>("velocity");
         auto* fu        = finalState->template getField<double>("specificInternalEnergy");
@@ -165,7 +169,8 @@ public:
         EOSLookup();
     }
 
-    virtual void EOSLookup() {
+    virtual void 
+    EOSLookup() {
         NodeList* nodeList = this->nodeList;
         auto* rho = nodeList->getField<double>("density");
         auto* u = nodeList->getField<double>("specificInternalEnergy");
@@ -175,23 +180,26 @@ public:
         this->eos->setSoundSpeed(cs, rho, u);
     }
 
-    virtual double getCell(int i, int j, const std::string& fieldName = "pressure") const {
+    virtual double 
+    getCell(int i, int j, const std::string& fieldName = "pressure") const {
         int idx = grid->index(i, j, 0);
         ScalarField* field = this->nodeList->template getField<double>(fieldName);
         return field->getValue(idx);
     }
 
-    virtual double getCellComponent(int i, int j, int component, const std::string& fieldName) const {
+    virtual double 
+    getCellComponent(int i, int j, int component, const std::string& fieldName) const {
         int idx = grid->index(i, j, 0);
         auto* field = this->nodeList->template getField<Vector>(fieldName);
         return field->getValue(idx)[component];
     }
 
     // To be implemented by derived class
-    virtual HLLFlux<dim> computeFlux(int iL, int iR, int axis,
-                                     const Field<double>& rho,
-                                     const Field<Vector>& v,
-                                     const Field<double>& u,
-                                     const Field<double>& p,
-                                     const Field<double>& cs) const = 0;
+    virtual HLLFlux<dim> 
+    computeFlux(int iL, int iR, int axis,
+                const Field<double>& rho,
+                const Field<Vector>& v,
+                const Field<double>& u,
+                const Field<double>& p,
+                const Field<double>& cs) const = 0;
 };

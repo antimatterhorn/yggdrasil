@@ -17,7 +17,8 @@ public:
 
     virtual std::string name() const override { return "GridHydroHLLC"; }
 
-    virtual HLLFlux<dim> computeFlux(int iL, int iR, int axis,
+    virtual HLLFlux<dim> 
+    computeFlux(int iL, int iR, int axis,
                                      const Field<double>& rho,
                                      const Field<Vector>& v,
                                      const Field<double>& u,

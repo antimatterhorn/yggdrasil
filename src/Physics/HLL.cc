@@ -197,7 +197,8 @@ computeHLLCFlux(int iL, int iR, int axis,
 
 //LIMITED VERSION
 template<int dim>
-HLLFlux<dim> computeHLLCFluxFromStates(
+HLLFlux<dim> 
+computeHLLCFluxFromStates(
     double rhoL, const Lin::Vector<dim>& vL, double uL, double pL, double cL,
     double rhoR, const Lin::Vector<dim>& vR, double uR, double pR, double cR,
     int axis) {
