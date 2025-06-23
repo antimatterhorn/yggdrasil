@@ -90,6 +90,7 @@ if __name__ == "__main__":
         title = MakeTitle(controller,"time","time")
 
         bounds = (nx,ny)
+        # call = lambda i, j, fieldName: hydro.getCell2dComponent(i, j, 0, "velocity"),
         update_method = AnimationUpdateMethod2d(call = hydro.getCell2d,
                                                 stepper=controller.Step,
                                                 title=title,
