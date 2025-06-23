@@ -70,38 +70,48 @@ if __name__ == "__main__":
     packages = [waveEqn]
 
     box = DirichletGridBoundary2d(grid=grid)
-    box.addBox(Vector2d(16,20),Vector2d(20,44))
-    box.addBox(Vector2d(16,20),Vector2d(96,24))
-    box.addBox(Vector2d(20,44),Vector2d(52,48))
-    box.addBox(Vector2d(24,20),Vector2d(28,32))
-    box.addBox(Vector2d(32,20),Vector2d(36,56))
-    box.addBox(Vector2d(36,56),Vector2d(40,60))
-    box.addBox(Vector2d(40,20),Vector2d(44,56))
-    box.addBox(Vector2d(48,44),Vector2d(52,56))
-    box.addBox(Vector2d(48,32),Vector2d(52,40))
-    box.addBox(Vector2d(52,56),Vector2d(56,60))
-    box.addBox(Vector2d(56,20),Vector2d(60,56))
-    box.addBox(Vector2d(60,56),Vector2d(64,60))
-    box.addBox(Vector2d(64,44),Vector2d(68,56))
-    box.addBox(Vector2d(64,44),Vector2d(72,48))
-    box.addBox(Vector2d(64,20),Vector2d(68,32))
-    box.addBox(Vector2d(72,20),Vector2d(76,44))
-    box.addBox(Vector2d(76,44),Vector2d(88,48))
-    box.addBox(Vector2d(80,32),Vector2d(84,40))
-    box.addBox(Vector2d(88,8),Vector2d(92,44))
-    box.addBox(Vector2d(92,44),Vector2d(104,48))
-    box.addBox(Vector2d(108,44),Vector2d(120,48))
-    box.addBox(Vector2d(124,44),Vector2d(136,48))
-    box.addBox(Vector2d(104,8),Vector2d(108,44))
-    box.addBox(Vector2d(120,8),Vector2d(124,44))
-    box.addBox(Vector2d(88,8),Vector2d(124,12))
-    box.addBox(Vector2d(104,20),Vector2d(112,24))
-    box.addBox(Vector2d(96,32),Vector2d(100,40))
-    box.addBox(Vector2d(112,32),Vector2d(116,40))
-    box.addBox(Vector2d(120,20),Vector2d(132,24))
-    box.addBox(Vector2d(128,20),Vector2d(132,32))
-    box.addBox(Vector2d(132,32),Vector2d(140,36))
-    box.addBox(Vector2d(136,32),Vector2d(140,44))
+
+    box.addBox(Vector2d(12,32),Vector2d(16,48))
+    box.addBox(Vector2d(12,20),Vector2d(16,28))
+    box.addBox(Vector2d(16,48),Vector2d(20,52))
+    box.addBox(Vector2d(24,48),Vector2d(28,52))
+    box.addBox(Vector2d(16,28),Vector2d(20,32))
+    box.addBox(Vector2d(20,40),Vector2d(24,48))
+    box.addBox(Vector2d(16,16),Vector2d(28,20))
+    box.addBox(Vector2d(28,20),Vector2d(32,48))
+    box.addBox(Vector2d(44,20),Vector2d(48,48))
+    box.addBox(Vector2d(60,20),Vector2d(64,48))
+    box.addBox(Vector2d(76,28),Vector2d(80,56))
+    box.addBox(Vector2d(60,28),Vector2d(88,32))
+    box.addBox(Vector2d(92,28),Vector2d(144,32))
+    box.addBox(Vector2d(76,48),Vector2d(92,52))
+    box.addBox(Vector2d(96,48),Vector2d(128,52))
+    box.addBox(Vector2d(32,28),Vector2d(36,32))
+    box.addBox(Vector2d(48,28),Vector2d(52,32))
+    box.addBox(Vector2d(32,16),Vector2d(44,20))
+    box.addBox(Vector2d(48,16),Vector2d(60,20))
+    box.addBox(Vector2d(32,48),Vector2d(44,52))
+    box.addBox(Vector2d(48,48),Vector2d(60,52))
+    box.addBox(Vector2d(36,36),Vector2d(40,44))
+    box.addBox(Vector2d(52,36),Vector2d(56,44))
+    box.addBox(Vector2d(68,36),Vector2d(72,44))
+    box.addBox(Vector2d(92,32),Vector2d(96,48))
+    box.addBox(Vector2d(108,32),Vector2d(112,48))
+    box.addBox(Vector2d(124,32),Vector2d(128,56))
+    box.addBox(Vector2d(132,32),Vector2d(136,56))
+    box.addBox(Vector2d(140,32),Vector2d(144,56))
+    box.addBox(Vector2d(84,32),Vector2d(88,36))
+    box.addBox(Vector2d(88,36),Vector2d(92,40))
+    box.addBox(Vector2d(100,40),Vector2d(104,44))
+    box.addBox(Vector2d(112,36),Vector2d(116,40))
+    box.addBox(Vector2d(120,40),Vector2d(124,44))
+    box.addBox(Vector2d(128,44),Vector2d(132,48))
+    box.addBox(Vector2d(128,56),Vector2d(132,60))
+    box.addBox(Vector2d(136,56),Vector2d(140,60))
+    box.addBox(Vector2d(72,56),Vector2d(76,60))
+    box.addBox(Vector2d(68,48),Vector2d(72,56))
+    box.addBox(Vector2d(64,48),Vector2d(72,52))
+
 
 
     box.addDomain()
@@ -115,33 +125,29 @@ if __name__ == "__main__":
     print("field names =",myNodeList.fieldNames)
 
     locations = []
-    locations.append([15,10])
-    locations.append([15,70])
-    locations.append([45,10])
-    locations.append([45,70])
-    locations.append([75,10])
-    locations.append([75,70])
-    locations.append([105,10])
-    locations.append([105,70])
-    locations.append([135,10])
-    locations.append([135,70])
-    #n
-    locations.append([22,30])
-    #i
-    locations.append([38,30])
-    locations.append([38,50])
-    #d
-    locations.append([50,30])
-    #h
-    locations.append([61,30])
-    #o
-    locations.append([80,30])
-    #g
-    locations.append([100,30])
-    #g
-    locations.append([110,30])
-    #r
-    locations.append([124,30])
+    for x in [20,36,52,84,100,116,132]:
+        locations.append([x,64])
+    for x in [128,136]:
+        locations.append([x,52])
+    for x in [65,81]:
+        locations.append([x,47])
+    for x in [116,129]:
+        locations.append([x,44])
+    locations.append([100,40])
+    for x in [20,36,52,72]:
+        locations.append([x,36])
+    for x in [68,84,100,116,132]:
+        locations.append([x,24])
+    for x in [20,36,52]:
+        locations.append([x,12])
+
+    locations.append([8,64])
+    locations.append([8,32])
+    locations.append([8,12])
+    locations.append([40,48])
+    locations.append([56,48])
+    locations.append([120,36])
+
 
 
     #osc = oscillate(nodeList=myNodeList,grid=grid,width=nx,height=ny,workCycle=1)

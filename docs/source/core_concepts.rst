@@ -1,6 +1,12 @@
 Core Concepts
 =============
 
+Python Scripting of the C++ Modules
+------------------------------------
+
+Yggdrasil is first and foremost a C++ code, but the user does not run the code from a C++ ``main();``. Rather, the user constructs 
+a Python script that invokes the relevant C++ modules and passes data between them in Python's ``__main__():``. 
+
 Dimensionality
 --------------
 
@@ -67,25 +73,7 @@ which state vectors the physics package is intended to evolve.
 Generators
 -----------
 Generators create point distributions for use in particle-based simulations or Voronoi mesh generation. Generators return a python list of points
-in 2d or 3d coordinates inside a unitary bounding box or unit circle/sphere for a chosen number of points. The available generators are:
-
-.. code-block:: text
-
-    ConstantDThetaDisk2d
-    CVTNodeGenerator2d
-    CVTDiskGenerator2d
-    FibonacciDisk2d
-    FibonacciSurface3d
-    GlassNodeGenerator2d/3d
-    HCPNodeGenerator2d
-    Lattice2d/3d
-    PoissonDisk2d
-    PoissonNodeGenerator2d
-    RandomNodeGenerator1d/2d/3d
-    RecursivePrimitiveRefinementSurface3d
-    ParameterizedSpiralSurface3d
-    RPRPSNodeGenerator3d
-    SEAGenSurface3d
+in 2d or 3d coordinates inside a unitary bounding box or unit circle/sphere for a chosen number of points. 
 
 Below is an example generated distribution of points using the ``FibbonaciDisk2d`` generator used as
 seed generators for a Voronoi mesh.
@@ -106,25 +94,8 @@ Hydrodynamics physics packages also require an equation of state (``eos``). Phys
 hold onto State vectors of pertinent Fields and prescribe how their derivatives are to be
 calculated. However, physics packages do not themselves advance the state - the Integrators do.
 
-The current list of available physics packages and their constructors is
-
-.. code-block:: text
-
-    ConstantGravityXd(nodeList,constants,gravityVector)
-    ConstantGridAccelXd(nodeList,constants,gravityVector)
-    EulerHydroXd(nodeList,constants,eos,grid)
-    FEMXd(nodeList,constants,mesh)
-    GridHydroHLLXd(nodeList,constants,eos,grid)
-    KineticsXd(nodeList,constants)
-    NBodyGravityXd(nodeList,constants,plummerLength)
-    PhaseCouplingXd(nodeList,constants,couplingConstant,[searchRadius])
-    PointSourceGravityXd(nodeList,constants,pointSourceLocation,pointSourceVelocity,pointSourceMass)
-    RockPaperScissors(grid,A,D)
-    ThermalConduction(nodeList,constants,eos,opac,grid)
-    WaveEquationXd(nodeList,constants,grid,[C,depthMap])
-
-For each of these, replace the ``Xd`` with your desired dimensionality (1d,2d,3d). Consult the
-python class definitions in the ``src/Physics`` directory for specific implementation details.
+Consult the python class definitions in the ``src/Physics`` directory for specific implementation details for each
+of the available physics packages.
 
 Assigning multiple physics packages to
 the integrator is as simple as passing a Python list of constructed physics objects to the integrator's constructor. 
@@ -299,4 +270,48 @@ if a ``tstop`` is supplied. The controller is simple enough to be reproduced in 
 
 .. literalinclude:: ../../src/Utilities/Controller.py
    :language: python
-   
+
+The Flow of the Script
+-----------------------
+
+Yggdrasil's runscripts should be reminiscent of building Legos. Start with the ``constants`` object and a ``NodeList`` (and a ``Grid`` if 
+you're simulating something with a Mesh). 
+
+.. code-block:: python
+
+    myConstants = MKS()
+    numNodes = nx*ny
+    myNodeList = NodeList(numNodes)
+    myGrid = Grid2d(nx,ny,1,1)
+
+Then create your Physics package(s) that use these objects in their constructors.
+
+.. code-block:: python
+
+    waveEqn = WaveEquation2d(nodeList=myNodeList,
+                             constants=myConstants,
+                             grid=myGrid,C=cs)
+    packages = [waveEqn]
+
+Next, assign boundary conditions to your Physics package.
+
+.. code-block:: python
+
+    pm = PeriodicGridBoundary2d(grid=myGrid)
+    waveEqn.addBoundary(pm)
+
+Construct an integrator that points to the Physics package(s) you want to evolve.
+
+.. code-block:: python
+
+    myIntegrator = RungeKutta4Integrator2d(packages=packages,
+                                         dtmin=0.01,verbose=False)
+
+Finally, create the Controller and step through the simulation.
+
+.. code-block:: python
+
+    controller = Controller(integrator=myIntegrator,
+                            statStep=10,
+                            periodicWork=[])
+    controller.Step(1000)
