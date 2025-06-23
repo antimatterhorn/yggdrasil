@@ -54,7 +54,7 @@ if __name__ == "__main__":
                                        cs = 1.0,
                                        frequency = 10.0,
                                        amplitude  = 8.0,
-                                       damping = -5.0,
+                                       damping = -2.0,
                                        ns = 16)
     
     constants = MKS()
