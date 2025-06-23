@@ -22,6 +22,7 @@ public:
 
         for (Physics<dim>* physics : packages) {
             physics->PreStepInitialize();
+            physics->UpdateState();
 
             const State<dim>* state = physics->getState();
 
