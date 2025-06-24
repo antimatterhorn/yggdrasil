@@ -4,7 +4,7 @@ from Animation import *
 from Mesh import Grid2d
 from Physics import GridHydroKT2d, ConstantGridAccel2d
 from EOS import IdealGasEOS
-from Boundaries import ReflectingGridBoundary2d
+from Boundaries import ReflectingGridBoundary2d,DirichletGridBoundary2d
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
@@ -60,11 +60,11 @@ if __name__ == "__main__":
 
             if y < interface_y:
                 rho = 1.0
-                density.setValue(idx, rho)  # heavy fluid below
+                density.setValue(idx, rho)  # light fluid below
                 energy.setValue(idx, p0 / ((gamma - 1.0) * rho))
             else:
                 rho = 2.0
-                density.setValue(idx, rho)  # light fluid above
+                density.setValue(idx, rho)  # heavy fluid above
                 energy.setValue(idx, p0 / ((gamma - 1.0) * rho))
 
     periodicWork = []
