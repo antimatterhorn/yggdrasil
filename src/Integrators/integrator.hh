@@ -24,6 +24,7 @@ public:
     ~Integrator();
 
     virtual void Step();
+    virtual State<dim> Integrate(Physics<dim>* physics);
     virtual void VoteDt();
     virtual double const Time();
     virtual unsigned int Cycle();

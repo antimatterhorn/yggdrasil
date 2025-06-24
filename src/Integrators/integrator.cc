@@ -18,30 +18,37 @@ void Integrator<dim>::Step() {
             physics->ZeroTimeInitialize();
     }
 
+    for (Physics<dim>* physics : packages)
+    {
+        physics->UpdateState();
+        physics->PreStepInitialize();
+        
+        State<dim> finalState = Integrate(physics);
+
+        physics->ApplyBoundaries(&finalState);
+        physics->FinalizeStep(&finalState);
+    }
+
     time += dt;
     cycle += 1;
 
-    for (Physics<dim>* physics : packages)
-    {
-        physics->PreStepInitialize();
-        physics->UpdateState();
-
-        const State<dim>* state = physics->getState();
-        State<dim> derivatives(state->size());
-        derivatives.ghost(state);
-
-        physics->EvaluateDerivatives(state, derivatives, time, 0);
-
-        derivatives *= dt;
-        State<dim> newState(state->size());
-        newState = state->deepCopy();
-        newState += derivatives;
-
-        physics->ApplyBoundaries(&newState);
-        physics->FinalizeStep(&newState);
-    }
-
     VoteDt();
+}
+
+template <int dim>
+State<dim> 
+Integrator<dim>::Integrate(Physics<dim>* physics) {
+    const State<dim>* state = physics->getState();
+    State<dim> derivatives(state->size());
+    derivatives.ghost(state);
+
+    physics->EvaluateDerivatives(state, derivatives, time, 0);
+
+    derivatives *= dt;
+    State<dim> newState(state->size());
+    newState = state->deepCopy();
+    newState += derivatives;
+    return newState;
 }
 
 template <int dim>
