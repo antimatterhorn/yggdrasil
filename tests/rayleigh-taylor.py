@@ -2,7 +2,7 @@ from yggdrasil import *
 import matplotlib.pyplot as plt
 from Animation import *
 from Mesh import Grid2d
-from Physics import GridHydroKT2d, ConstantGridAccel2d
+from Physics import GridHydroKT2d, GridHydroHLLE2d, ConstantGridAccel2d
 from EOS import IdealGasEOS
 from Boundaries import ReflectingGridBoundary2d,DirichletGridBoundary2d
 
@@ -29,11 +29,11 @@ if __name__ == "__main__":
     print(eos,"gamma =",eos.gamma)
 
     hydro = GridHydroKT2d(myNodeList,constants,eos,myGrid)
-
+    #hydro = GridHydroHLLE2d(myNodeList,constants,eos,myGrid)
     box = ReflectingGridBoundary2d(grid=myGrid)
     hydro.addBoundary(box)
 
-    gravityVector = Vector2d(0.,-10)
+    gravityVector = Vector2d(0.,-50)
     gravity  = ConstantGridAccel2d(myNodeList,constants,gravityVector)
 
     integrator = RungeKutta4Integrator2d([hydro,gravity],dtmin=dtmin,verbose=intVerbose)
@@ -63,7 +63,7 @@ if __name__ == "__main__":
                 density.setValue(idx, rho)  # light fluid below
                 energy.setValue(idx, p0 / ((gamma - 1.0) * rho))
             else:
-                rho = 2.0
+                rho = 8.0
                 density.setValue(idx, rho)  # heavy fluid above
                 energy.setValue(idx, p0 / ((gamma - 1.0) * rho))
 
