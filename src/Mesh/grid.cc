@@ -115,16 +115,16 @@ namespace Mesh {
             neighbors.push_back(rightIdx);
         }
 
-        // Check down neighbor
-        if (coords[1] < ny - 1) {
-            int downIdx = index(coords[0], coords[1] + 1, coords[2]);
-            neighbors.push_back(downIdx);
-        }
-
         // Check up neighbor
         if (coords[1] > 0) {
             int upIdx = index(coords[0], coords[1] - 1, coords[2]);
             neighbors.push_back(upIdx);
+        }
+
+        // Check down neighbor
+        if (coords[1] < ny - 1) {
+            int downIdx = index(coords[0], coords[1] + 1, coords[2]);
+            neighbors.push_back(downIdx);
         }
 
         // Check back neighbor (for 3D grid)

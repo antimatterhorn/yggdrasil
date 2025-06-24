@@ -68,10 +68,12 @@ if __name__ == "__main__":
                 if rho < 1: 
                     rho = 1
                     vx = 0
+                    vy = 0
                 else:
                     vx = 5
+                    vy = 5
 
-            velocity.setValue(idx, Vector2d(vx, 0))
+            velocity.setValue(idx, Vector2d(vx, vy))
             density.setValue(idx, rho)
             energy.setValue(idx, p0 / ((gamma - 1.0) * rho))
 

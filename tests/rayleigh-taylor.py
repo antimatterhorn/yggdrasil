@@ -28,12 +28,12 @@ if __name__ == "__main__":
     eos = IdealGasEOS(1.4,constants)
     print(eos,"gamma =",eos.gamma)
 
-    hydro = GridHydroKT2d(myNodeList,constants,eos,myGrid)
-    #hydro = GridHydroHLLE2d(myNodeList,constants,eos,myGrid)
+    #hydro = GridHydroKT2d(myNodeList,constants,eos,myGrid)
+    hydro = GridHydroHLLE2d(myNodeList,constants,eos,myGrid)
     box = ReflectingGridBoundary2d(grid=myGrid)
     hydro.addBoundary(box)
 
-    gravityVector = Vector2d(0.,-50)
+    gravityVector = Vector2d(0.,-10)
     gravity  = ConstantGridAccel2d(myNodeList,constants,gravityVector)
 
     integrator = RungeKutta4Integrator2d([hydro,gravity],dtmin=dtmin,verbose=intVerbose)
@@ -63,7 +63,7 @@ if __name__ == "__main__":
                 density.setValue(idx, rho)  # light fluid below
                 energy.setValue(idx, p0 / ((gamma - 1.0) * rho))
             else:
-                rho = 8.0
+                rho = 2.0
                 density.setValue(idx, rho)  # heavy fluid above
                 energy.setValue(idx, p0 / ((gamma - 1.0) * rho))
 
