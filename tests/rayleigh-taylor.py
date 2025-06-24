@@ -6,6 +6,10 @@ from Physics import GridHydroKT2d, GridHydroHLLE2d, ConstantGridAccel2d
 from EOS import IdealGasEOS
 from Boundaries import ReflectingGridBoundary2d,DirichletGridBoundary2d
 
+from matplotlib.colors import LinearSegmentedColormap
+colors = [(1,0,0), (0, 0, 0), (0,0,1)]  # Red -> Black -> Blue
+cmap = LinearSegmentedColormap.from_list('rbbl', colors, N=256)
+
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
                                         siloDump = False,
@@ -14,7 +18,8 @@ if __name__ == "__main__":
                                         ny = 100,
                                         dx = 1,
                                         dy = 1,
-                                        dtmin = 0.001,
+                                        g  = 980,
+                                        dtmin = 1e-6,
                                         intVerbose = False)
 
     myGrid = Grid2d(nx,ny,dx,dy)
@@ -24,16 +29,16 @@ if __name__ == "__main__":
     print("numNodes =",myNodeList.numNodes)
     print("field names =",myNodeList.fieldNames)
 
-    constants = MKS()
+    constants = CGS()
     eos = IdealGasEOS(1.4,constants)
     print(eos,"gamma =",eos.gamma)
 
-    #hydro = GridHydroKT2d(myNodeList,constants,eos,myGrid)
-    hydro = GridHydroHLLE2d(myNodeList,constants,eos,myGrid)
+    hydro = GridHydroKT2d(myNodeList,constants,eos,myGrid)
+    #hydro = GridHydroHLLE2d(myNodeList,constants,eos,myGrid)
     box = ReflectingGridBoundary2d(grid=myGrid)
     hydro.addBoundary(box)
 
-    gravityVector = Vector2d(0.,-10)
+    gravityVector = Vector2d(0.,-g)
     gravity  = ConstantGridAccel2d(myNodeList,constants,gravityVector)
 
     integrator = RungeKutta4Integrator2d([hydro,gravity],dtmin=dtmin,verbose=intVerbose)
@@ -44,28 +49,39 @@ if __name__ == "__main__":
     position = myNodeList.getFieldVector2d("position")
 
     p0 = 2.5
+    p_top = p0
     gamma = eos.gamma
 
-    for j in range(ny):
-        for i in range(nx):
-            idx = myGrid.index(i,j,0)
-            energy.setValue(idx, 1.0)
-            density.setValue(idx, 1.0)
-            pos = position[idx]
-            x = pos.x
-            y = pos.y
+    p = np.zeros((nx, ny))
+    rho = np.zeros((nx, ny))
 
-            # sinusoidal vertical offset of the interface
-            interface_y = ny / 2 + 0.8 * np.sin(5.0 * np.pi * x / nx)
+    # Set up the interface shape
+    interface_y = np.zeros(nx)
+    for i in range(nx):
+        x = (i + 0.5) * dx
+        interface_y[i] = ny / 2 + 1.5 * np.sin(45.0 * np.pi * x / nx)
 
-            if y < interface_y:
-                rho = 1.0
-                density.setValue(idx, rho)  # light fluid below
-                energy.setValue(idx, p0 / ((gamma - 1.0) * rho))
+    for i in range(nx):
+        for j in reversed(range(ny)):
+            y = (j + 0.5) * dy
+            idx = myGrid.index(i, j, 0)
+
+            if y >= interface_y[i]:
+                rho_ij = 3
             else:
-                rho = 2.0
-                density.setValue(idx, rho)  # heavy fluid above
-                energy.setValue(idx, p0 / ((gamma - 1.0) * rho))
+                rho_ij = 1.0
+
+            rho[i, j] = rho_ij
+
+            if j == ny - 1:
+                p[i, j] = p_top
+            else:
+                p[i, j] = p[i, j+1] + rho[i, j+1] * g * dy  # integrate dp = -ρg dy
+
+            # Now set fields
+            density.setValue(idx, rho[i, j])
+            u = p[i, j] / ((gamma - 1.0) * rho[i, j])
+            energy.setValue(idx, u)
 
     periodicWork = []
 
@@ -86,6 +102,6 @@ if __name__ == "__main__":
                                                 stepper=controller.Step,
                                                 title=title,
                                                 fieldName="density")
-        AnimateGrid2d(bounds,update_method,extremis=[0,5],frames=cycles,cmap="plasma")
+        AnimateGrid2d(bounds,update_method,extremis=[1,3],frames=cycles,cmap=cmap)
     else:
         controller.Step(cycles)
