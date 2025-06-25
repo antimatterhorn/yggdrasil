@@ -17,7 +17,9 @@ if __name__ == "__main__":
                                         dx = 1,
                                         dy = 1,
                                         dtmin = 0.1e-7,
-                                        g  = 10,
+                                        g  = -10,
+                                        rho1 = 1,
+                                        rho2 = 5,
                                         intVerbose = False)
 
     myGrid = Grid2d(nx,ny,dx,dy)
@@ -39,7 +41,7 @@ if __name__ == "__main__":
     box = ReflectingGridBoundary2d(grid=myGrid)
     hydro.addBoundary(box)
 
-    gravityVector = Vector2d(0.,-g)
+    gravityVector = Vector2d(0.,g)
     gravity  = ConstantGridAccel2d(myNodeList,constants,gravityVector)
 
     integrator = RungeKutta4Integrator2d([hydro,gravity],dtmin=dtmin,verbose=intVerbose)
@@ -52,7 +54,7 @@ if __name__ == "__main__":
     p0 = 2.5
     gamma = eos.gamma
 
-    loc = [int(nx//2),int(ny//2)]
+    loc = [int(nx//2),int(ny//10)]
 
     p0 = 2.5
     p_top = p0
@@ -70,16 +72,16 @@ if __name__ == "__main__":
             r = np.sqrt((i-loc[0])**2 + (j-loc[1])**2)
 
             if r > (nx//20):
-                rhoij = 5
+                rhoij = rho2
             else:
-                rhoij = 1
+                rhoij = rho1
 
             rho[i, j] = rhoij
 
             if j == ny - 1:
                 p[i, j] = p_top
             else:
-                p[i, j] = p[i, j+1] + rho[i, j+1] * g * dy
+                p[i, j] = p[i, j+1] - rho[i, j+1] * g * dy
 
             density.setValue(idx, rhoij)
             u = p[i, j] / ((gamma - 1.0) * rho[i, j])
@@ -105,6 +107,6 @@ if __name__ == "__main__":
                                                 stepper=controller.Step,
                                                 title=title,
                                                 fieldName="density")
-        AnimateGrid2d(bounds,update_method,extremis=[0,5],frames=cycles,cmap="plasma")
+        AnimateGrid2d(bounds,update_method,extremis=[0,1.1*rho2],frames=cycles,cmap="YlOrRd")
     else:
         controller.Step(cycles)
