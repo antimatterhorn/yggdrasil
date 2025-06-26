@@ -5,6 +5,7 @@ from Physics import GridHydroKT2d
 from Mesh import Grid2d
 from EOS import IdealGasEOS
 from Boundaries import ReflectingGridBoundary2d
+from Utilities import SiloDump
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
@@ -53,7 +54,7 @@ if __name__ == "__main__":
     periodicWork = []
     
     if siloDump:
-        meshWriter = SiloDump(baseName="HLL",
+        meshWriter = SiloDump(baseName="Sod",
                                 nodeList=myNodeList,
                                 fieldNames=["density","specificInternalEnergy","pressure","velocity"],
                                 dumpCycle=50)
@@ -80,5 +81,5 @@ if __name__ == "__main__":
         if position[i].y == ((ny/2.0)+(dy/2.0)):
             xs.append(position[i].x)
             ys.append(density[i])
-    plt.plot(xs,ys)
-    plt.show()
+    # plt.plot(xs,ys)
+    # plt.show()
