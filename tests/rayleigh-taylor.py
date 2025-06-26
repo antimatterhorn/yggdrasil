@@ -18,7 +18,7 @@ if __name__ == "__main__":
                                         ny = 100,
                                         dx = 1,
                                         dy = 1,
-                                        g  = 980,
+                                        g  = -980,
                                         dtmin = 1e-6,
                                         intVerbose = False)
 
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     box = ReflectingGridBoundary2d(grid=myGrid)
     hydro.addBoundary(box)
 
-    gravityVector = Vector2d(0.,-g)
+    gravityVector = Vector2d(0.,g)
     gravity  = ConstantGridAccel2d(myNodeList,constants,gravityVector)
 
     integrator = RungeKutta4Integrator2d([hydro,gravity],dtmin=dtmin,verbose=intVerbose)
@@ -76,7 +76,7 @@ if __name__ == "__main__":
             if j == ny - 1:
                 p[i, j] = p_top
             else:
-                p[i, j] = p[i, j+1] + rho[i, j+1] * g * dy  # integrate dp = -ρg dy
+                p[i, j] = p[i, j+1] - rho[i, j+1] * g * dy  # integrate dp = -ρg dy
 
             # Now set fields
             density.setValue(idx, rho[i, j])
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     periodicWork = []
 
     if siloDump:
-        meshWriter = SiloDump(baseName="HLL",
+        meshWriter = SiloDump(baseName="Rayleigh-Taylor",
                                 nodeList=myNodeList,
                                 fieldNames=["density","specificInternalEnergy","pressure","velocity","acceleration"],
                                 dumpCycle=50)
