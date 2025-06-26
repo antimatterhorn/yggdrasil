@@ -59,7 +59,7 @@ if __name__ == "__main__":
     interface_y = np.zeros(nx)
     for i in range(nx):
         x = (i + 0.5) * dx
-        interface_y[i] = ny / 2 + 1.5 * np.sin(45.0 * np.pi * x / nx)
+        interface_y[i] = ny / 2 + 4.0 * np.sin(9.0 * np.pi * x / nx + np.pi)
 
     for i in range(nx):
         for j in reversed(range(ny)):
@@ -67,7 +67,7 @@ if __name__ == "__main__":
             idx = myGrid.index(i, j, 0)
 
             if y >= interface_y[i]:
-                rho_ij = 3
+                rho_ij = 5.0
             else:
                 rho_ij = 1.0
 
