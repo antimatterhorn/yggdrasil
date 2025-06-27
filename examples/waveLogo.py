@@ -41,9 +41,6 @@ class SpkOscillator:
 
 from Utilities import DampedHarmonicOscillator,SiloDump 
 
-from matplotlib.colors import LinearSegmentedColormap
-colors = [ (0, 0, 0), (1,0,0),(1,1,1)]  # Red -> Black -> Blue
-cmap = LinearSegmentedColormap.from_list('rbbl', colors, N=256)
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
@@ -174,6 +171,6 @@ if __name__ == "__main__":
                                                 stepper=controller.Step,
                                                 title=title,
                                                 fieldName="maxphi")
-        AnimateGrid2d(bounds,update_method,extremis=[0,5],frames=cycles,cmap=cmap)
+        AnimateGrid2d(bounds,update_method,extremis=[0,5],frames=cycles,cmap=brw)
     else:
         controller.Step(cycles)

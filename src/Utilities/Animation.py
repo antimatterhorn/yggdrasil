@@ -171,3 +171,9 @@ class MakeTitle:
     def __call__(self):
         member_value = getattr(self.obj, self.var)
         return f"%s: %03.3e" % (self.name,member_value)
+    
+from matplotlib.colors import LinearSegmentedColormap
+RBBLcolors = [(1,0,0), (0, 0, 0), (0,0,1)]  # Red -> Black -> Blue
+rbbl = LinearSegmentedColormap.from_list('rbbl', RBBLcolors, N=256)
+BRWcolors = [ (0, 0, 0), (1,0,0),(1,1,1)]  # Red -> Black -> Blue
+brw = LinearSegmentedColormap.from_list('brw', BRWcolors, N=256)

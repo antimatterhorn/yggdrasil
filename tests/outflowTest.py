@@ -5,10 +5,6 @@ from Physics import WaveEquation2d
 from Boundaries import OutflowGridBoundary2d
 from Mesh import Grid2d
 
-from matplotlib.colors import LinearSegmentedColormap
-colors = [(1,0,0), (1, 1, 1), (0,0,1)]  # Red -> White -> Blue
-cmap = LinearSegmentedColormap.from_list('rbbl', colors, N=256)
-
 class oscillate:
     def __init__(self,nodeList,grid,width,height,workCycle=1):
         self.nodeList = nodeList
@@ -94,6 +90,6 @@ if __name__ == "__main__":
                                                 stepper=controller.Step,
                                                 title=title,
                                                 fieldName="phi")
-        AnimateGrid2d(bounds,update_method,extremis=[-0.1,0.1],frames=cycles,cmap=cmap)
+        AnimateGrid2d(bounds,update_method,extremis=[-0.1,0.1],frames=cycles,cmap=rbbl)
     else:
         controller.Step(cycles)

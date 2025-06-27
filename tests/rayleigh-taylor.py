@@ -6,10 +6,6 @@ from Physics import GridHydroKT2d, GridHydroHLLE2d, ConstantGridAccel2d
 from EOS import IdealGasEOS
 from Boundaries import ReflectingGridBoundary2d,DirichletGridBoundary2d
 
-from matplotlib.colors import LinearSegmentedColormap
-colors = [(1,0,0), (0, 0, 0), (0,0,1)]  # Red -> Black -> Blue
-cmap = LinearSegmentedColormap.from_list('rbbl', colors, N=256)
-
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
                                         siloDump = False,
@@ -102,6 +98,6 @@ if __name__ == "__main__":
                                                 stepper=controller.Step,
                                                 title=title,
                                                 fieldName="density")
-        AnimateGrid2d(bounds,update_method,extremis=[1,3],frames=cycles,cmap=cmap)
+        AnimateGrid2d(bounds,update_method,extremis=[1,3],frames=cycles,cmap=rbbl)
     else:
         controller.Step(cycles)
