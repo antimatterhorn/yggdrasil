@@ -344,7 +344,7 @@ namespace Mesh {
 
     template <int dim> Lin::Vector<dim> 
     Grid<dim>::gradient(int idx, Field<double>* field) const {
-        Vector grad;
+        Lin::Vector<dim> grad;
 
         if constexpr (dim == 1) {
             double dx = this->dx;
