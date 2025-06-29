@@ -1,4 +1,5 @@
 // Copyright (C) 2025  Cody Raskin
+#pragma once
 
 #include <iostream>
 
