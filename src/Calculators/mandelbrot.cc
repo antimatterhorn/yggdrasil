@@ -41,6 +41,7 @@ public:
 
         int numNodes = nodeList->size();
         int lastPercent = -1;
+        #pragma omp parallel for
         for (int i = 0; i < numNodes; ++i) {
             std::complex<double> c = complexPosition->getValue(i);
             std::complex<double> z = 0.0;

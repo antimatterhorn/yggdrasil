@@ -48,6 +48,7 @@ namespace Mesh {
     template <int dim>
     void 
     Grid<dim>::setOrigin(Lin::Vector<dim> origin) {
+        #pragma omp parallel for
         for (int i = 0; i < gridPositions.getSize(); ++i) {
             gridPositions[i] -= origin;
         }
@@ -273,6 +274,7 @@ namespace Mesh {
             nodeList->insertField<Vector>("position");
                 
         VectorField* position = nodeList->getField<Vector>("position");
+        #pragma omp parallel for
         for (int i = 0; i < position->size(); ++i) {
             position->setValue(i, this->getPosition(i));
         }
