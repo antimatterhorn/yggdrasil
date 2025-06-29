@@ -47,6 +47,8 @@ class NodeList:
                                 template_parameters = ("3"),pyname="position")
     getFieldDouble = PYB11TemplateMethod(getField,
                                 template_parameters = ("double"))
+    getFieldComplex = PYB11TemplateMethod(getField,
+                                template_parameters = ("std::complex<double>"))
     getFieldVector1d = PYB11TemplateMethod(getField,
                                 template_parameters = ("Lin::Vector<1>"))
     getFieldVector2d = PYB11TemplateMethod(getField,
@@ -55,6 +57,8 @@ class NodeList:
                                 template_parameters = ("Lin::Vector<3>"))
     insertFieldDouble = PYB11TemplateMethod(insertField,
                                 template_parameters = ("double"))
+    insertFieldComplex = PYB11TemplateMethod(insertField,
+                                template_parameters = ("std::complex<double>"))
     insertFieldVector1d = PYB11TemplateMethod(insertField,
                                 template_parameters = ("Lin::Vector<1>"))
     insertFieldVector2d = PYB11TemplateMethod(insertField,

@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <complex>
 #include "../Type/name.hh"
 
 // Base class for all Field types
