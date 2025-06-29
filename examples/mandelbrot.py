@@ -7,10 +7,10 @@ import matplotlib.pyplot as plt
 
 # Command-line arguments
 commandLine = CommandLineArguments(ne = 1000,
-                                   xmin = -0.0018-1.106,
-                                   xmax = -0.0001-1.106,
-                                   ymin = 0.2405,
-                                   ymax = 0.2419)
+                                   xmax = -1.105945,
+                                   xmin = -1.106815,
+                                   ymin = 0.240362,
+                                   ymax = 0.241187)
 
 # Extract bounds and resolution
 nx = ny = ne
