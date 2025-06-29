@@ -5,31 +5,46 @@ from Calculators import Mandelbrot
 import numpy as np
 import matplotlib.pyplot as plt
 
-commandLine = CommandLineArguments(ne = 200)
+# Command-line arguments
+commandLine = CommandLineArguments(ne = 1000,
+                                   xmin = -0.0018-1.106,
+                                   xmax = -0.0001-1.106,
+                                   ymin = 0.2405,
+                                   ymax = 0.2419)
 
+# Extract bounds and resolution
 nx = ny = ne
-dx = dy = 2./(nx//2)
 
-numNodes = nx*ny
+# Compute spacing
+dx = (xmax - xmin) / nx
+dy = (ymax - ymin) / ny
+numNodes = nx * ny
+
+# Create grid
 print("Creating Grid...")
 nodeList = NodeList(numNodes)
-myGrid = Grid2d(nx,ny,dx,dy)
+myGrid = Grid2d(nx, ny, dx, dy)
 
-origin = Vector2d(2,2)
+# Set grid origin to upper-right corner (consistent with your system)
+# so that coordinates descend as i,j increase
+origin = Vector2d(-xmin,-ymin)
 myGrid.setOrigin(origin)
 
-mand   = Mandelbrot(nodeList,myGrid)
+print(xmin,ymin,xmax,ymax)
+
+# Compute Mandelbrot set
 print("Computing Mandelbrot...")
+mand = Mandelbrot(nodeList, myGrid)
 mand.compute()
 
-mp     = nodeList.getFieldDouble("mandelbrot")
-
+# Extract and reshape results
+mp = nodeList.getFieldDouble("mandelbrot")
 print("Generating Plot...")
-# Convert to 2D array for plotting
 data = np.array([mp[i] for i in range(numNodes)])
-data2D = data.reshape((nx,ny))
+data2D = data.reshape((ny, nx))  # NOTE: row = y, col = x
 
-plt.imshow(data2D, extent=[-2, 2, -2, 2], origin='lower', cmap='inferno')
+# Plot using user-specified domain extents
+plt.imshow(data2D, extent=[xmin, xmax, ymin, ymax], origin='lower', cmap='inferno')
 plt.title("Smoothed Mandelbrot Escape Time")
 plt.colorbar(label="Smoothed Iteration Count")
 plt.tight_layout()

@@ -45,7 +45,7 @@ public:
         for (int i = 0; i < numNodes; ++i) {
             std::complex<double> c = complexPosition->getValue(i);
             std::complex<double> z = 0.0;
-            const int maxIterations = 100;
+            const int maxIterations = 200;
             int iter = 0;
             
             while (std::abs(z) <= 2.0 && iter < maxIterations) {
