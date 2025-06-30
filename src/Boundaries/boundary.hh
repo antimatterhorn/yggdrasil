@@ -29,20 +29,17 @@ public:
         for (int i = 0; i < state->count(); ++i) {
             FieldBase* field = state->getFieldByIndex(i);
             if (typeid(*field) == typeid(ScalarField)) {
-                ApplyThis(static_cast<ScalarField*>(field));
+                ApplyScalar(static_cast<ScalarField*>(field));
             } else if (typeid(*field) == typeid(VectorField)) {
-                ApplyThis(static_cast<VectorField*>(field));
+                ApplyVector(static_cast<VectorField*>(field));
             } else if (typeid(*field) == typeid(ComplexField)) {
-                ApplyThis(static_cast<ComplexField*>(field));
+                ApplyComplex(static_cast<ComplexField*>(field));
             }
         }
     }
 
-    virtual void 
-    ApplyThis(ScalarField* field) {};
-    virtual void
-    ApplyThis(VectorField* field) {};
-    virtual void
-    ApplyThis(ComplexField* field) {};
+    virtual void ApplyScalar(ScalarField* field) {};
+    virtual void ApplyVector(VectorField* field) {};
+    virtual void ApplyComplex(ComplexField* field) {};
 
 };

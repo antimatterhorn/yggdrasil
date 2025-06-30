@@ -3,12 +3,33 @@
 #include <vector>
 #include "gridBoundary.hh"
 
+#define IMPLEMENT_APPLY_INTERFACE(type, TypeName, T) \
+    void Apply##TypeName(type* field) override { ApplyThis<T>(field); }
+
 // Base class for Grid Boundary
 template <int dim>
 class ReflectingGridBoundary : public GridBoundary<dim> {
-protected:
+private:
     std::vector<std::vector<int>> boundaryLists;
     std::vector<std::vector<int>> interiorLists;
+
+    template <typename T>
+    void ApplyThis(Field<T>* field) { 
+        for (int i = 0; i < boundaryLists.size(); ++i) {
+            const auto& b = boundaryLists[i];
+            const auto& iids = interiorLists[i];
+            for (size_t j = 0; j < b.size(); ++j) {
+                if constexpr (std::is_same_v<T, Vector>) {
+                    Vector val = field->getValue(iids[j]);
+                    val[i/2] *= -1; // Flip component normal to the boundary
+                    field->setValue(b[j], val);
+                } else if constexpr (std::is_same_v<T, double> ||
+                                    std::is_same_v<T, Complex>) {
+                    field->setValue(b[j], field->getValue(iids[j]));
+                }
+            }
+        }
+    }
 public:
     using Vector      = Lin::Vector<dim>;
     using VectorField = Field<Vector>;
@@ -91,38 +112,7 @@ public:
 
     virtual ~ReflectingGridBoundary() = default;
 
-    virtual void 
-    ApplyThis(ScalarField* field) override {
-        for (int i = 0; i < boundaryLists.size(); ++i) {
-            const auto& b = boundaryLists[i];
-            const auto& iids = interiorLists[i];
-            for (size_t j = 0; j < b.size(); ++j) {
-                field->setValue(b[j], field->getValue(iids[j]));
-            }
-        }
-    }
-
-    virtual void 
-    ApplyThis(VectorField* field) override {
-        for (int i = 0; i < boundaryLists.size(); ++i) {
-            const auto& b = boundaryLists[i];
-            const auto& iids = interiorLists[i];
-            for (size_t j = 0; j < b.size(); ++j) {
-                auto val = field->getValue(iids[j]);
-                val[i/2] *= -1; // Flip component normal to the boundary
-                field->setValue(b[j], val);
-            }
-        }
-    }
-
-    virtual void 
-    ApplyThis(ComplexField* field) override {
-        for (int i = 0; i < boundaryLists.size(); ++i) {
-            const auto& b = boundaryLists[i];
-            const auto& iids = interiorLists[i];
-            for (size_t j = 0; j < b.size(); ++j) {
-                field->setValue(b[j], field->getValue(iids[j]));
-            }
-        }
-    }
+    IMPLEMENT_APPLY_INTERFACE(ScalarField, Scalar, double)
+    IMPLEMENT_APPLY_INTERFACE(VectorField, Vector, Vector)
+    IMPLEMENT_APPLY_INTERFACE(ComplexField, Complex, Complex)
 };

@@ -5,10 +5,13 @@
 #include "../Math/vectorMath.hh"
 #include <complex>
 
+#define IMPLEMENT_APPLY_INTERFACE(type, TypeName, T) \
+    void Apply##TypeName(type* field) override { ApplyThis<T>(field); }
+
 // Base class for Grid Boundary
 template <int dim>
 class DirichletGridBoundary : public GridBoundary<dim> {
-protected:
+private:
     std::vector<int> ids;
     Mesh::Grid<dim>* grid;
 
@@ -18,6 +21,19 @@ protected:
             ids.push_back(vec[i]);
         }
     }
+
+    template <typename T>
+    void ApplyThis(Field<T>* field) { 
+        for (int i = 0; i < ids.size(); ++i) {
+            int k = ids[i];
+            if constexpr (std::is_same_v<T, double>) {
+                field->setValue(k, 0.0);
+            } else {
+                field->setValue(k, T());
+            }
+        }
+    }
+
 public:
     using Vector      = Lin::Vector<dim>;
     using VectorField = Field<Vector>;
@@ -136,32 +152,12 @@ public:
         }
     }
 
-    virtual void 
-    ApplyThis(ScalarField* field) override {
-        for (int i = 0; i < ids.size(); ++i) {
-            int k = ids[i];
-            field->setValue(k,0);
-        }
-    }
-
-    virtual void 
-    ApplyThis(VectorField* field) override {
-        for (int i = 0; i < ids.size(); ++i) {
-            int k = ids[i];
-            field->setValue(k,Vector());
-        }
-    }
-
-    virtual void 
-    ApplyThis(ComplexField* field) override {
-        for (int i = 0; i < ids.size(); ++i) {
-            int k = ids[i];
-            field->setValue(k,Complex());
-        }
-    }
-
     virtual std::vector<int> 
     boundaryIds() {
         return ids;
     }
+
+    IMPLEMENT_APPLY_INTERFACE(ScalarField, Scalar, double)
+    IMPLEMENT_APPLY_INTERFACE(VectorField, Vector, Vector)
+    IMPLEMENT_APPLY_INTERFACE(ComplexField, Complex, Complex)
 };
