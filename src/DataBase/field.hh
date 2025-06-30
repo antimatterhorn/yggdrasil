@@ -28,6 +28,8 @@ private:
     Name name;
 
 public:
+    using ElementType = T;
+    
     Field();
     Field(const std::string& fieldName);
     Field(const std::string& fieldName, unsigned int numElements);
