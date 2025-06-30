@@ -20,6 +20,8 @@ public:
     using Vector = Lin::Vector<dim>;
     using VectorField = Field<Vector>;
     using ScalarField = Field<double>;
+    using Complex     = std::complex<double>;
+    using ComplexField= Field<Complex>;
     
     Constraint(NodeList* nodeList, std::vector<int> nodeIndices) : 
         nodeList(nodeList), nodeIndices(nodeIndices), copyState(nodeIndices.size()) {
@@ -34,18 +36,23 @@ public:
             const std::string& name = names[i];
             FieldBase* FieldToCopy = nodeList->getFieldByIndex(i);
             
-            if (auto* resultDouble = dynamic_cast<Field<double>*>(FieldToCopy)) {
+            if (auto* resultDouble = dynamic_cast<ScalarField*>(FieldToCopy)) {
                 copyState.template insertField<double>(name);
                 ScalarField* copy = copyState.template getField<double>(name);
                 for (int j = 0; j < nodeIndices.size(); ++j) {
                     copy->setValue(j, resultDouble->getValue(nodeIndices[j]));
                 }
-            } 
-            else if (auto* resultVector = dynamic_cast<Field<Lin::Vector<dim>>*>(FieldToCopy)) {
+            } else if (auto* resultVector = dynamic_cast<VectorField*>(FieldToCopy)) {
                 copyState.template insertField<Vector>(name);
                 VectorField* copy = copyState.template getField<Vector>(name);
                 for (int j = 0; j < nodeIndices.size(); ++j) {
                     copy->setValue(j, resultVector->getValue(nodeIndices[j]));
+                }
+            } else if (auto* resultComplex = dynamic_cast<ComplexField*>(FieldToCopy)) {
+                copyState.template insertField<Complex>(name);
+                ComplexField* copy = copyState.template getField<Complex>(name);
+                for (int j = 0; j < nodeIndices.size(); ++j) {
+                    copy->setValue(j, resultComplex->getValue(nodeIndices[j]));
                 }
             }
         }

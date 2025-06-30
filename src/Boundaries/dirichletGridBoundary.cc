@@ -3,6 +3,7 @@
 #include <vector>
 #include "gridBoundary.hh"
 #include "../Math/vectorMath.hh"
+#include <complex>
 
 // Base class for Grid Boundary
 template <int dim>
@@ -21,6 +22,8 @@ public:
     using Vector      = Lin::Vector<dim>;
     using VectorField = Field<Vector>;
     using ScalarField = Field<double>;
+    using Complex     = std::complex<double>;
+    using ComplexField= Field<Complex>;
 
     DirichletGridBoundary(Mesh::Grid<dim>* grid) : 
         GridBoundary<dim>(grid),
@@ -133,30 +136,27 @@ public:
         }
     }
 
-    virtual void
-    ApplyBoundaries(State<dim>* state, NodeList* nodeList) override {
-        for (int i = 0; i < state->count(); ++i) {
-            FieldBase* field = state->getFieldByIndex(i); // Get the field at index i
+    virtual void 
+    ApplyThis(ScalarField* field) override {
+        for (int i = 0; i < ids.size(); ++i) {
+            int k = ids[i];
+            field->setValue(k,0);
+        }
+    }
 
-            if (dynamic_cast<ScalarField*>(field) != nullptr) {
-                ScalarField* doubleField = dynamic_cast<ScalarField*>(field);
+    virtual void 
+    ApplyThis(VectorField* field) override {
+        for (int i = 0; i < ids.size(); ++i) {
+            int k = ids[i];
+            field->setValue(k,Vector());
+        }
+    }
 
-                #pragma omp parallel for
-                for (int j=0; j<ids.size();++j){
-                    int k = ids[j];
-                    doubleField->setValue(k,0);
-                }
-            
-            } else if (dynamic_cast<VectorField*>(field) != nullptr) {
-                VectorField* vectorField = dynamic_cast<VectorField*>(field);
-
-                #pragma omp parallel for
-                for (int j=0; j<ids.size();++j) {
-                    int k = ids[j];
-                    vectorField->setValue(k,Vector());
-                }
-            
-            }
+    virtual void 
+    ApplyThis(ComplexField* field) override {
+        for (int i = 0; i < ids.size(); ++i) {
+            int k = ids[i];
+            field->setValue(k,Complex());
         }
     }
 

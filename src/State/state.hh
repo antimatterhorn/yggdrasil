@@ -1,7 +1,6 @@
 // Copyright (C) 2025  Cody Raskin
 
-#ifndef STATE_HH
-#define STATE_HH
+#pragma once
 
 #include "../DataBase/nodeList.hh"
 #include "../Type/name.hh"
@@ -222,5 +221,3 @@ public:
     void updateLastDt(const double dt) { lastDt = dt; }
     double getLastDt() { return lastDt; }
 };
-
-#endif // STATE_HH

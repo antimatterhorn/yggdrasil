@@ -13,6 +13,8 @@ public:
     using Vector      = Lin::Vector<dim>;
     using VectorField = Field<Vector>;
     using ScalarField = Field<double>;
+    using Complex     = std::complex<double>;
+    using ComplexField= Field<Complex>;
 
     ReflectingGridBoundary(Mesh::Grid<dim>* grid) : 
         GridBoundary<dim>(grid) {
@@ -89,18 +91,8 @@ public:
 
     virtual ~ReflectingGridBoundary() = default;
 
-    virtual void ApplyBoundaries(State<dim>* state, NodeList* nodeList) override {
-        for (int i = 0; i < state->count(); ++i) {
-            FieldBase* field = state->getFieldByIndex(i);
-            if (typeid(*field) == typeid(ScalarField)) {
-                ApplyReflecting(static_cast<ScalarField*>(field));
-            } else if (typeid(*field) == typeid(VectorField)) {
-                ApplyReflecting(static_cast<VectorField*>(field));
-            }
-        }
-    }
-
-    void ApplyReflecting(ScalarField* field) {
+    virtual void 
+    ApplyThis(ScalarField* field) override {
         for (int i = 0; i < boundaryLists.size(); ++i) {
             const auto& b = boundaryLists[i];
             const auto& iids = interiorLists[i];
@@ -110,7 +102,8 @@ public:
         }
     }
 
-    void ApplyReflecting(VectorField* field) {
+    virtual void 
+    ApplyThis(VectorField* field) override {
         for (int i = 0; i < boundaryLists.size(); ++i) {
             const auto& b = boundaryLists[i];
             const auto& iids = interiorLists[i];
@@ -118,6 +111,17 @@ public:
                 auto val = field->getValue(iids[j]);
                 val[i/2] *= -1; // Flip component normal to the boundary
                 field->setValue(b[j], val);
+            }
+        }
+    }
+
+    virtual void 
+    ApplyThis(ComplexField* field) override {
+        for (int i = 0; i < boundaryLists.size(); ++i) {
+            const auto& b = boundaryLists[i];
+            const auto& iids = interiorLists[i];
+            for (size_t j = 0; j < b.size(); ++j) {
+                field->setValue(b[j], field->getValue(iids[j]));
             }
         }
     }

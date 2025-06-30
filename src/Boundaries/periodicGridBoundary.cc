@@ -12,7 +12,9 @@ public:
     using Vector      = Lin::Vector<dim>;
     using VectorField = Field<Vector>;
     using ScalarField = Field<double>;
-    
+    using Complex     = std::complex<double>;
+    using ComplexField= Field<Complex>;
+
     PeriodicGridBoundary(Mesh::Grid<dim>* grid) : 
         GridBoundary<dim>(grid) {
         if (dim == 1) {
@@ -131,57 +133,41 @@ public:
     }
     
     virtual ~PeriodicGridBoundary() = default;
-    
-    virtual void
-    ApplyBoundaries(State<dim>* state, NodeList* nodeList) override {
-        Mesh::Grid<dim>* grid = this->grid;
 
-        for (int i = 0; i < state->count(); ++i) {
-            FieldBase* field = state->getFieldByIndex(i); // Get the field at index i
-            if (typeid(*field) == typeid(ScalarField)) {
-                ScalarField* doubleField = dynamic_cast<ScalarField*>(field);
-                if (doubleField) {
-                    ApplyPeriodicBoundary(doubleField);
-                }
-            } else if (typeid(*field) == typeid(VectorField)) {
-                VectorField* vectorField = dynamic_cast<VectorField*>(field);
-                if (vectorField) {
-                    ApplyPeriodicBoundary(vectorField);
-                }
-            }
-        }
-    }
-
-    void ApplyPeriodicBoundary(ScalarField* field) {       
+    virtual void 
+    ApplyThis(ScalarField* field) override {       
         for (int i=0; i<2*dim;++i) {
             std::vector<int> b = boundaryLists[2*i];
             std::vector<int> c = boundaryLists[2*i+1];
-            CopyBoundaryData(field, b, c);
+            CopyBoundaryData<double>(field, b, c);
         }
     }
 
-    void ApplyPeriodicBoundary(VectorField* field) {
+    virtual void 
+    ApplyThis(VectorField* field) override {
         for (int i=0; i<2*dim;++i) {
             std::vector<int> b = boundaryLists[2*i];
             std::vector<int> c = boundaryLists[2*i+1];
-            CopyBoundaryData(field, b, c);
+            CopyBoundaryData<Vector>(field, b, c);
         }
     }
 
-    void CopyBoundaryData(ScalarField* field, const std::vector<int>& boundaryIds, const std::vector<int>& copyIds) {     
+    virtual void 
+    ApplyThis(ComplexField* field) override {
+        for (int i=0; i<2*dim;++i) {
+            std::vector<int> b = boundaryLists[2*i];
+            std::vector<int> c = boundaryLists[2*i+1];
+            CopyBoundaryData<Complex>(field, b, c);
+        }
+    }
+
+    template <typename T>
+    void CopyBoundaryData(Field<T>* field, const std::vector<int>& boundaryIds, const std::vector<int>& copyIds) {     
         for (int i=0;i<boundaryIds.size();++i) {
             int bi = boundaryIds[i];
             int ci = copyIds[i];
             field->setValue(bi,field->getValue(ci));
         }      
-    }
-
-    void CopyBoundaryData(VectorField* field, const std::vector<int>& boundaryIds, const std::vector<int>& copyIds) {
-        for (int i=0;i<boundaryIds.size();++i) {
-            int bi = boundaryIds[i];
-            int ci = copyIds[i];
-            field->setValue(bi,field->getValue(ci));
-        }
     }
 
     std::vector<std::vector<int>> GetBounds(Mesh::Grid<dim>* grid) {
