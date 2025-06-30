@@ -14,6 +14,12 @@ private:
     int numNodes;
     double lastDt;
 public:
+    using Complex       = std::complex<double>;
+    using Vector        = Lin::Vector<dim>;
+    using ComplexField  = Field<Complex>;
+    using VectorField   = Field<Vector>;
+    using ScalarField   = Field<double>;
+
     State(int numNodes) : 
         numNodes(numNodes) { };
 
@@ -65,15 +71,20 @@ public:
     void
     updateFields(NodeList* nodeList) {
         for (const auto& fieldPtr : fields) {
-            if (auto* doubleField = dynamic_cast<Field<double>*>(fieldPtr.get())) {
-                auto* otherDoubleField = dynamic_cast<const Field<double>*>(nodeList->getField<double>(doubleField->getNameString()));
+            if (auto* doubleField = dynamic_cast<ScalarField*>(fieldPtr.get())) {
+                auto* otherDoubleField = dynamic_cast<const ScalarField*>(nodeList->getField<double>(doubleField->getNameString()));
                 if (otherDoubleField) {
                     doubleField->copyValues(otherDoubleField);
                 }
-            } else if (auto* vectorField = dynamic_cast<Field<Lin::Vector<dim>>*>(fieldPtr.get())) {
-                auto* otherVectorField = dynamic_cast<const Field<Lin::Vector<dim>>*>(nodeList->getField<Lin::Vector<dim>>(vectorField->getNameString()));
+            } else if (auto* vectorField = dynamic_cast<VectorField*>(fieldPtr.get())) {
+                auto* otherVectorField = dynamic_cast<const VectorField*>(nodeList->getField<Vector>(vectorField->getNameString()));
                 if (otherVectorField) {
                     vectorField->copyValues(otherVectorField);
+                }
+            } else if (auto* complexField = dynamic_cast<ComplexField*>(fieldPtr.get())) {
+                auto* otherComplexField = dynamic_cast<const ComplexField*>(nodeList->getField<Complex>(complexField->getNameString()));
+                if (otherComplexField) {
+                    complexField->copyValues(otherComplexField);
                 }
             }
         }
@@ -92,15 +103,20 @@ public:
             throw std::invalid_argument("Incompatible State objects for addition");
         }
         for (const auto& fieldPtr : fields) {
-            if (auto* doubleField = dynamic_cast<Field<double>*>(fieldPtr.get())) {
-                auto* otherDoubleField = dynamic_cast<const Field<double>*>(other->getField<double>(doubleField->getNameString()));
+            if (auto* doubleField = dynamic_cast<ScalarField*>(fieldPtr.get())) {
+                auto* otherDoubleField = dynamic_cast<const ScalarField*>(other->getField<double>(doubleField->getNameString()));
                 if (otherDoubleField) {
                     *doubleField += *otherDoubleField;
                 }
-            } else if (auto* vectorField = dynamic_cast<Field<Lin::Vector<dim>>*>(fieldPtr.get())) {
-                auto* otherVectorField = dynamic_cast<const Field<Lin::Vector<dim>>*>(other->getField<Lin::Vector<dim>>(vectorField->getNameString()));
+            } else if (auto* vectorField = dynamic_cast<VectorField*>(fieldPtr.get())) {
+                auto* otherVectorField = dynamic_cast<const VectorField*>(other->getField<Vector>(vectorField->getNameString()));
                 if (otherVectorField) {
                     *vectorField += *otherVectorField;
+                }
+            } else if (auto* complexField = dynamic_cast<ComplexField*>(fieldPtr.get())) {
+                auto* otherComplexField = dynamic_cast<const ComplexField*>(other->getField<Complex>(complexField->getNameString()));
+                if (otherComplexField) {
+                    *complexField += *otherComplexField;
                 }
             }
         }
@@ -114,15 +130,20 @@ public:
                 throw std::invalid_argument("Incompatible State objects for addition");
             }
             for (const auto& fieldPtr : fields) {
-                if (auto* doubleField = dynamic_cast<Field<double>*>(fieldPtr.get())) {
-                    auto* otherDoubleField = dynamic_cast<const Field<double>*>(other.getField<double>(doubleField->getNameString()));
+                if (auto* doubleField = dynamic_cast<ScalarField*>(fieldPtr.get())) {
+                    auto* otherDoubleField = dynamic_cast<const ScalarField*>(other.getField<double>(doubleField->getNameString()));
                     if (otherDoubleField) {
                         *doubleField += *otherDoubleField;
                     }
-                } else if (auto* vectorField = dynamic_cast<Field<Lin::Vector<dim>>*>(fieldPtr.get())) {
-                    auto* otherVectorField = dynamic_cast<const Field<Lin::Vector<dim>>*>(other.getField<Lin::Vector<dim>>(vectorField->getNameString()));
+                } else if (auto* vectorField = dynamic_cast<VectorField*>(fieldPtr.get())) {
+                    auto* otherVectorField = dynamic_cast<const VectorField*>(other.getField<Vector>(vectorField->getNameString()));
                     if (otherVectorField) {
                         *vectorField += *otherVectorField;
+                    }
+                } else if (auto* complexField = dynamic_cast<ComplexField*>(fieldPtr.get())) {
+                    auto* otherComplexField = dynamic_cast<const ComplexField*>(other.getField<Complex>(complexField->getNameString()));
+                    if (otherComplexField) {
+                        *complexField += *otherComplexField;
                     }
                 }
             }
@@ -134,10 +155,12 @@ public:
     State& 
     operator*=(const double other) {
         for (const auto& fieldPtr : fields) {
-            if (auto* doubleField = dynamic_cast<Field<double>*>(fieldPtr.get())) {
+            if (auto* doubleField = dynamic_cast<ScalarField*>(fieldPtr.get())) {
                 *doubleField *= other;
-            } else if (auto* vectorField = dynamic_cast<Field<Lin::Vector<dim>>*>(fieldPtr.get())) {
+            } else if (auto* vectorField = dynamic_cast<VectorField*>(fieldPtr.get())) {
                 *vectorField *= other;
+            } else if (auto* complexField = dynamic_cast<ComplexField*>(fieldPtr.get()))  {
+                *complexField *= other;
             }
         }
         return *this;
@@ -149,10 +172,12 @@ public:
         
         for (int i = 0; i < newState.count(); ++i) {
             FieldBase* fieldPtr = newState.getFieldByIndex(i);
-            if (auto* doubleField = dynamic_cast<Field<double>*>(fieldPtr)) {
+            if (auto* doubleField = dynamic_cast<ScalarField*>(fieldPtr)) {
                 *doubleField *= scalar;
-            } else if (auto* vectorField = dynamic_cast<Field<Lin::Vector<dim>>*>(fieldPtr)) {
+            } else if (auto* vectorField = dynamic_cast<VectorField*>(fieldPtr)) {
                 *vectorField *= scalar;
+            } else if (auto* complexField = dynamic_cast<ComplexField*>(fieldPtr))  {
+                *complexField *= scalar;
             }
         }
         return newState;
@@ -190,15 +215,20 @@ public:
         for (int i = 0; i < this->count(); ++i) {
             FieldBase* field = this->getFieldByIndex(i); // Get the field at index i
 
-            if (auto* doubleField = dynamic_cast<Field<double>*>(field)) {
-                auto* otherDoubleField = dynamic_cast<const Field<double>*>(other.getFieldByIndex(i));
+            if (auto* doubleField = dynamic_cast<ScalarField*>(field)) {
+                auto* otherDoubleField = dynamic_cast<const ScalarField*>(other.getFieldByIndex(i));
                 if (otherDoubleField) {
                     *doubleField += *otherDoubleField; // Perform addition for double fields
                 }
-            } else if (auto* vectorField = dynamic_cast<Field<Lin::Vector<dim>>*>(field)) {
-                auto* otherVectorField = dynamic_cast<const Field<Lin::Vector<dim>>*>(other.getFieldByIndex(i));
+            } else if (auto* vectorField = dynamic_cast<VectorField*>(field)) {
+                auto* otherVectorField = dynamic_cast<const VectorField*>(other.getFieldByIndex(i));
                 if (otherVectorField) {
                     *vectorField += *otherVectorField; // Perform addition for vector fields
+                }
+            } else if (auto* complexField = dynamic_cast<ComplexField*>(field)) {
+                auto* otherComplexField = dynamic_cast<const ComplexField*>(other.getFieldByIndex(i));
+                if (otherComplexField) {
+                    *complexField += *otherComplexField; // Perform addition for vector fields
                 }
             }
         }
@@ -218,12 +248,15 @@ public:
             FieldBase* resultField = result.getFieldByIndex(i);
             FieldBase* otherField = other.getFieldByIndex(i);
 
-            if (auto* resultDouble = dynamic_cast<Field<double>*>(resultField)) {
-                auto* otherDouble = dynamic_cast<const Field<double>*>(otherField);
+            if (auto* resultDouble = dynamic_cast<ScalarField*>(resultField)) {
+                auto* otherDouble = dynamic_cast<const ScalarField*>(otherField);
                 if (otherDouble) *resultDouble -= *otherDouble;
-            } else if (auto* resultVector = dynamic_cast<Field<Lin::Vector<dim>>*>(resultField)) {
-                auto* otherVector = dynamic_cast<const Field<Lin::Vector<dim>>*>(otherField);
+            } else if (auto* resultVector = dynamic_cast<VectorField*>(resultField)) {
+                auto* otherVector = dynamic_cast<const VectorField*>(otherField);
                 if (otherVector) *resultVector -= *otherVector;
+            } else if (auto* resultComplex = dynamic_cast<ComplexField*>(resultField)) {
+                auto* otherComplex = dynamic_cast<const ComplexField*>(otherField);
+                if (otherComplex) *resultComplex -= *otherComplex;
             }
         }
 
@@ -239,15 +272,20 @@ public:
             FieldBase* field = other->getFieldByIndex(i);
             if (field->hasName()) {
                 std::string fieldName = field->getNameString();
-                if (dynamic_cast<Field<double>*>(field) != nullptr) {
+                if (dynamic_cast<ScalarField*>(field) != nullptr) {
                     insertField<double>(fieldName);
-                    Field<double>* thisField = getField<double>(fieldName);
-                    thisField->copyValues(dynamic_cast<Field<double>*>(field));
+                    ScalarField* thisField = getField<double>(fieldName);
+                    thisField->copyValues(dynamic_cast<ScalarField*>(field));
                 } 
-                else if (dynamic_cast<Field<Lin::Vector<dim>>*>(field) != nullptr) {
-                    insertField<Lin::Vector<dim>>(fieldName);
-                    Field<Lin::Vector<dim>>* thisField = getField<Lin::Vector<dim>>(fieldName);
-                    thisField->copyValues(dynamic_cast<Field<Lin::Vector<dim>>*>(field));
+                else if (dynamic_cast<VectorField*>(field) != nullptr) {
+                    insertField<Vector>(fieldName);
+                    VectorField* thisField = getField<Vector>(fieldName);
+                    thisField->copyValues(dynamic_cast<VectorField*>(field));
+                }
+                else if (dynamic_cast<ComplexField*>(field) != nullptr) {
+                    insertField<Complex>(fieldName);
+                    ComplexField* thisField = getField<Complex>(fieldName);
+                    thisField->copyValues(dynamic_cast<ComplexField*>(field));
                 }
             }
         }
@@ -268,11 +306,14 @@ public:
             FieldBase* field = other->getFieldByIndex(i);
             if (field->hasName()) {
                 std::string fieldName = field->getNameString();
-                if (dynamic_cast<Field<double>*>(field) != nullptr) {
+                if (dynamic_cast<ScalarField*>(field) != nullptr) {
                     insertField<double>(fieldName);
                 } 
-                else if (dynamic_cast<Field<Lin::Vector<dim>>*>(field) != nullptr) {
-                    insertField<Lin::Vector<dim>>(fieldName);
+                else if (dynamic_cast<VectorField*>(field) != nullptr) {
+                    insertField<Vector>(fieldName);
+                }
+                else if (dynamic_cast<ComplexField*>(field) != nullptr) {
+                    insertField<Complex>(fieldName);
                 }
             }
         }
@@ -285,12 +326,15 @@ public:
         for (int i = 0; i < this->count(); ++i) {
             FieldBase* field = this->getFieldByIndex(i);
 
-            if (auto* f = dynamic_cast<Field<double>*>(field)) {
+            if (auto* f = dynamic_cast<ScalarField*>(field)) {
                 for (int j = 0; j < f->size(); ++j)
                     sum += (*f)[j] * (*f)[j];
-            } else if (auto* f = dynamic_cast<Field<Lin::Vector<dim>>*>(field)) {
+            } else if (auto* f = dynamic_cast<VectorField*>(field)) {
                 for (int j = 0; j < f->size(); ++j)
                     sum += (*f)[j].mag2();
+            } else if (auto* f = dynamic_cast<ComplexField*>(field)) {
+                for (int j = 0; j < f->size(); ++j)
+                    sum += std::norm((*f)[j]);
             }
         }
 
