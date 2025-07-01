@@ -94,10 +94,9 @@ public:
         return "Wave equation using complex field ψ = φ + iξ";
     }
 
-    double
-    getCell(int i,int j, std::string fieldName="phi") {
-        int idx = grid->index(i,j,0);
-        ScalarField* phi    = this->nodeList->template getField<double>(fieldName);
-        return phi->getValue(idx);
+    double getCell(int i, int j, std::string fieldName = "psi") {
+        int idx = grid->index(i, j, 0);
+        auto* psi = this->nodeList->template getField<std::complex<double>>(fieldName);
+        return std::real(psi->getValue(idx));  // return real part
     }
 };
