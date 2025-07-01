@@ -14,9 +14,11 @@ protected:
     double dxmin = 1e30;
     std::vector<int> insideIds;
 public:
-    using Vector = Lin::Vector<dim>;
-    using Complex = std::complex<double>;
-    using ComplexField = Field<Complex>;
+    using Vector        = Lin::Vector<dim>;
+    using Complex       = std::complex<double>;
+    using ComplexField  = Field<Complex>;
+    using ScalarField   = Field<double>;
+
 
     ComplexWaveEquation(NodeList* nodeList, PhysicalConstants& constants, Mesh::Grid<dim>* grid, double C) : 
         Physics<dim>(nodeList,constants), grid(grid), C(C) {
@@ -86,5 +88,12 @@ public:
     virtual std::string name() const override { return "complexWaveEquation"; }
     virtual std::string description() const override {
         return "Wave equation using complex field ψ = φ + iξ";
+    }
+
+    double
+    getCell(int i,int j, std::string fieldName="phi") {
+        int idx = grid->index(i,j,0);
+        ScalarField* phi    = this->nodeList->template getField<double>(fieldName);
+        return phi->getValue(idx);
     }
 };
