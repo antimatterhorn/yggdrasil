@@ -24,6 +24,7 @@ private:
 
     template <typename T>
     void ApplyThis(Field<T>* field) { 
+        #pragma omp parallel for
         for (int i = 0; i < ids.size(); ++i) {
             int k = ids[i];
             if constexpr (std::is_same_v<T, double>) {

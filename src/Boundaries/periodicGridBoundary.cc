@@ -14,6 +14,7 @@ private:
 
     template <typename T>
     void ApplyThis(Field<T>* field) { 
+        #pragma omp parallel for
         for (int i=0; i<2*dim;++i) {
             std::vector<int> b = boundaryLists[2*i];
             std::vector<int> c = boundaryLists[2*i+1];

@@ -15,6 +15,7 @@ private:
 
     template <typename T>
     void ApplyThis(Field<T>* field) { 
+        #pragma omp parallel for
         for (int i = 0; i < boundaryLists.size(); ++i) {
             const auto& b = boundaryLists[i];
             const auto& iids = interiorLists[i];
