@@ -344,6 +344,49 @@ namespace Mesh {
         }
     }
 
+    template <int dim>
+    template <typename T, typename F>
+    T Grid<dim>::laplacian(int idx, F&& valueAt) const {
+        if constexpr (dim == 1) {
+            double dx = this->dx;
+            int left  = idx - 1;
+            int right = idx + 1;
+            return (valueAt(right) - 2.0 * valueAt(idx) + valueAt(left)) / (dx * dx);
+        }
+
+        if constexpr (dim == 2) {
+            auto [ix, iy, _] = this->indexToCoordinates(idx);
+            double dx = this->dx;
+            double dy = this->dy;
+
+            int iL = this->index(ix - 1, iy);
+            int iR = this->index(ix + 1, iy);
+            int iB = this->index(ix, iy - 1);
+            int iT = this->index(ix, iy + 1);
+
+            return (valueAt(iR) - 2.0 * valueAt(idx) + valueAt(iL)) / (dx * dx) +
+                (valueAt(iT) - 2.0 * valueAt(idx) + valueAt(iB)) / (dy * dy);
+        }
+
+        if constexpr (dim == 3) {
+            auto [ix, iy, iz] = this->indexToCoordinates(idx);
+            double dx = this->dx;
+            double dy = this->dy;
+            double dz = this->dz;
+
+            int iL = this->index(ix - 1, iy, iz);
+            int iR = this->index(ix + 1, iy, iz);
+            int iB = this->index(ix, iy - 1, iz);
+            int iT = this->index(ix, iy + 1, iz);
+            int iD = this->index(ix, iy, iz - 1);
+            int iU = this->index(ix, iy, iz + 1);
+
+            return (valueAt(iR) - 2.0 * valueAt(idx) + valueAt(iL)) / (dx * dx) +
+                (valueAt(iT) - 2.0 * valueAt(idx) + valueAt(iB)) / (dy * dy) +
+                (valueAt(iU) - 2.0 * valueAt(idx) + valueAt(iD)) / (dz * dz);
+        }
+    }
+
     template <int dim> Lin::Vector<dim> 
     Grid<dim>::gradient(int idx, Field<double>* field) const {
         Lin::Vector<dim> grad;
@@ -389,6 +432,54 @@ namespace Mesh {
 
         return grad;
     }
+
+    template <int dim>
+    template <typename F>
+    Lin::Vector<dim> Grid<dim>::gradient(int idx, F&& valueAt) const {
+        Lin::Vector<dim> grad;
+
+        if constexpr (dim == 1) {
+            double dx = this->dx;
+            int left  = idx - 1;
+            int right = idx + 1;
+            grad[0] = (valueAt(right) - valueAt(left)) / (2.0 * dx);
+        }
+
+        if constexpr (dim == 2) {
+            auto [ix, iy, _] = this->indexToCoordinates(idx);
+            double dx = this->dx;
+            double dy = this->dy;
+
+            int iL = this->index(ix - 1, iy);
+            int iR = this->index(ix + 1, iy);
+            int iB = this->index(ix, iy - 1);
+            int iT = this->index(ix, iy + 1);
+
+            grad[0] = (valueAt(iR) - valueAt(iL)) / (2.0 * dx);
+            grad[1] = (valueAt(iT) - valueAt(iB)) / (2.0 * dy);
+        }
+
+        if constexpr (dim == 3) {
+            auto [ix, iy, iz] = this->indexToCoordinates(idx);
+            double dx = this->dx;
+            double dy = this->dy;
+            double dz = this->dz;
+
+            int iL = this->index(ix - 1, iy, iz);
+            int iR = this->index(ix + 1, iy, iz);
+            int iB = this->index(ix, iy - 1, iz);
+            int iT = this->index(ix, iy + 1, iz);
+            int iD = this->index(ix, iy, iz - 1);
+            int iU = this->index(ix, iy, iz + 1);
+
+            grad[0] = (valueAt(iR) - valueAt(iL)) / (2.0 * dx);
+            grad[1] = (valueAt(iT) - valueAt(iB)) / (2.0 * dy);
+            grad[2] = (valueAt(iU) - valueAt(iD)) / (2.0 * dz);
+        }
+
+        return grad;
+    }
+
 
 }
 

@@ -98,7 +98,13 @@ namespace Mesh {
         template <typename T>
         T laplacian(int idx, Field<T>* field) const;
 
+        template <typename T, typename F>
+        T laplacian(int idx, F&& valueAt) const;
+
         Vector gradient(int idx, Field<double>* field) const;
+        
+        template <typename F>
+        Vector gradient(int idx, F&& valueAt) const;
     };
 }
 

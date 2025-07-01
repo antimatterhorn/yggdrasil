@@ -64,13 +64,17 @@ public:
             // Time derivative: d(psi)/dt = i * c^2 * ∇²(Re(psi)) + Im(psi)
             double phi = std::real(psi_i);
             double xi  = std::imag(psi_i);
-            double laplace_phi = grid->laplacian(i, [&](int j) { return std::real(psi->getValue(j)); });
+            double laplace_phi = (grid->template laplacian<double>)(i, [&](int j) {
+                return std::real(psi->getValue(j));
+            });
 
             Complex dpsi_dt(xi, c * c * laplace_phi);
             DpsiDt->setValue(i, dpsi_dt);
 
             // Energy density: 0.5 * (|Im(psi)|² + c² |∇Re(psi)|²)
-            auto grad        = grid->gradient(i, [&](int j) { return std::real(psi->getValue(j)); });
+            auto grad = grid->gradient(i, [&](int j) {
+                return std::real(psi->getValue(j));
+            });
             double grad2     = grad.mag2();
 
             e->setValue(i, 0.5 * (std::imag(psi_i) * std::imag(psi_i) + c * c * grad2));
