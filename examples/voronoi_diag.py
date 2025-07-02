@@ -7,7 +7,7 @@ if __name__ == "__main__":
     commandLine = CommandLineArguments(numNodes = 100,
                                        bmin = [-4,-4],
                                        bmax = [4,4],
-                                       method = "random")
+                                       method = "fibonacci")
     
     assert method in ["random", "fibonacci", "glass", 
                         "constantDTheta", "poisson", 
