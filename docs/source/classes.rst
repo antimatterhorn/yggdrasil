@@ -82,7 +82,9 @@ An example of this pattern for simple forward Euler integration is shown below:
    :lines: 6-70
 
 .. note::
-   While this class is a foward Euler integrator, it is also the base class for all integrators in Yggdrasil.
+   While this class is a foward Euler integrator, it is also the base class for all integrators in Yggdrasil, and as such,
+   its ``Step()`` method is rarely overridden by derived classes. Instead, the most common override will be to the ``Integrate()``
+   method.
 
 Equations of State
 ------------------
