@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
     packages = [waveEqn]
 
-    pm = OutflowGridBoundary2d(grid=grid)
+    pm = OutflowGridBoundary2d(grid=grid,derivative="xi")
     waveEqn.addBoundary(pm)
 
     integrator = RungeKutta4Integrator2d(packages=packages,dtmin=0.01)
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     periodicWork = [osc]
 
     controller = Controller(integrator=integrator,
-                            statStep=1,
+                            statStep=50,
                             periodicWork=periodicWork)
 
     if(animate):

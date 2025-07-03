@@ -53,19 +53,19 @@ Integrator<dim>::Integrate(Physics<dim>* physics) {
 
 template <int dim>
 void Integrator<dim>::VoteDt() {
-        double smallestDt = 1e30;
-        for (Physics<dim>* physics : packages) {
-            double newdt = physics->EstimateTimestep();
-            if (newdt < smallestDt) {
-                smallestDt = newdt;
-                if (verbose)
-                    std::cout << physics->name() << " requested timestep of " << newdt << "\n";
-            }
+    double smallestDt = 1e30;
+    for (Physics<dim>* physics : packages) {
+        double newdt = physics->EstimateTimestep();
+        if (newdt < smallestDt) {
+            smallestDt = newdt;
+            if (verbose)
+                std::cout << physics->name() << " requested timestep of " << newdt << "\n";
         }
+    }
 
-        dt = (dt < smallestDt ?  dt + 0.2 * (smallestDt - dt) : smallestDt);
+    dt = (dt < smallestDt ?  dt + 0.2 * (smallestDt - dt) : smallestDt);
 
-        this->dt = std::max(dt, this->dtmin) * this->dtMultiplier;
+    this->dt = std::max(dt, this->dtmin) * this->dtMultiplier;
 }
 
 template <int dim>

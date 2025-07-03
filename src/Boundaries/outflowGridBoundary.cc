@@ -6,9 +6,50 @@
 // Base class for Grid Boundary
 template <int dim>
 class OutflowGridBoundary : public GridBoundary<dim> {
-protected:
+private:
     std::vector<std::vector<int>> boundaryIds;
     std::string derivFieldName;
+
+    template <typename T>
+    void ApplyThis(Field<T>* field) {
+        for (int face = 0; face < 2 * dim; ++face) {
+            const std::vector<int>& ghost = boundaryIds[2 * face];     // ghost cells
+            const std::vector<int>& inner = boundaryIds[2 * face + 1]; // first interior cells
+
+            std::vector<int> next;
+            next.reserve(inner.size());
+
+            for (int idx : inner) {
+                auto [ix, iy, iz] = this->grid->indexToCoordinates(idx);
+                int di = 0, dj = 0, dk = 0;
+
+                switch (face) {
+                    case 0: di = -1; break;  // -x face
+                    case 1: di = +1; break;  // +x face
+                    case 2: dj = -1; break;  // -y face
+                    case 3: dj = +1; break;  // +y face
+                    case 4: dk = -1; break;  // -z face
+                    case 5: dk = +1; break;  // +z face
+                }
+
+                int nextIdx = this->grid->index(ix + di, iy + dj, iz + dk);
+                next.push_back(nextIdx);
+            }
+
+            ExtrapolateBoundaryData(field, ghost, inner, next);
+        }
+    }
+
+    template<typename T>
+    void ExtrapolateBoundaryData(Field<T>* field,
+                                const std::vector<int>& boundaryIds,
+                                const std::vector<int>& copyIds,
+                                const std::vector<int>& nextInteriorIds) {
+        for (size_t i = 0; i < boundaryIds.size(); ++i) {
+            T val = field->getValue(copyIds[i]) * 2.0 - field->getValue(nextInteriorIds[i]);
+            field->setValue(boundaryIds[i], val);
+        }
+    }
 public:
     using Vector=Lin::Vector<dim>;
     using VectorField = Field<Vector>;
@@ -124,8 +165,9 @@ public:
     }
 
     OutflowGridBoundary(Mesh::Grid<dim>* grid, std::string derivative) : 
-        OutflowGridBoundary<dim>(grid){
+        OutflowGridBoundary<dim>(grid) { 
         derivFieldName = derivative;
+        std::cout << "OutflowGridBoundary: " << derivFieldName << std::endl;
     }
     
     virtual ~OutflowGridBoundary() = default;
@@ -139,12 +181,12 @@ public:
             if (typeid(*field) == typeid(ScalarField)) {
                 ScalarField* doubleField = dynamic_cast<ScalarField*>(field);
                 if (doubleField) {
-                    ApplyOutflowBoundary(doubleField, grid);
+                    ApplyThis<double>(doubleField);
                 }
             } else if (typeid(*field) == typeid(VectorField)) {
                 VectorField* vectorField = dynamic_cast<VectorField*>(field);
                 if (vectorField) {
-                    ApplyOutflowBoundary(vectorField, grid);
+                    ApplyThis<Vector>(vectorField);
                 }
             }
         }
@@ -166,22 +208,6 @@ public:
                     }
                 }
             }
-        }
-    }
-
-    void ApplyOutflowBoundary(ScalarField* field, Mesh::Grid<dim>* grid) {
-        for (int i=0;i<2*dim;++i) {
-            std::vector<int> b = boundaryIds[2*i];
-            std::vector<int> c = boundaryIds[2*i+1];
-            CopyBoundaryData(field,b,c);
-        }
-    }
-
-    void ApplyOutflowBoundary(VectorField* field, Mesh::Grid<dim>* grid) {
-        for (int i=0;i<2*dim;++i) {
-            std::vector<int> b = boundaryIds[2*i];
-            std::vector<int> c = boundaryIds[2*i+1];
-            CopyBoundaryData(field,b,c);
         }
     }
 
@@ -207,16 +233,6 @@ public:
                 field->setValue(b2[i],Vector());
             }
         }
-    }
-
-    void CopyBoundaryData(ScalarField* field, const std::vector<int>& boundaryIds, const std::vector<int>& copyIds) {
-        for (int i=0;i<boundaryIds.size();++i)
-            field->setValue(boundaryIds[i],field->getValue(copyIds[i]));
-    }
-
-    void CopyBoundaryData(VectorField* field, const std::vector<int>& boundaryIds, const std::vector<int>& copyIds) {
-        for (int i=0;i<boundaryIds.size();++i)
-            field->setValue(boundaryIds[i],field->getValue(copyIds[i]));
     }
 
     std::vector<std::vector<int>> GetBounds(Mesh::Grid<dim>* grid) {
