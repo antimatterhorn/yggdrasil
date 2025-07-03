@@ -41,7 +41,7 @@ def run():
 
     packages = [waveEqn]
 
-    pm = OutflowGridBoundary2d(grid=grid)
+    pm = PeriodicGridBoundary2d(grid=grid)
     box = DirichletGridBoundary2d(grid=grid)
 
     nbox = 10
