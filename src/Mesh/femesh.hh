@@ -13,7 +13,6 @@
 #include "../Math/vectorMath.hh"
 #include "../DataBase/field.hh"
 #include "../DataBase/nodeList.hh"
-#include "elementType.hh"
 #include "element.hh"
 
 namespace Mesh {    

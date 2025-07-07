@@ -5,11 +5,18 @@
 #include <vector>
 #include "../Math/vectorMath.hh"
 #include "basisFunction.hh"
-#include "elementType.hh"
 #include <stdexcept>
 #include <Eigen/Dense>
 
 namespace Mesh {
+
+enum class ElementType {
+    Line,        // dim = 1
+    Triangle,    // dim = 2
+    Quad,
+    Tetrahedron, // dim = 3
+    Hexahedron
+};
 
 template <int dim>
 class Element {
