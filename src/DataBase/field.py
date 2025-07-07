@@ -18,6 +18,8 @@ class Field(FieldBase):
        
     def pyinit(self,fieldName="std::string"):
         return
+    # def pyinit2(self,fieldName="std::string",numElements="unsigned"):
+    #     return
     def addValue(self,field="FieldType"):
         return
     
