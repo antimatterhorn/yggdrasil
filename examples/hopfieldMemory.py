@@ -31,8 +31,8 @@ class HopfieldSimulator:
 
     def randomize(self):
         for i in range(len(self.state)):
-            val = randint(-1, 1)
-            self.state[i] = -1 if val == 0 else val
+            val = randint(0, 1)
+            self.state[i] = val * 2 - 1
 
     def remember(self):
         j = randint(0, self.num_nodes - 1)
