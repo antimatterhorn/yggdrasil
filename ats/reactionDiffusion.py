@@ -14,9 +14,9 @@ def initialize_reaction_diffusion(rd: ReactionDiffusion, nodeList, grid):
     # Seed the RNG for reproducibility
     random.seed(42)
     
-    c1 = nodeList.getFieldDouble("c1")
-    c2 = nodeList.getFieldDouble("c2")
-    c3 = nodeList.getFieldDouble("c3")
+    c1 = nodeList.c1
+    c2 = nodeList.c2
+    c3 = nodeList.c3
 
     sx = grid.nx
     sy = grid.ny

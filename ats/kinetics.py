@@ -18,14 +18,14 @@ def run():
     integrator = RungeKutta4Integrator2d(packages=packages, dtmin=0.01,verbose=False)
 
 
-    rad = myNodeList.getFieldDouble("radius")
-    mass = myNodeList.getFieldDouble("mass")
+    rad = myNodeList.radius
+    mass = myNodeList.mass
     for i in range(numNodes):
         rad.setValue(i,0.5)
         mass.setValue(i,0.2)
 
-    pos = myNodeList.getFieldVector2d("position")
-    vel = myNodeList.getFieldVector2d("velocity")
+    pos = myNodeList.position
+    vel = myNodeList.velocity
     for i in range(numNodes):
         pos.setValue(i, Vector2d(-10+i/numNodes*30, -0.5+i/numNodes*1))
         vel.setValue(i, Vector2d(3*(-1)**i,0))

@@ -23,8 +23,8 @@ def run():
 
     integrator = RungeKutta4Integrator2d([hydro],dtmin=dtmin,verbose=False)
 
-    density = myNodeList.getFieldDouble("density")
-    energy  = myNodeList.getFieldDouble("specificInternalEnergy")
+    density = myNodeList.density
+    energy  = myNodeList.specificInternalEnergy
 
     for j in range(ny):
         for i in range(nx):

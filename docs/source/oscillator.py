@@ -5,7 +5,7 @@ class oscillate:
         self.grid = grid
         self.width = width
         self.height = height
-        self.phi = nodeList.getFieldDouble("phi")
+        self.phi = nodeList.phi
     def __call__(self,cycle,time,dt):
         a = 5*(cos(time))
         i = int(self.width/2)
