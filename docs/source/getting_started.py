@@ -16,10 +16,10 @@ if __name__ == "__main__":
     integrator  = RungeKutta4Integrator2d(packages=packages, dtmin=0.01, verbose=False)
     print(integrator)
     # Integrator_created
-    rad     = myNodeList.getFieldDouble("radius")
-    mass    = myNodeList.getFieldDouble("mass")
-    vel     = myNodeList.getFieldVector2d("velocity")
-    pos     = myNodeList.getFieldVector2d("position")
+    rad     = myNodeList.radius
+    mass    = myNodeList.mass
+    vel     = myNodeList.velocity
+    pos     = myNodeList.position
     
     mass.setValue(0, 1)
     rad.setValue(0, 0.01)

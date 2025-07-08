@@ -46,10 +46,10 @@ if __name__ == "__main__":
 
     integrator = RungeKutta4Integrator2d([hydro,gravity],dtmin=dtmin,verbose=intVerbose)
 
-    density = myNodeList.getFieldDouble("density")
-    energy  = myNodeList.getFieldDouble("specificInternalEnergy")
-    velocity = myNodeList.getFieldVector2d("velocity")
-    position = myNodeList.getFieldVector2d("position")
+    density = myNodeList.density
+    energy  = myNodeList.specificInternalEnergy
+    velocity = myNodeList.velocity
+    position = myNodeList.position
 
     p0 = 2.5
     gamma = eos.gamma

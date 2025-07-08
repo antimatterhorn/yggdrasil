@@ -14,5 +14,7 @@ waveEqn = WaveEquation2d(nodeList=myNodeList,
                             grid=grid,C=1)
 
 phi = myNodeList.phi
+phi2 = myNodeList.getFieldDouble("phi")
 
 print(phi)
+print(phi2)

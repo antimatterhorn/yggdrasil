@@ -12,7 +12,7 @@ class oscillate:
         self.grid = grid
         self.width = width
         self.height = height
-        self.phi = self.nodeList.getFieldDouble("phi")
+        self.phi = self.nodeList.phi
     def __call__(self,cycle,time,dt):
         a = 5*(cos(0.5*time))*np.exp(-time)
         i = int(self.width/2)
@@ -28,7 +28,7 @@ class SpkOscillator:
         self.grid = grid
         self.width = width
         self.height = height
-        self.phi = self.nodeList.getFieldDouble("phi")
+        self.phi = self.nodeList.phi
         self.locations = locations
     def __call__(self,cycle,time,dt):
         m = self.speaker.get_output(cycle*2.5e-3)

@@ -12,8 +12,8 @@ class minPeri:
         self.energy = []
         self.G = G
     def __call__(self,cycle,time,dt):
-        v = self.nodeList.getFieldVector2d("velocity")
-        x = self.nodeList.getFieldVector2d("position")
+        v = self.nodeList.velocity
+        x = self.nodeList.position
         for i in range(self.nodeList.numNodes):
             self.minP = min(self.minP,x[i].magnitude)
         print(self.minP)
@@ -26,7 +26,7 @@ class dumpState:
         self.G = G
     def __call__(self,cycle,time,dt):
         for i in range(self.nodeList.numNodes):
-            self.dump.append((self.nodeList.getFieldVector2d("position")[i].x,self.nodeList.getFieldVector2d("position")[i].y))
+            self.dump.append((self.nodeList.position[i].x,self.nodeList.position[i].y))
 
 
 if __name__ == "__main__":
@@ -68,8 +68,8 @@ if __name__ == "__main__":
     torbit = 2 * np.pi * np.sqrt(a**3 / (constants.G * cmass))
     print(torbit)
 
-    pos = myNodeList.getFieldVector2d("position")
-    velocity = myNodeList.getFieldVector2d("velocity")
+    pos = myNodeList.position
+    velocity = myNodeList.velocity
 
     for i in range(nComets):
         r = float(random.randint(8000,120000))

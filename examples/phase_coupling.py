@@ -36,10 +36,10 @@ if __name__ == "__main__":
 
     mesh.assignPositions(myNodeList)
 
-    phase = myNodeList.getFieldDouble("kphase")
-    pos = myNodeList.getFieldVector2d("position")
-    strength = myNodeList.getFieldDouble("kstrength")
-    omega = myNodeList.getFieldDouble("komega")
+    phase = myNodeList.kphase
+    pos = myNodeList.position
+    strength = myNodeList.kstrength
+    omega = myNodeList.komega
     for i in range(numNodes):
         phase.setValue(i,random()*2*pi)
         omega.setValue(i,random()*0.1+1.0)

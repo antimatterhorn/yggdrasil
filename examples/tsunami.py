@@ -12,7 +12,7 @@ class oscillate:
         self.grid = grid
         self.width = width
         self.height = height
-        self.phi = myNodeList.getFieldDouble("phi")
+        self.phi = myNodeList.phi
     def __call__(self,cycle,time,dt):
         if (time<(3.14159/12)):
             a = -40*(cos(time*6))
@@ -28,8 +28,8 @@ class debug:
         self.nodeList = nodeList
         self.cycle = debugCycle
     def __call__(self,cycle,time,dt):
-        phi = self.nodeList.getFieldDouble("phi")
-        xi = self.nodeList.getFieldDouble("xi")
+        phi = self.nodeList.phi
+        xi = self.nodeList.xi
         for i in range(self.nodeList.numNodes):
             if phi[i] != 0 or xi[i] != 0:
                 print(cycle,i,phi[i],xi[i]) 

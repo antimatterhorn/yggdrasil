@@ -38,7 +38,7 @@ mand = Mandelbrot(nodeList, myGrid)
 mand.compute()
 
 # Extract and reshape results
-mp = nodeList.getFieldDouble("mandelbrot")
+mp = nodeList.mandelbrot
 print("Generating Plot...")
 data = np.array([mp[i] for i in range(numNodes)])
 data2D = data.reshape((ny, nx))  # NOTE: row = y, col = x

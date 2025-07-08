@@ -12,7 +12,7 @@ class oscillate:
         self.grid = grid
         self.width = width
         self.height = height
-        self.psi = self.nodeList.getFieldComplex("psi")  # Updated field accessor
+        self.psi = self.nodeList.psi  # Updated field accessor
 
     def __call__(self, cycle, time, dt):
         a1 = 5 * cos(time)

@@ -15,17 +15,6 @@ class NodeList:
     @PYB11returnpolicy("reference")
     def getField(self,name="std::string"):
         return
-    @PYB11returnpolicy("reference")
-    def mass(self):
-        return
-    @PYB11template("dim")
-    @PYB11returnpolicy("reference")
-    def velocity(self):
-        return 
-    @PYB11template("dim")
-    @PYB11returnpolicy("reference")
-    def position(self):
-        return
     @PYB11template("dim")
     def updatePositions(self, py_positions="std::vector<std::array>&"):
         return
@@ -33,18 +22,6 @@ class NodeList:
     count = PYB11property("int", getter="getFieldCount", doc="The number of fields in the nodeList.")
     fieldNames = PYB11property("std::vector<std::string>", getter="fieldNames", doc="The names of fields in the nodeList.")
 
-    velocity1d = PYB11TemplateMethod(velocity,
-                                template_parameters = ("1"),pyname="velocity")
-    velocity2d = PYB11TemplateMethod(velocity,
-                                template_parameters = ("2"),pyname="velocity")
-    velocity3d = PYB11TemplateMethod(velocity,
-                                template_parameters = ("3"),pyname="velocity")
-    position1d = PYB11TemplateMethod(position,
-                                template_parameters = ("1"),pyname="position")
-    position2d = PYB11TemplateMethod(position,
-                                template_parameters = ("2"),pyname="position")
-    position3d = PYB11TemplateMethod(position,
-                                template_parameters = ("3"),pyname="position")
     getFieldDouble = PYB11TemplateMethod(getField,
                                 template_parameters = ("double"))
     getFieldComplex = PYB11TemplateMethod(getField,
