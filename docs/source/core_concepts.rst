@@ -64,6 +64,12 @@ of data, for pairing of different Field data into a state, and for state copying
 to be passed as a constructor argument to keep track of
 which state vectors the physics package is intended to evolve. 
 
+When a Field is assigned to a NodeList, it can be accessed from within Python as an attribute on that NodeList, e.g.
+``myNodeList.density`` which returns a Pythonic list of the Field's type, in this case Python floats. 
+However, this requires that the Field has been assigned to the ``Nodelist`` first, either via the construction 
+of a Physics package that creates it (and enrolls it) or manually from within the Python runscript via 
+``myNodeList.insertFieldDouble("density")``.
+
 .. note::
     Yggdrasil does not assume any specific Fields (except ``id``) are necessary without a physics package first 
     creating that Field and then assigning it to the ``Nodelist``. If you try to access a Field called ``density`` inside
