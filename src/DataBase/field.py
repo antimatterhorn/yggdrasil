@@ -32,8 +32,14 @@ class Field(FieldBase):
 
     @PYB11cppname("operator[]")
     @PYB11returnpolicy("reference_internal")
-    @PYB11implementation('[](Field<FieldType>& self, int i) { const int n = self.size(); if (i >= n) throw py::index_error(); return &self[(i %% n + n) %% n]; }')
+    @PYB11implementation('[](Field<FieldType>& self, int i) { const int n = self.size(); if (i < 0  || i >= n) throw py::index_error(); return &self[i]; }')
     def __getitem__(self):
+        return
+
+    @PYB11cppname("operator[]")
+    @PYB11implementation("[](Field<FieldType>& self, int i, FieldType val) { const int n = self.size(); if (i >= n || i < 0) throw py::index_error(); self[i] = val; }")
+    def __setitem__(self):
+        "Assign a value to a field element"
         return
 
     # @PYB11cppname("setValue")
