@@ -65,7 +65,7 @@ if __name__ == "__main__":
     pos = myNodeList.position
 
     for i in range(numNodes):
-        pos.setValue(i,Vector2d(posF[i][0], posF[i][1])*0.5*(bmax[1]-bmin[1]))
+        pos[i] = Vector2d(posF[i][0], posF[i][1])*0.5*(bmax[1]-bmin[1])
 
     print("Creating VoronoiMesh2d")
     vor = VoronoiMesh2d(pos)

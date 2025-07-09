@@ -44,10 +44,10 @@ if __name__ == "__main__":
     strength = myNodeList.kstrength
     omega = myNodeList.komega
     for i in range(numNodes):
-        rad.setValue(i, 1e-5)
-        mass.setValue(i,1e-5)
-        phase.setValue(i,random()*2*pi)
-        omega.setValue(i,random()*0.1+1.0)
+        rad[i] = 1e-5
+        mass[i] = 1e-5
+        phase[i] = random()*2*pi
+        omega[i] = random()*0.1+1.0
 
     integrator  = Integrator2d(packages=packages, dtmin=.001, verbose=False)
 

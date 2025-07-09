@@ -18,8 +18,7 @@ class oscillate:
         i = int(self.width/2)
         j = int(self.height/2)
         idx = self.grid.index(i,j,0)
-        self.phi.setValue(idx,a)
-
+        self.phi[idx]=a
 class SpkOscillator:
     def __init__(self,speaker,nodeList,grid,width,height,locations,workCycle=1):
         self.speaker = speaker
@@ -37,7 +36,7 @@ class SpkOscillator:
             i = int(loc[0])
             j = int(loc[1])
             idx = self.grid.index(i,j,0)
-            self.phi.setValue(idx,m)
+            self.phi[idx]=m
 
 from Utilities import DampedHarmonicOscillator,SiloDump 
 

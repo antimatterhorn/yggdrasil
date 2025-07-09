@@ -41,8 +41,8 @@ if __name__ == "__main__":
     strength = myNodeList.kstrength
     omega = myNodeList.komega
     for i in range(numNodes):
-        phase.setValue(i,random()*2*pi)
-        omega.setValue(i,random()*0.1+1.0)
+        phase[i] = random()*2*pi
+        omega[i] = random()*0.1+1.0
 
     integrator  = RungeKutta2Integrator2d(packages=packages, dtmin=dtmin, verbose=False)
 
