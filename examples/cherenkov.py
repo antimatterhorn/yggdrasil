@@ -22,10 +22,7 @@ class oscillate:
             i = int(posx)
             j = int(self.height/2)
             idx = self.grid.index(i,j,0)
-            self.phi.setValue(idx,a)
-        # self.phi.setValue(5050,-val)
-        # self.phi.setValue(2025,val)
-        # self.phi.setValue(8075,val)
+            self.phi[idx] = a
 
 from Utilities import SiloDump
 
