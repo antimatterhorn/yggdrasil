@@ -39,15 +39,16 @@ public:
         ComplexField* complexPosition = nodeList->getField<std::complex<double>>("complexPosition");
         ScalarField* mandel = nodeList->getField<double>("mandelbrot");
 
-        int numNodes = nodeList->size();
+        const int numNodes = nodeList->size();
         int lastPercent = -1;
-        #pragma omp parallel for
+        const int maxIterations = 200;
+        std::vector<std::complex<double>> complexData = complexPosition->getValues();
+        #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < numNodes; ++i) {
-            std::complex<double> c = complexPosition->getValue(i);
+            std::complex<double> c = complexData[i];
             std::complex<double> z = 0.0;
-            const int maxIterations = 200;
-            int iter = 0;
-            
+
+            int iter = 0;    
             while (std::abs(z) <= 2.0 && iter < maxIterations) {
                 z = z*z + c;
                 ++iter;
@@ -57,11 +58,11 @@ public:
             double value = (iter == maxIterations) ? 0.0 : iter + 1 - log(log(abs(z))) / log(2);
             value = std::min(value, (double)maxIterations);
             mandel->setValue(i, value);
-            int percent = int(100.0 * i / numNodes);
-            if (percent > lastPercent) {
-                ProgressBar(double(percent) / 100.0, " ");
-                lastPercent = percent;
-            }
+            // int percent = int(100.0 * i / numNodes);
+            // if (percent > lastPercent) {
+            //     ProgressBar(double(percent) / 100.0, " ");
+            //     lastPercent = percent;
+            // }
         }
     }
 };
