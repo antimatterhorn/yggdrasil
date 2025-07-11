@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Command-line arguments
-commandLine = CommandLineArguments(ne = 1000,
+commandLine = CommandLineArguments(ne = 500,
                                    xmax = -1.105945,
                                    xmin = -1.106815,
                                    ymin = 0.240362,
