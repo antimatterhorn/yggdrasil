@@ -59,6 +59,16 @@ public:
     std::string getNameString() const override;
 
     void fill(unsigned int n, T val);
+
+    inline
+    T* data() {
+        return values.data();
+    }
+
+    inline
+    const T* data() const {
+        return values.data();
+    }
 };
 
 #include "field.cc"

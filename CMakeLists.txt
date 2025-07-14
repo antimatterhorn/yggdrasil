@@ -12,6 +12,11 @@ message("CXX Compiler ID: ${CMAKE_CXX_COMPILER_ID}")
 # Find and enable OpenMP
 find_package(OpenMP REQUIRED)
 
+if (OPENMP_FOUND AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(OpenMP_CXX_FLAGS "-fopenmp -fopenmp-targets=nvptx64-nvidia-cuda -Xopenmp-target=nvptx64-nvidia-cuda --cuda-path=/usr/local/cuda")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
+
 set(EIGEN3_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/eigen)
 include_directories(${EIGEN3_INCLUDE_DIR})
 

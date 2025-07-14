@@ -1,7 +1,6 @@
 // Copyright (C) 2025  Cody Raskin
 
-#ifndef FIELD_CC
-#define FIELD_CC
+#pragma once
 
 #include "field.hh"
 
@@ -181,4 +180,4 @@ Field<T>::fill(unsigned int n, T val) {
     }
 }
 
-#endif // FIELD_CC
+

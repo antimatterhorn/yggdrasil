@@ -63,43 +63,59 @@ public:
         const double dx = grid->dx;
         const double dy = grid->dy;
 
-        #pragma omp parallel for
-        for (int p = 0; p < insideIds.size(); ++p) {
-            int idx = insideIds[p];
+        double* c1_data = c1->data();
+        double* c2_data = c2->data();
+        double* c3_data = c3->data();
 
-            auto [ix, iy, _] = grid->indexToCoordinates(idx);
+        double* dc1_data = dc1->data();
+        double* dc2_data = dc2->data();
+        double* dc3_data = dc3->data();
 
-            double u[3] = {
-                c1->getValue(idx),
-                c2->getValue(idx),
-                c3->getValue(idx)
-            };
-            double dudt[3] = { 0.0, 0.0, 0.0 };
+        double* rho_data = rho->data();
+        const int total = c1->size();  // total number of grid cells
 
-            // Compute total density
-            double r = u[0] + u[1] + u[2];
-            rho->setValue(idx, r);
+        const int N = insideIds.size();
+        const int* insideIds_data = insideIds.data();
 
-            std::vector<ScalarField*> fields = { c1, c2, c3 };
-            // Diffusion term for each component
-            for (int c = 0; c < 3; ++c) {
-                double del = 0.0;
+        #pragma omp target data map(to: insideIds_data[0:N], c1_data[0:total], c2_data[0:total], c3_data[0:total]) \
+                        map(from: dc1_data[0:total], dc2_data[0:total], dc3_data[0:total], rho_data[0:total])
+        {
+            #pragma omp target teams distribute parallel for
+            for (int p = 0; p < N; ++p) {
+                int idx = insideIds_data[p];
+                int ix = idx % nx;
+                int iy = idx / nx;
 
-                for (int dj = -1; dj <= 1; ++dj) {
-                    for (int di = -1; di <= 1; ++di) {
-                        if (di == 0 && dj == 0) continue;
-                        double fac = (di != 0 && dj != 0) ? 0.05 : 0.2;
-                        del += fac * fields[c]->getValue(grid->index(ix + di, iy + dj));
+                double u[3] = {
+                    c1_data[idx],
+                    c2_data[idx],
+                    c3_data[idx]
+                };
+                double dudt[3] = {0.0, 0.0, 0.0};
+                double r = u[0] + u[1] + u[2];
+                rho_data[idx] = r;
+
+                for (int c = 0; c < 3; ++c) {
+                    double del = 0.0;
+                    for (int dj = -1; dj <= 1; ++dj) {
+                        for (int di = -1; di <= 1; ++di) {
+                            if (di == 0 && dj == 0) continue;
+                            double fac = (di != 0 && dj != 0) ? 0.05 : 0.2;
+                            int nidx = (iy + dj) * nx + (ix + di);
+                            del += fac * (c == 0 ? c1_data[nidx] :
+                                        c == 1 ? c2_data[nidx] :
+                                                c3_data[nidx]);
+                        }
                     }
+                    dudt[c] = D * del + u[c] * (1.0 - r) - A * u[c] * u[(c + 1) % 3];
                 }
 
-                dudt[c] = D * del + u[c] * (1.0 - r) - A * u[c] * u[(c + 1) % 3];
+                dc1_data[idx] = dudt[0];
+                dc2_data[idx] = dudt[1];
+                dc3_data[idx] = dudt[2];
             }
-
-            dc1->setValue(idx, dudt[0]);
-            dc2->setValue(idx, dudt[1]);
-            dc3->setValue(idx, dudt[2]);
         }
+
     }
 
     virtual double
