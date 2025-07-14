@@ -21,14 +21,14 @@ def run():
     rad = myNodeList.radius
     mass = myNodeList.mass
     for i in range(numNodes):
-        rad.setValue(i,0.5)
-        mass.setValue(i,0.2)
+        rad[i] = 0.5
+        mass[i] = 0.2
 
     pos = myNodeList.position
     vel = myNodeList.velocity
     for i in range(numNodes):
-        pos.setValue(i, Vector2d(-10+i/numNodes*30, -0.5+i/numNodes*1))
-        vel.setValue(i, Vector2d(3*(-1)**i,0))
+        pos[i] =  Vector2d(-10+i/numNodes*30, -0.5+i/numNodes*1)
+        vel[i] =  Vector2d(3*(-1)**i,0)
 
     controller = Controller(integrator=integrator, periodicWork=[], statStep=100)
 

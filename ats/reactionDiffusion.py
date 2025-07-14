@@ -26,11 +26,11 @@ def initialize_reaction_diffusion(rd: ReactionDiffusion, nodeList, grid):
             idx = grid.index(i, j, 0)
             choice = random.randint(0, 2)
             if choice == 0:
-                c1.setValue(idx, 1.0)
+                c1[idx] =  1.0
             elif choice == 1:
-                c2.setValue(idx, 1.0)
+                c2[idx] =  1.0
             else:
-                c3.setValue(idx, 1.0)
+                c3[idx] =  1.0
 
 def run():
 

@@ -30,11 +30,11 @@ def run():
         for i in range(nx):
             idx = myGrid.index(i,j,0)
             if i < nx // 2:
-                density.setValue(idx, 1.0)
-                energy.setValue(idx, 2.5)   # high pressure side
+                density[idx] = 1.0
+                energy[idx]  = 2.5   # high pressure side
             else:
-                density.setValue(idx, 0.125)
-                energy.setValue(idx, 2.0)   # low pressure side
+                density[idx] = 0.125
+                energy[idx]  = 2.0   # low pressure side
 
     periodicWork = []
     

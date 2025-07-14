@@ -35,11 +35,11 @@ def run():
     positions   = myNodeList.position
     mass        = myNodeList.mass
     for i in range(numNodes):
-        mass.setValue(i,1.0)
+        mass[i] = 1.0
 
-    positions.setValue(0,Vector2d(-1,1))
-    positions.setValue(1,Vector2d(1,1))
-    positions.setValue(2,Vector2d(0,-1))
+    positions[0] = Vector2d(-1,1)
+    positions[1] = Vector2d(1,1)
+    positions[2] = Vector2d(0,-1)
 
     integrator = RungeKutta4Integrator2d(packages=packages,
                                          dtmin=0.5e1,verbose=False)

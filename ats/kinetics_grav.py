@@ -85,8 +85,8 @@ def run():
     rad = myNodeList.getFieldDouble("radius")
     mass = myNodeList.getFieldDouble("mass")
     for i in range(numNodes):
-        rad.setValue(i, 0.2)
-        mass.setValue(i,0.2)
+        rad[i] = 0.2
+        mass[i] = 0.2
 
     # print("numNodes =", myNodeList.numNodes)
     # print("field names =", myNodeList.fieldNames)
@@ -95,7 +95,7 @@ def run():
 
     for i in range(numNodes):
         x = -9 + i*(18/numNodes)
-        pos.setValue(i, Vector2d(x, 10))
+        pos[i] =  Vector2d(x, 10)
 
     controller = Controller(integrator=integrator, periodicWork=[], statStep=200)
 
