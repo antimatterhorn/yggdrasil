@@ -32,18 +32,18 @@ class Field(FieldBase):
 
     @PYB11cppname("operator[]")
     @PYB11returnpolicy("reference_internal")
-    @PYB11implementation('[](Field<FieldType>& self, int i) { const int n = self.size(); if (i >= n) throw py::index_error(); return &self[(i %% n + n) %% n]; }')
+    @PYB11implementation('[](Field<FieldType>& self, int i) { const int n = self.size(); if (i >= n || i <= -n) throw py::index_error(); return &self[(i %% n + n) %% n]; }')
     def __getitem__(self):
         return
 
     @PYB11cppname("operator[]")
-    @PYB11implementation("[](Field<FieldType>& self, int i, FieldType val) { const int n = self.size(); if (i >= n) throw py::index_error(); self[(i %% n + n) %% n] = val; }")
+    @PYB11implementation("[](Field<FieldType>& self, int i, FieldType val) { const int n = self.size(); if (i >= n || i <= -n) throw py::index_error(); self[(i %% n + n) %% n] = val; }")
     def __setitem__(self):
         "Assign a value to a field element"
         return
 
     @PYB11returnpolicy("reference_internal")
-    @PYB11implementation("[](Field<FieldType>& self, int i) { const int n = self.size(); if (i >= n) throw py::index_error(); return &self[(i %% n + n) %% n]; }")
+    @PYB11implementation("[](Field<FieldType>& self, int i) { const int n = self.size(); if (i >= n || i <= -n) throw py::index_error(); return &self[(i %% n + n) %% n]; }")
     def __call__(self):
         "Index into a Field"
         return
