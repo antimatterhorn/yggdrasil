@@ -19,6 +19,7 @@ PYB11includes = ['"physics.hh"',
                 '"treeGravity.cc"',
                 '"reactionDiffusion.cc"',
                 '"complexWaveEquation.cc"',
+                '"magField.cc"',
                 ]
 
 from physics import *
@@ -41,3 +42,4 @@ from phaseCoupling import *
 from treeGravity import *
 from reactionDiffusion import *
 from complexWaveEquation import *
+from magField import *
