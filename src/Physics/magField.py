@@ -6,7 +6,7 @@ class MagField(Physics):
     def pyinit(self,
                nodeList="NodeList*",
                constants="PhysicalConstants&",
-               magF="Lin::Vector<%(dim)s>&"):
+               B="Lin::Vector<%(dim)s>&"):
         return
     def SetB(self, mF="Lin::Vector<%(dim)s>&"):
         return
