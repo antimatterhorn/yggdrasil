@@ -1,8 +1,19 @@
 from yggdrasil import *
 import numpy as np
+from math import cos
 import random
 from Physics import MagField3d
 from Animation import AnimateScatter
+
+class oscillate:
+    def __init__(self,magField,freq=0.5):
+        self.magField = magField
+        self.freq = freq
+        self.cycle = 1
+    def __call__(self,cycle,time,dt):
+        a = 1.0*(cos(self.freq*time))
+        self.magField.SetB(Vector3d(0, 0, a))
+        print(a)
 
 class Projected2DView:
     def __init__(self, vector3d_list, axes=(0, 1)):
@@ -33,6 +44,8 @@ if __name__ == "__main__":
     mag = MagField3d(myNodeList, constants, bVec)
     packages = [mag]
 
+    osc = oscillate(mag, freq=0.5)
+
     integrator = RungeKutta2Integrator3d(packages=packages, dtmin=1e-5,verbose=False)
     print(integrator)
 
@@ -50,7 +63,7 @@ if __name__ == "__main__":
     pos = myNodeList.position
     projected_positions = Projected2DView(pos, axes=(0, 1))  # XY plane
 
-    controller = Controller(integrator=integrator, periodicWork=[], statStep=1)
+    controller = Controller(integrator=integrator, periodicWork=[osc], statStep=1)
 
     bounds = (-10, 10, -10, 10)
     AnimateScatter(bounds, stepper=controller, positions=projected_positions, frames=100, interval=50)
