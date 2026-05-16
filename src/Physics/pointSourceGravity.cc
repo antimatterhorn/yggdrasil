@@ -61,8 +61,9 @@ public:
             double amag = a.mag2();
             double vmag = v.mag2();
             local_dtmin = std::min(local_dtmin,vmag/amag);
-            dxdt->setValue(i,v+dt*a);
             dvdt->setValue(i,a);
+            dxdt->setValue(i,v+dt*a);
+            
         }
 
         dtmin = local_dtmin;
