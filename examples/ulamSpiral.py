@@ -1,5 +1,6 @@
 from yggdrasil import *
 from Mesh import Grid2d
+from progressBar import ProgressBar
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,12 +11,16 @@ commandLine = CommandLineArguments(n=200)
 size = 2 * n + 1
 numNodes = size * size
 
+print(f"Generating Ulam Spiral with {numNodes} nodes ({size}×{size})...")
+print("Checking all primes up to", numNodes)
 # Sieve of Eratosthenes
 sieve = np.ones(numNodes + 1, dtype=bool)
 sieve[0] = sieve[1] = False
 for i in range(2, int(numNodes**0.5) + 1):
     if sieve[i]:
         sieve[i*i::i] = False
+
+print("Finished generating primes. Now creating grid and assigning prime values...")
 
 myGrid = Grid2d(size, size, 1, 1)
 myNodes = NodeList(numNodes)
@@ -35,6 +40,7 @@ prime_field[myGrid.index(x, y, 0)] = 0.0
 
 dir_idx = 0
 while num < numNodes:
+    ProgressBar(num / numNodes, "Generating Ulam Spiral")
     dx, dy = directions[dir_idx % 4]
     steps = (dir_idx // 2) + 1
     for _ in range(steps):
