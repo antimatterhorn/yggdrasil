@@ -7,13 +7,12 @@ import matplotlib.pyplot as plt
 
 commandLine = CommandLineArguments(n=200)
 
-# Grid is (2n+1) x (2n+1) so the center cell is exactly at (n, n)
 size = 2 * n + 1
 numNodes = size * size
 
 print(f"Generating Ulam Spiral with {numNodes} nodes ({size}×{size})...")
 print("Checking all primes up to", numNodes)
-# Sieve of Eratosthenes
+
 sieve = np.ones(numNodes + 1, dtype=bool)
 sieve[0] = sieve[1] = False
 for i in range(2, int(numNodes**0.5) + 1):
@@ -30,13 +29,15 @@ prime_field = myNodes.prime
 for k in range(numNodes):
     prime_field[k] = 0.0
 
-# Ulam spiral: direction sequence R, U, L, D with step counts 1, 1, 2, 2, 3, 3, ...
+# Build a parallel integer map: integer_map[k] = the integer at grid cell k
+integer_map = np.zeros(numNodes, dtype=int)
+
 directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
-x, y = n, n  # start at center
+x, y = n, n
 num = 1
 
-# 1 is not prime, so center gets 0
 prime_field[myGrid.index(x, y, 0)] = 0.0
+integer_map[myGrid.index(x, y, 0)] = 1
 
 dir_idx = 0
 while num < numNodes:
@@ -49,18 +50,31 @@ while num < numNodes:
         num += 1
         if num > numNodes:
             break
-        prime_field[myGrid.index(x, y, 0)] = 1.0 if sieve[num] else 0.0
+        idx = myGrid.index(x, y, 0)
+        prime_field[idx] = 1.0 if sieve[num] else 0.0
+        integer_map[idx] = num
     if num >= numNodes:
         break
     dir_idx += 1
 
-# Reshape: grid stores index = i + j*nx, so reshape to (ny, nx) gives array[j, i]
 data = np.array([prime_field[k] for k in range(numNodes)])
 data2D = data.reshape((size, size))
+integer2D = integer_map.reshape((size, size))
 
-plt.figure(figsize=(10, 10))
-plt.imshow(data2D, origin='lower', cmap='binary_r', interpolation='nearest')
-plt.title(f"Ulam Spiral  —  {size}×{size}  ({sieve.sum()} primes)")
-plt.axis('off')
+fig, ax = plt.subplots(figsize=(10, 10))
+ax.imshow(data2D, origin='lower', cmap='binary_r', interpolation='nearest')
+ax.set_title(f"Ulam Spiral  —  {size}×{size}  ({sieve.sum()} primes)")
+ax.axis('off')
+
+def format_coord(x, y):
+    col, row = int(round(x)), int(round(y))
+    if 0 <= col < size and 0 <= row < size:
+        val = integer2D[row, col]
+        is_prime = "prime" if sieve[val] else "composite"
+        return f"({col}, {row})  n={val}  [{is_prime}]"
+    return ""
+
+ax.format_coord = format_coord
+
 plt.tight_layout()
 plt.show()
