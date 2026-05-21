@@ -1,6 +1,7 @@
 from yggdrasil import *
 from Mesh import Grid2d
 from progressBar import ProgressBar
+from random import random
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -52,6 +53,7 @@ while num < numNodes:
             break
         idx = myGrid.index(x, y, 0)
         prime_field[idx] = 1.0 if sieve[num] else 0.0
+        #prime_field[idx] = 1.0 if random() < 0.2 else 0.0
         integer_map[idx] = num
     if num >= numNodes:
         break
