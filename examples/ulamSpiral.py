@@ -6,7 +6,8 @@ from random import random
 import numpy as np
 import matplotlib.pyplot as plt
 
-commandLine = CommandLineArguments(n=200)
+commandLine = CommandLineArguments(n=200,
+                                   randomize=False)
 
 size = 2 * n + 1
 numNodes = size * size
@@ -40,6 +41,12 @@ num = 1
 prime_field[myGrid.index(x, y, 0)] = 0.0
 integer_map[myGrid.index(x, y, 0)] = 1
 
+def prob(j):
+    if j < 5:
+        return 0.5
+    else:
+        return np.sum(sieve[:j]) / j
+
 dir_idx = 0
 while num < numNodes:
     ProgressBar(num / numNodes, "Generating Ulam Spiral")
@@ -52,8 +59,10 @@ while num < numNodes:
         if num > numNodes:
             break
         idx = myGrid.index(x, y, 0)
-        prime_field[idx] = 1.0 if sieve[num] else 0.0
-        #prime_field[idx] = 1.0 if random() < 0.2 else 0.0
+        if not randomize:
+            prime_field[idx] = 1.0 if sieve[num] else 0.0
+        else: 
+            prime_field[idx] = 1.0 if random() < prob(idx) else 0.0
         integer_map[idx] = num
     if num >= numNodes:
         break
