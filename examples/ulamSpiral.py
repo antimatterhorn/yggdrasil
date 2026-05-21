@@ -21,7 +21,7 @@ for i in range(2, int(numNodes**0.5) + 1):
     if sieve[i]:
         sieve[i*i::i] = False
 
-print("Finished generating primes. Now creating grid and assigning prime values...")
+print("Finished generating primes. Now creating grid and assigning %s values..."%("random" if randomize else "prime/composite"))
 
 myGrid = Grid2d(size, size, 1, 1)
 myNodes = NodeList(numNodes)
