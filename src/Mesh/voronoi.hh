@@ -82,7 +82,7 @@ private:
 
     // Core helpers:
     std::vector<std::pair<Vector, Vector>> getBisectingHyperplanes(int i);
-    std::vector<Vector> intersectHalfSpaces(const std::vector<std::pair<Vector, Vector>>& planes);
+    std::vector<Vector> intersectHalfSpaces(const std::vector<std::pair<Vector, Vector>>& planes, const Vector& bmin, const Vector& bmax);
 
 public:
 
