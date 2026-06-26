@@ -18,23 +18,23 @@ def run():
 
     hydro = GridHydroHLLE2d(myNodeList,constants,eos,myGrid)
 
-    box = ReflectingGridBoundaries2d(grid=myGrid)
+    box = ReflectingGridBoundary2d(grid=myGrid)
     hydro.addBoundary(box)
 
     integrator = RungeKutta4Integrator2d([hydro],dtmin=dtmin,verbose=False)
 
-    density = myNodeList.getFieldDouble("density")
-    energy  = myNodeList.getFieldDouble("specificInternalEnergy")
+    density = myNodeList.density
+    energy  = myNodeList.specificInternalEnergy
 
     for j in range(ny):
         for i in range(nx):
             idx = myGrid.index(i,j,0)
             if i < nx // 2:
-                density.setValue(idx, 1.0)
-                energy.setValue(idx, 2.5)   # high pressure side
+                density[idx] = 1.0
+                energy[idx]  = 2.5   # high pressure side
             else:
-                density.setValue(idx, 0.125)
-                energy.setValue(idx, 2.0)   # low pressure side
+                density[idx] = 0.125
+                energy[idx]  = 2.0   # low pressure side
 
     periodicWork = []
     

@@ -9,7 +9,7 @@ class oscillate:
         self.grid = grid
         self.width = width
         self.height = height
-        self.phi = self.nodeList.getFieldDouble("phi")
+        self.phi = self.nodeList.phi
     def __call__(self,cycle,time,dt):
         a = 5*(cos(time))
         i = int(self.width/6)
@@ -41,8 +41,8 @@ def run():
 
     packages = [waveEqn]
 
-    pm = OutflowGridBoundaries2d(grid=grid)
-    box = DirichletGridBoundaries2d(grid=grid)
+    pm = PeriodicGridBoundary2d(grid=grid)
+    box = DirichletGridBoundary2d(grid=grid)
 
     nbox = 10
     dy = ny/nbox
@@ -85,7 +85,7 @@ def run():
             for i in range(nx):
                 rgb_grid[j, i] = waveEqn.getCell2d(i % nx, j % ny, "maxphi")
                 if i == nx // 2:
-                    maxi = rgb_grid[j, i]
+                    maxi = float(rgb_grid[j, i])
             max_values.append(maxi)
         return max_values
 

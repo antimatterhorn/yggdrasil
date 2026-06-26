@@ -1,10 +1,10 @@
 // Copyright (C) 2025  Cody Raskin
 
-#include "physics.hh"
+#include "kinematics.hh"
 #include <iostream>
 
 template <int dim>
-class Kinetics : public Physics<dim> {
+class Kinetics : public Kinematics<dim> {
 protected:
     double dtmin;
     double timeVisited;
@@ -14,12 +14,9 @@ public:
     using ScalarField = Field<double>;
 
     Kinetics(NodeList* nodeList, PhysicalConstants& constants) :
-        Physics<dim>(nodeList,constants) {
+        Kinematics<dim>(nodeList,constants) {
 
-        int numNodes = nodeList->size();
         this->template EnrollFields<double>({"mass", "radius"});
-        this->template EnrollFields<Vector>({"acceleration", "velocity", "position"});
-        this->template EnrollStateFields<Vector>({"position"});
 
         // kinetics will operate solely on the spatial derivative. velocities merely change direction
         // i.e. there is no acceleration term for this physics package so no dvdt

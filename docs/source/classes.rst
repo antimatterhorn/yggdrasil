@@ -72,16 +72,19 @@ on the derived physics class.
 
 Integrator Classes
 ------------------
-Nihoggr's integrators follow a basic pattern of initializing the state of the physics objects at each step, applying boundary conditions,
-evaluating derivatives, advancing the state of each physics object from those derivatives, and then finalizing each physics object's state.
+Nihoggr's integrators follow a basic pattern of initializing the state of the physics objects at each step, 
+evaluating derivatives, advancing the state of each physics object from those derivatives, applying boundary conditions, 
+and then finalizing each physics object's state.
 An example of this pattern for simple forward Euler integration is shown below:
 
 .. literalinclude:: ../../src/Integrators/integrator.cc
    :language: c++
-   :lines: 6-66
+   :lines: 6-70
 
 .. note::
-   While this class is a foward Euler integrator, it is also the base class for all integrators in Yggdrasil.
+   While this class is a foward Euler integrator, it is also the base class for all integrators in Yggdrasil, and as such,
+   its ``Step()`` method is rarely overridden by derived classes. Instead, the most common override will be to the ``Integrate()``
+   method.
 
 Equations of State
 ------------------

@@ -48,6 +48,7 @@ namespace Mesh {
     template <int dim>
     void 
     Grid<dim>::setOrigin(Lin::Vector<dim> origin) {
+        #pragma omp parallel for
         for (int i = 0; i < gridPositions.getSize(); ++i) {
             gridPositions[i] -= origin;
         }
@@ -103,28 +104,28 @@ namespace Mesh {
         std::array<int, 3> coords = indexToCoordinates(idx);
         std::vector<int> neighbors;
 
-        // Check right neighbor
-        if (coords[0] < nx - 1) {
-            int rightIdx = index(coords[0] + 1, coords[1], coords[2]);
-            neighbors.push_back(rightIdx);
-        }
-
         // Check left neighbor
         if (coords[0] > 0) {
             int leftIdx = index(coords[0] - 1, coords[1], coords[2]);
             neighbors.push_back(leftIdx);
         }
 
-        // Check down neighbor
-        if (coords[1] < ny - 1) {
-            int downIdx = index(coords[0], coords[1] + 1, coords[2]);
-            neighbors.push_back(downIdx);
+        // Check right neighbor
+        if (coords[0] < nx - 1) {
+            int rightIdx = index(coords[0] + 1, coords[1], coords[2]);
+            neighbors.push_back(rightIdx);
         }
 
         // Check up neighbor
         if (coords[1] > 0) {
             int upIdx = index(coords[0], coords[1] - 1, coords[2]);
             neighbors.push_back(upIdx);
+        }
+
+        // Check down neighbor
+        if (coords[1] < ny - 1) {
+            int downIdx = index(coords[0], coords[1] + 1, coords[2]);
+            neighbors.push_back(downIdx);
         }
 
         // Check back neighbor (for 3D grid)
@@ -273,6 +274,7 @@ namespace Mesh {
             nodeList->insertField<Vector>("position");
                 
         VectorField* position = nodeList->getField<Vector>("position");
+        #pragma omp parallel for
         for (int i = 0; i < position->size(); ++i) {
             position->setValue(i, this->getPosition(i));
         }
@@ -296,6 +298,189 @@ namespace Mesh {
         }
         return nullptr;
     }
+
+    template <int dim>
+    template <typename T>
+    T Grid<dim>::laplacian(int idx, Field<T>* field) const {
+        if constexpr (dim == 1) {
+            double dx = this->dx;
+            int left  = idx - 1;
+            int right = idx + 1;
+            return (field->getValue(right) - 2.0 * field->getValue(idx) + field->getValue(left)) / (dx * dx);
+        }
+
+        if constexpr (dim == 2) {
+            auto [ix, iy, _] = this->indexToCoordinates(idx);
+            double dx = this->dx;
+            double dy = this->dy;
+
+            int iL = this->index(ix - 1, iy);
+            int iR = this->index(ix + 1, iy);
+            int iB = this->index(ix, iy - 1);
+            int iT = this->index(ix, iy + 1);
+
+            T center = field->getValue(idx);
+            return (field->getValue(iR) - 2.0 * center + field->getValue(iL)) / (dx * dx) +
+                (field->getValue(iT) - 2.0 * center + field->getValue(iB)) / (dy * dy);
+        }
+
+        if constexpr (dim == 3) {
+            auto [ix, iy, iz] = this->indexToCoordinates(idx);
+            double dx = this->dx;
+            double dy = this->dy;
+            double dz = this->dz;
+
+            int iL = this->index(ix - 1, iy, iz);
+            int iR = this->index(ix + 1, iy, iz);
+            int iB = this->index(ix, iy - 1, iz);
+            int iT = this->index(ix, iy + 1, iz);
+            int iD = this->index(ix, iy, iz - 1);
+            int iU = this->index(ix, iy, iz + 1);
+
+            T center = field->getValue(idx);
+            return (field->getValue(iR) - 2.0 * center + field->getValue(iL)) / (dx * dx) +
+                (field->getValue(iT) - 2.0 * center + field->getValue(iB)) / (dy * dy) +
+                (field->getValue(iU) - 2.0 * center + field->getValue(iD)) / (dz * dz);
+        }
+    }
+
+    template <int dim>
+    template <typename T, typename F>
+    T Grid<dim>::laplacian(int idx, F&& valueAt) const {
+        if constexpr (dim == 1) {
+            double dx = this->dx;
+            int left  = idx - 1;
+            int right = idx + 1;
+            return (valueAt(right) - 2.0 * valueAt(idx) + valueAt(left)) / (dx * dx);
+        }
+
+        if constexpr (dim == 2) {
+            auto [ix, iy, _] = this->indexToCoordinates(idx);
+            double dx = this->dx;
+            double dy = this->dy;
+
+            int iL = this->index(ix - 1, iy);
+            int iR = this->index(ix + 1, iy);
+            int iB = this->index(ix, iy - 1);
+            int iT = this->index(ix, iy + 1);
+
+            return (valueAt(iR) - 2.0 * valueAt(idx) + valueAt(iL)) / (dx * dx) +
+                (valueAt(iT) - 2.0 * valueAt(idx) + valueAt(iB)) / (dy * dy);
+        }
+
+        if constexpr (dim == 3) {
+            auto [ix, iy, iz] = this->indexToCoordinates(idx);
+            double dx = this->dx;
+            double dy = this->dy;
+            double dz = this->dz;
+
+            int iL = this->index(ix - 1, iy, iz);
+            int iR = this->index(ix + 1, iy, iz);
+            int iB = this->index(ix, iy - 1, iz);
+            int iT = this->index(ix, iy + 1, iz);
+            int iD = this->index(ix, iy, iz - 1);
+            int iU = this->index(ix, iy, iz + 1);
+
+            return (valueAt(iR) - 2.0 * valueAt(idx) + valueAt(iL)) / (dx * dx) +
+                (valueAt(iT) - 2.0 * valueAt(idx) + valueAt(iB)) / (dy * dy) +
+                (valueAt(iU) - 2.0 * valueAt(idx) + valueAt(iD)) / (dz * dz);
+        }
+    }
+
+    template <int dim> Lin::Vector<dim> 
+    Grid<dim>::gradient(int idx, Field<double>* field) const {
+        Lin::Vector<dim> grad;
+
+        if constexpr (dim == 1) {
+            double dx = this->dx;
+            int left = idx - 1;
+            int right = idx + 1;
+            grad[0] = (field->getValue(right) - field->getValue(left)) / (2.0 * dx);
+        }
+
+        if constexpr (dim == 2) {
+            auto [ix, iy, _] = this->indexToCoordinates(idx);
+            double dx = this->dx;
+            double dy = this->dy;
+
+            int iL = this->index(ix - 1, iy);
+            int iR = this->index(ix + 1, iy);
+            int iB = this->index(ix, iy - 1);
+            int iT = this->index(ix, iy + 1);
+
+            grad[0] = (field->getValue(iR) - field->getValue(iL)) / (2.0 * dx);
+            grad[1] = (field->getValue(iT) - field->getValue(iB)) / (2.0 * dy);
+        }
+
+        if constexpr (dim == 3) {
+            auto [ix, iy, iz] = this->indexToCoordinates(idx);
+            double dx = this->dx;
+            double dy = this->dy;
+            double dz = this->dz;
+
+            int iL = this->index(ix - 1, iy, iz);
+            int iR = this->index(ix + 1, iy, iz);
+            int iB = this->index(ix, iy - 1, iz);
+            int iT = this->index(ix, iy + 1, iz);
+            int iD = this->index(ix, iy, iz - 1);
+            int iU = this->index(ix, iy, iz + 1);
+
+            grad[0] = (field->getValue(iR) - field->getValue(iL)) / (2.0 * dx);
+            grad[1] = (field->getValue(iT) - field->getValue(iB)) / (2.0 * dy);
+            grad[2] = (field->getValue(iU) - field->getValue(iD)) / (2.0 * dz);
+        }
+
+        return grad;
+    }
+
+    template <int dim>
+    template <typename F>
+    Lin::Vector<dim> Grid<dim>::gradient(int idx, F&& valueAt) const {
+        Lin::Vector<dim> grad;
+
+        if constexpr (dim == 1) {
+            double dx = this->dx;
+            int left  = idx - 1;
+            int right = idx + 1;
+            grad[0] = (valueAt(right) - valueAt(left)) / (2.0 * dx);
+        }
+
+        if constexpr (dim == 2) {
+            auto [ix, iy, _] = this->indexToCoordinates(idx);
+            double dx = this->dx;
+            double dy = this->dy;
+
+            int iL = this->index(ix - 1, iy);
+            int iR = this->index(ix + 1, iy);
+            int iB = this->index(ix, iy - 1);
+            int iT = this->index(ix, iy + 1);
+
+            grad[0] = (valueAt(iR) - valueAt(iL)) / (2.0 * dx);
+            grad[1] = (valueAt(iT) - valueAt(iB)) / (2.0 * dy);
+        }
+
+        if constexpr (dim == 3) {
+            auto [ix, iy, iz] = this->indexToCoordinates(idx);
+            double dx = this->dx;
+            double dy = this->dy;
+            double dz = this->dz;
+
+            int iL = this->index(ix - 1, iy, iz);
+            int iR = this->index(ix + 1, iy, iz);
+            int iB = this->index(ix, iy - 1, iz);
+            int iT = this->index(ix, iy + 1, iz);
+            int iD = this->index(ix, iy, iz - 1);
+            int iU = this->index(ix, iy, iz + 1);
+
+            grad[0] = (valueAt(iR) - valueAt(iL)) / (2.0 * dx);
+            grad[1] = (valueAt(iT) - valueAt(iB)) / (2.0 * dy);
+            grad[2] = (valueAt(iU) - valueAt(iD)) / (2.0 * dz);
+        }
+
+        return grad;
+    }
+
+
 }
 
 

@@ -3,7 +3,7 @@ from Animation import *
 from math import sin,cos
 from Mesh import Grid2d
 from Physics import WaveEquation2d
-from Boundaries import PeriodicGridBoundaries2d
+from Boundaries import PeriodicGridBoundary2d
 
 class oscillate:
     def __init__(self,nodeList,grid,cs,width,height,workCycle=1):
@@ -13,7 +13,7 @@ class oscillate:
         self.cs = cs
         self.width = width
         self.height = height
-        self.phi = myNodeList.getFieldDouble("phi")
+        self.phi = myNodeList.phi
     def __call__(self,cycle,time,dt):
         a = 5*(cos(time/0.5))
         v = min(max((0.02*time+0.5)*self.cs,0.5*self.cs),2.0*self.cs)
@@ -22,10 +22,7 @@ class oscillate:
             i = int(posx)
             j = int(self.height/2)
             idx = self.grid.index(i,j,0)
-            self.phi.setValue(idx,a)
-        # self.phi.setValue(5050,-val)
-        # self.phi.setValue(2025,val)
-        # self.phi.setValue(8075,val)
+            self.phi[idx] = a
 
 from Utilities import SiloDump
 
@@ -57,8 +54,8 @@ if __name__ == "__main__":
     print(waveEqn)
     packages = [waveEqn]
 
-    # Create boundaries
-    pm = PeriodicGridBoundaries2d(grid=grid)
+    # Create Boundary
+    pm = PeriodicGridBoundary2d(grid=grid)
     waveEqn.addBoundary(pm)
 
     # ------------------------------------------------

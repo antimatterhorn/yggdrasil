@@ -27,6 +27,9 @@ class VoronoiMesh:
         return
     def getCells(self):
         return "const std::vector<typename Mesh::VoronoiCell<%(dim)s>>&"
+    @PYB11returnpolicy("move")
+    def generateDualFEMesh(self):
+        return "FEMesh<%(dim)s>"
 
 
 # VoronoiMesh1d = PYB11TemplateClass(VoronoiMesh,

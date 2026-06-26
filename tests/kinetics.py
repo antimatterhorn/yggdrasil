@@ -23,7 +23,7 @@ if __name__ == "__main__":
     rad = myNodeList.getFieldDouble("radius")
     mass = myNodeList.getFieldDouble("mass")
     for i in range(numNodes):
-        rad.setValue(i,2)
+        rad.setValue(i,0.5)
         mass.setValue(i,0.2)
 
     print("numNodes =", myNodeList.numNodes)

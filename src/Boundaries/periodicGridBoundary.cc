@@ -1,20 +1,44 @@
 // Copyright (C) 2025  Cody Raskin
 
 #include <vector>
-#include "gridBoundaries.hh"
+#include "gridBoundary.hh"
 
-// Base class for Grid Boundaries
+#define IMPLEMENT_APPLY_INTERFACE(type, TypeName, T) \
+    void Apply##TypeName(type* field) override { ApplyThis<T>(field); }
+
+// Base class for Grid Boundary
 template <int dim>
-class PeriodicGridBoundaries : public GridBoundaries<dim> {
-protected:
+class PeriodicGridBoundary : public GridBoundary<dim> {
+private:
     std::vector<std::vector<int>> boundaryLists;
+
+    template <typename T>
+    void ApplyThis(Field<T>* field) { 
+        #pragma omp parallel for
+        for (int i=0; i<2*dim;++i) {
+            std::vector<int> b = boundaryLists[2*i];
+            std::vector<int> c = boundaryLists[2*i+1];
+            CopyBoundaryData<T>(field, b, c);
+        }
+    }
+
+    template <typename T>
+    void CopyBoundaryData(Field<T>* field, const std::vector<int>& boundaryIds, const std::vector<int>& copyIds) {     
+        for (int i=0;i<boundaryIds.size();++i) {
+            int bi = boundaryIds[i];
+            int ci = copyIds[i];
+            field->setValue(bi,field->getValue(ci));
+        }      
+    }
 public:
     using Vector      = Lin::Vector<dim>;
     using VectorField = Field<Vector>;
     using ScalarField = Field<double>;
-    
-    PeriodicGridBoundaries(Mesh::Grid<dim>* grid) : 
-        GridBoundaries<dim>(grid) {
+    using Complex     = std::complex<double>;
+    using ComplexField= Field<Complex>;
+
+    PeriodicGridBoundary(Mesh::Grid<dim>* grid) : 
+        GridBoundary<dim>(grid) {
         if (dim == 1) {
             std::vector<int> leftIds = grid->leftMost();  
             std::vector<int> leftcol;
@@ -130,59 +154,11 @@ public:
         }
     }
     
-    virtual ~PeriodicGridBoundaries() = default;
-    
-    virtual void
-    ApplyBoundaries(State<dim>* state, NodeList* nodeList) override {
-        Mesh::Grid<dim>* grid = this->grid;
+    virtual ~PeriodicGridBoundary() = default;
 
-        for (int i = 0; i < state->count(); ++i) {
-            FieldBase* field = state->getFieldByIndex(i); // Get the field at index i
-            if (typeid(*field) == typeid(ScalarField)) {
-                ScalarField* doubleField = dynamic_cast<ScalarField*>(field);
-                if (doubleField) {
-                    ApplyPeriodicBoundary(doubleField);
-                }
-            } else if (typeid(*field) == typeid(VectorField)) {
-                VectorField* vectorField = dynamic_cast<VectorField*>(field);
-                if (vectorField) {
-                    ApplyPeriodicBoundary(vectorField);
-                }
-            }
-        }
-    }
-
-    void ApplyPeriodicBoundary(ScalarField* field) {       
-        for (int i=0; i<2*dim;++i) {
-            std::vector<int> b = boundaryLists[2*i];
-            std::vector<int> c = boundaryLists[2*i+1];
-            CopyBoundaryData(field, b, c);
-        }
-    }
-
-    void ApplyPeriodicBoundary(VectorField* field) {
-        for (int i=0; i<2*dim;++i) {
-            std::vector<int> b = boundaryLists[2*i];
-            std::vector<int> c = boundaryLists[2*i+1];
-            CopyBoundaryData(field, b, c);
-        }
-    }
-
-    void CopyBoundaryData(ScalarField* field, const std::vector<int>& boundaryIds, const std::vector<int>& copyIds) {     
-        for (int i=0;i<boundaryIds.size();++i) {
-            int bi = boundaryIds[i];
-            int ci = copyIds[i];
-            field->setValue(bi,field->getValue(ci));
-        }      
-    }
-
-    void CopyBoundaryData(VectorField* field, const std::vector<int>& boundaryIds, const std::vector<int>& copyIds) {
-        for (int i=0;i<boundaryIds.size();++i) {
-            int bi = boundaryIds[i];
-            int ci = copyIds[i];
-            field->setValue(bi,field->getValue(ci));
-        }
-    }
+    IMPLEMENT_APPLY_INTERFACE(ScalarField, Scalar, double)
+    IMPLEMENT_APPLY_INTERFACE(VectorField, Vector, Vector)
+    IMPLEMENT_APPLY_INTERFACE(ComplexField, Complex, Complex)
 
     std::vector<std::vector<int>> GetBounds(Mesh::Grid<dim>* grid) {
         std::vector<std::vector<int>> retVector;

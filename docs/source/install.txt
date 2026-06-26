@@ -2,6 +2,8 @@ git clone --recurse-submodules https://github.com/antimatterhorn/yggdrasil.git y
 
 cd yggdrasil
 
+pip install -r requirements.txt (or pip3)
+
 git submodule update --remote --recursive
 git submodule update --init --recursive
 

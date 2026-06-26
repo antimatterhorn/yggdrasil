@@ -85,19 +85,19 @@ if __name__ == "__main__":
     print(integrator)
 
 
-    rad = myNodeList.getFieldDouble("radius")
-    mass = myNodeList.getFieldDouble("mass")
+    rad = myNodeList.radius
+    mass = myNodeList.mass
     for i in range(numNodes):
-        rad.setValue(i, 0.2)
-        mass.setValue(i,0.2)
+        rad[i] = 0.2
+        mass[i] = 0.2
 
     print("numNodes =", myNodeList.numNodes)
     print("field names =", myNodeList.fieldNames)
 
-    pos = myNodeList.getFieldVector2d("position")
+    pos = myNodeList.position
 
     for i in range(numNodes):
-        pos.setValue(i, Vector2d(random.uniform(-9, 9), 10))
+        pos[i] = Vector2d(random.uniform(-9, 9), 10)
 
     controller = Controller(integrator=integrator, periodicWork=[], statStep=1)
 

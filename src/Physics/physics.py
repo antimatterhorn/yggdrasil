@@ -7,7 +7,7 @@ class Physics:
                constants="PhysicalConstants&"):
         return
     def addBoundary(self,
-                    boundary="Boundaries<dim>*"):
+                    boundary="Boundary<dim>*"):
         return
     def UpdateState(self):
         return

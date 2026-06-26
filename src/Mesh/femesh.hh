@@ -13,7 +13,6 @@
 #include "../Math/vectorMath.hh"
 #include "../DataBase/field.hh"
 #include "../DataBase/nodeList.hh"
-#include "elementType.hh"
 #include "element.hh"
 
 namespace Mesh {    
@@ -60,6 +59,8 @@ namespace Mesh {
         void computeConnectivityMap();
         const std::vector<std::vector<size_t>>& getConnectivityMap() const;
         const std::unordered_map<size_t, std::vector<size_t>>& getNodeToElementMap() const;
+
+        FEMesh(const FEMesh& other) = default;
     };
 }
 

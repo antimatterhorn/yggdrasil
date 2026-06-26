@@ -1,10 +1,11 @@
 from yggdrasil import *
 import matplotlib.pyplot as plt
 from Animation import *
-from Physics import GridHydroHLLE2d
+from Physics import GridHydroKT2d
 from Mesh import Grid2d
 from EOS import IdealGasEOS
-from Boundaries import ReflectingGridBoundaries2d
+from Boundaries import ReflectingGridBoundary2d
+from Utilities import SiloDump
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
@@ -28,11 +29,11 @@ if __name__ == "__main__":
     eos = IdealGasEOS(1.4,constants)
     print(eos,"gamma =",eos.gamma)
 
-    hydro = GridHydroHLLE2d(myNodeList,constants,eos,myGrid)
+    hydro = GridHydroKT2d(myNodeList,constants,eos,myGrid)
     print("numNodes =",myNodeList.numNodes)
     print("field names =",myNodeList.fieldNames)
 
-    box = ReflectingGridBoundaries2d(grid=myGrid)
+    box = ReflectingGridBoundary2d(grid=myGrid)
     hydro.addBoundary(box)
 
     integrator = RungeKutta4Integrator2d([hydro],dtmin=dtmin,verbose=False)
@@ -53,7 +54,7 @@ if __name__ == "__main__":
     periodicWork = []
     
     if siloDump:
-        meshWriter = SiloDump(baseName="HLL",
+        meshWriter = SiloDump(baseName="Sod",
                                 nodeList=myNodeList,
                                 fieldNames=["density","specificInternalEnergy","pressure","velocity"],
                                 dumpCycle=50)
@@ -80,5 +81,5 @@ if __name__ == "__main__":
         if position[i].y == ((ny/2.0)+(dy/2.0)):
             xs.append(position[i].x)
             ys.append(density[i])
-    plt.plot(xs,ys)
-    plt.show()
+    # plt.plot(xs,ys)
+    # plt.show()

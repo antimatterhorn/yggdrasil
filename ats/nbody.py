@@ -11,7 +11,7 @@ class dumpState:
         self.G = G
     def __call__(self,cycle,time,dt):
         for i in range(self.nodeList.numNodes):
-            self.dump.append((self.nodeList.getFieldVector2d("position")[i].x,self.nodeList.getFieldVector2d("position")[i].y))
+            self.dump.append((self.nodeList.position[i].x,self.nodeList.position[i].y))
 
 
 def run():
@@ -32,14 +32,14 @@ def run():
                                plummerLength=0.01)
     packages = [nBodyGrav]
 
-    positions   = myNodeList.getFieldVector2d("position")
-    mass        = myNodeList.getFieldDouble("mass")
+    positions   = myNodeList.position
+    mass        = myNodeList.mass
     for i in range(numNodes):
-        mass.setValue(i,1.0)
+        mass[i] = 1.0
 
-    positions.setValue(0,Vector2d(-1,1))
-    positions.setValue(1,Vector2d(1,1))
-    positions.setValue(2,Vector2d(0,-1))
+    positions[0] = Vector2d(-1,1)
+    positions[1] = Vector2d(1,1)
+    positions[2] = Vector2d(0,-1)
 
     integrator = RungeKutta4Integrator2d(packages=packages,
                                          dtmin=0.5e1,verbose=False)

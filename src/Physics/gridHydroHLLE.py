@@ -12,6 +12,9 @@ class GridHydroHLLE(Hydro):
     @PYB11cppname("getCell")
     def getCell2d(self,i="int",j="int",fieldName="std::string"):
         return
+    @PYB11cppname("getCellComponent")
+    def getCellComponent2d(self,i="int",j="int",component="int",fieldName="std::string"):
+        return
 
 
 GridHydroHLLE1d = PYB11TemplateClass(GridHydroHLLE,

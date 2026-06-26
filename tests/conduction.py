@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     cond = ThermalConduction2d(myNodeList,constants,eos,opac,myGrid)
 
-    box = ReflectingGridBoundaries2d(grid=myGrid)
+    box = ReflectingGridBoundary2d(grid=myGrid)
     cond.addBoundary(box)
 
     integrator = RungeKutta4Integrator2d([cond],dtmin=dtmin,verbose=intVerbose)

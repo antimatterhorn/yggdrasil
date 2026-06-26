@@ -13,10 +13,6 @@ class GetStrength:
         id = self.mesh.index(i,j,0)
         return self.field[id]
 
-from matplotlib.colors import LinearSegmentedColormap
-colors = [(1,0,0), (0, 0, 0), (0,0,1)]  # Red -> Black -> Blue
-cmap = LinearSegmentedColormap.from_list('rbbl', colors, N=256)
-
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
                                        nx = 50,
@@ -40,13 +36,13 @@ if __name__ == "__main__":
 
     mesh.assignPositions(myNodeList)
 
-    phase = myNodeList.getFieldDouble("kphase")
-    pos = myNodeList.getFieldVector2d("position")
-    strength = myNodeList.getFieldDouble("kstrength")
-    omega = myNodeList.getFieldDouble("komega")
+    phase = myNodeList.kphase
+    pos = myNodeList.position
+    strength = myNodeList.kstrength
+    omega = myNodeList.komega
     for i in range(numNodes):
-        phase.setValue(i,random()*2*pi)
-        omega.setValue(i,random()*0.1+1.0)
+        phase[i] = random()*2*pi
+        omega[i] = random()*0.1+1.0
 
     integrator  = RungeKutta2Integrator2d(packages=packages, dtmin=dtmin, verbose=False)
 
@@ -62,6 +58,6 @@ if __name__ == "__main__":
                                                 stepper=controller.Step,
                                                 title=title,
                                                 fieldName="phi")
-        AnimateGrid2d(bounds,update_method,extremis=[-1,1],cmap=cmap,frames=400,save_as=save_as)
+        AnimateGrid2d(bounds,update_method,extremis=[-1,1],cmap=rbbl,frames=400,save_as=save_as)
     else:
         controller.Step(5000)

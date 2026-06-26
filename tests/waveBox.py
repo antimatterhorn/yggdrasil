@@ -4,7 +4,7 @@ from math import sin,cos
 from Utilities import HarmonicOscillator,SiloDump 
 from Physics import WaveEquation2d
 from Mesh import Grid2d
-from Boundaries import DirichletGridBoundaries2d
+from Boundaries import DirichletGridBoundary2d
 
 class oscillate:
     def __init__(self,nodeList,grid,width,height,workCycle=1):
@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
     packages = [waveEqn]
 
-    box = DirichletGridBoundaries2d(grid=grid)
+    box = DirichletGridBoundary2d(grid=grid)
     box.addBox(Vector2d(int(nx/5),int(ny/5)),Vector2d(int(4*nx/5),int(4*ny/5)))
     box.removeBox(Vector2d(int(nx/5)+5,int(ny/5)+5),Vector2d(int(4*nx/5)-5,int(4*ny/5)-5))
     box.removeBox(Vector2d(0,int(ny/2)-5),Vector2d(nx,int(ny/2)+5))

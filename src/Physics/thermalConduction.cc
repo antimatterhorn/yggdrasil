@@ -56,7 +56,8 @@ public:
 
     virtual void ZeroTimeInitialize() override {
         SetConductivity();
-        this->state.updateFields(this->nodeList);
+        this->UpdateState();
+        this->InitializeBoundaries();
     }
 
     virtual void PreStepInitialize() override {

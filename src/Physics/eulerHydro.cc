@@ -38,6 +38,7 @@ public:
     ZeroTimeInitialize() override {      
         EOSLookup();
         this->UpdateState();
+        this->InitializeBoundaries();
     }
 
     virtual void EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {

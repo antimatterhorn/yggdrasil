@@ -3,7 +3,7 @@ from Animation import *
 from math import sin,cos
 from Mesh import Grid2d
 from Physics import WaveEquation2d
-from Boundaries import OutflowGridBoundaries2d, DirichletGridBoundaries2d
+from Boundaries import OutflowGridBoundary2d, DirichletGridBoundary2d
 
 class oscillate:
     def __init__(self,nodeList,grid,width,height,workCycle=1):
@@ -12,7 +12,7 @@ class oscillate:
         self.grid = grid
         self.width = width
         self.height = height
-        self.phi = myNodeList.getFieldDouble("phi")
+        self.phi = nodeList.phi
     def __call__(self,cycle,time,dt):
         a = 5*(cos(time))
         i = int(self.width/6)
@@ -51,8 +51,8 @@ if __name__ == "__main__":
 
     packages = [waveEqn]
 
-    pm = OutflowGridBoundaries2d(grid=grid)
-    box = DirichletGridBoundaries2d(grid=grid)
+    pm = OutflowGridBoundary2d(grid=grid)
+    box = DirichletGridBoundary2d(grid=grid)
 
     nbox = 10
     dy = ny/nbox
@@ -90,6 +90,6 @@ if __name__ == "__main__":
                                                 stepper=controller.Step,
                                                 title=title,
                                                 fieldName="maxphi") # change to 'phi' to view full wave
-        AnimateGrid2d(bounds,update_method,extremis=[0,2],frames=cycles,cmap='plasma')
+        AnimateGrid2d(bounds,update_method,extremis=[0,0.1],frames=cycles,cmap='plasma')
     else:
         controller.Step(cycles)

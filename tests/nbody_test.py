@@ -38,6 +38,7 @@ if __name__ == "__main__":
     for i in range(numNodes):
         mass.setValue(i,1.0)
         positions.setValue(i,Vector2d(Generator.positions[i][0],Generator.positions[i][1]))
+        print(Generator.positions[i][0],Generator.positions[i][1])
 
     integrator = RungeKutta4Integrator2d(packages=packages,
                                          dtmin=0.5e1,verbose=False)
@@ -49,5 +50,6 @@ if __name__ == "__main__":
     controller = Controller(integrator=integrator,periodicWork=[],statStep=1,tstop=1e3)
 
     bounds = (-1,1,-1,1)
+
 
     AnimateScatter(bounds, stepper=controller, positions=positions, frames=100, interval=50)

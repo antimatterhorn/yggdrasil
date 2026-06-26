@@ -1,8 +1,8 @@
 from PYB11Generator import *
-from gridBoundaries import *
+from gridBoundary import *
 
 @PYB11template("dim")
-class DirichletGridBoundaries(GridBoundaries):
+class DirichletGridBoundary(GridBoundary):
     def pyinit(self,grid="Mesh::Grid<%(dim)s>*"):
         return
     def addBox(self,p1="Lin::Vector<%(dim)s>",p2="Lin::Vector<%(dim)s>"):
@@ -18,18 +18,18 @@ class DirichletGridBoundaries(GridBoundaries):
     def boundaryIds(self):
         return "std::vector<int>"
     
-DirichletGridBoundaries1d = PYB11TemplateClass(DirichletGridBoundaries,
+DirichletGridBoundary1d = PYB11TemplateClass(DirichletGridBoundary,
                               template_parameters = ("1"),
-                              cppname = "DirichletGridBoundaries<1>",
-                              pyname = "DirichletGridBoundaries1d",
+                              cppname = "DirichletGridBoundary<1>",
+                              pyname = "DirichletGridBoundary1d",
                               docext = " (1D).")
-DirichletGridBoundaries2d = PYB11TemplateClass(DirichletGridBoundaries,
+DirichletGridBoundary2d = PYB11TemplateClass(DirichletGridBoundary,
                               template_parameters = ("2"),
-                              cppname = "DirichletGridBoundaries<2>",
-                              pyname = "DirichletGridBoundaries2d",
+                              cppname = "DirichletGridBoundary<2>",
+                              pyname = "DirichletGridBoundary2d",
                               docext = " (2D).")
-DirichletGridBoundaries3d = PYB11TemplateClass(DirichletGridBoundaries,
+DirichletGridBoundary3d = PYB11TemplateClass(DirichletGridBoundary,
                               template_parameters = ("3"),
-                              cppname = "DirichletGridBoundaries<3>",
-                              pyname = "DirichletGridBoundaries3d",
+                              cppname = "DirichletGridBoundary<3>",
+                              pyname = "DirichletGridBoundary3d",
                               docext = " (3D).") 

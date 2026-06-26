@@ -4,5 +4,6 @@ tests = {
     "wave_bounds",
     "nbody",
     "hllesod",
-    "orbit"  
+    "orbit",
+    "reactionDiffusion"
 }

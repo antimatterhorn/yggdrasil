@@ -1,21 +1,45 @@
 // Copyright (C) 2025  Cody Raskin
 
 #include <vector>
-#include "gridBoundaries.hh"
+#include "gridBoundary.hh"
 
-// Base class for Grid Boundaries
+#define IMPLEMENT_APPLY_INTERFACE(type, TypeName, T) \
+    void Apply##TypeName(type* field) override { ApplyThis<T>(field); }
+
+// Base class for Grid Boundary
 template <int dim>
-class ReflectingGridBoundaries : public GridBoundaries<dim> {
-protected:
+class ReflectingGridBoundary : public GridBoundary<dim> {
+private:
     std::vector<std::vector<int>> boundaryLists;
     std::vector<std::vector<int>> interiorLists;
+
+    template <typename T>
+    void ApplyThis(Field<T>* field) { 
+        #pragma omp parallel for
+        for (int i = 0; i < boundaryLists.size(); ++i) {
+            const auto& b = boundaryLists[i];
+            const auto& iids = interiorLists[i];
+            for (size_t j = 0; j < b.size(); ++j) {
+                if constexpr (std::is_same_v<T, Vector>) {
+                    Vector val = field->getValue(iids[j]);
+                    val[i/2] *= -1; // Flip component normal to the boundary
+                    field->setValue(b[j], val);
+                } else if constexpr (std::is_same_v<T, double> ||
+                                    std::is_same_v<T, Complex>) {
+                    field->setValue(b[j], field->getValue(iids[j]));
+                }
+            }
+        }
+    }
 public:
     using Vector      = Lin::Vector<dim>;
     using VectorField = Field<Vector>;
     using ScalarField = Field<double>;
+    using Complex     = std::complex<double>;
+    using ComplexField= Field<Complex>;
 
-    ReflectingGridBoundaries(Mesh::Grid<dim>* grid) : 
-        GridBoundaries<dim>(grid) {
+    ReflectingGridBoundary(Mesh::Grid<dim>* grid) : 
+        GridBoundary<dim>(grid) {
         if constexpr (dim == 1) {
             boundaryLists.push_back(grid->leftMost());
             interiorLists.push_back({1});
@@ -87,38 +111,9 @@ public:
         }        
     }
 
-    virtual ~ReflectingGridBoundaries() = default;
+    virtual ~ReflectingGridBoundary() = default;
 
-    virtual void ApplyBoundaries(State<dim>* state, NodeList* nodeList) override {
-        for (int i = 0; i < state->count(); ++i) {
-            FieldBase* field = state->getFieldByIndex(i);
-            if (typeid(*field) == typeid(ScalarField)) {
-                ApplyReflecting(static_cast<ScalarField*>(field));
-            } else if (typeid(*field) == typeid(VectorField)) {
-                ApplyReflecting(static_cast<VectorField*>(field));
-            }
-        }
-    }
-
-    void ApplyReflecting(ScalarField* field) {
-        for (int i = 0; i < boundaryLists.size(); ++i) {
-            const auto& b = boundaryLists[i];
-            const auto& iids = interiorLists[i];
-            for (size_t j = 0; j < b.size(); ++j) {
-                field->setValue(b[j], field->getValue(iids[j]));
-            }
-        }
-    }
-
-    void ApplyReflecting(VectorField* field) {
-        for (int i = 0; i < boundaryLists.size(); ++i) {
-            const auto& b = boundaryLists[i];
-            const auto& iids = interiorLists[i];
-            for (size_t j = 0; j < b.size(); ++j) {
-                auto val = field->getValue(iids[j]);
-                val[i/2] *= -1; // Flip component normal to the boundary
-                field->setValue(b[j], val);
-            }
-        }
-    }
+    IMPLEMENT_APPLY_INTERFACE(ScalarField, Scalar, double)
+    IMPLEMENT_APPLY_INTERFACE(VectorField, Vector, Vector)
+    IMPLEMENT_APPLY_INTERFACE(ComplexField, Complex, Complex)
 };

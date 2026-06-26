@@ -6,4 +6,7 @@ commandLine = CommandLineArguments()
 mesh = FEMesh2d()
 mesh.buildFromObj("example.obj",axes="(x,z)")
 
-mesh.writeVTK("example.vtk")
+print(mesh.getNodes())
+#print(mesh.getElements())
+
+#mesh.writeVTK("example.vtk")

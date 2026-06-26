@@ -37,17 +37,17 @@ if __name__ == "__main__":
 
     myNodeList.updatePositions2d(dist)
 
-    rad = myNodeList.getFieldDouble("radius")
-    mass = myNodeList.getFieldDouble("mass")
-    phase = myNodeList.getFieldDouble("kphase")
-    pos = myNodeList.getFieldVector2d("position")
-    strength = myNodeList.getFieldDouble("kstrength")
-    omega = myNodeList.getFieldDouble("komega")
+    rad = myNodeList.radius
+    mass = myNodeList.mass
+    phase = myNodeList.kphase
+    pos = myNodeList.position
+    strength = myNodeList.kstrength
+    omega = myNodeList.komega
     for i in range(numNodes):
-        rad.setValue(i, 1e-5)
-        mass.setValue(i,1e-5)
-        phase.setValue(i,random()*2*pi)
-        omega.setValue(i,random()*0.1+1.0)
+        rad[i] = 1e-5
+        mass[i] = 1e-5
+        phase[i] = random()*2*pi
+        omega[i] = random()*0.1+1.0
 
     integrator  = Integrator2d(packages=packages, dtmin=.001, verbose=False)
 

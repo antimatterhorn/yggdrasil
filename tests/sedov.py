@@ -4,7 +4,7 @@ from Animation import *
 from Physics import GridHydroHLLE2d
 from Mesh import Grid2d
 from EOS import IdealGasEOS
-from Boundaries import ReflectingGridBoundaries2d
+from Boundaries import ReflectingGridBoundary2d
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     print("numNodes =",myNodeList.numNodes)
     print("field names =",myNodeList.fieldNames)
 
-    box = ReflectingGridBoundaries2d(grid=myGrid)
+    box = ReflectingGridBoundary2d(grid=myGrid)
     hydro.addBoundary(box)
 
     integrator = RungeKutta4Integrator2d([hydro],dtmin=dtmin,verbose=False)
@@ -81,7 +81,7 @@ if __name__ == "__main__":
                                                 stepper=controller.Step,
                                                 title=title,
                                                 fieldName="density")
-        AnimateGrid2d(bounds,update_method,extremis=[0,4],frames=cycles,cmap="plasma")
+        AnimateGrid2d(bounds,update_method,extremis=[0,4],frames=cycles,cmap=rbbl)
     else:
         controller.Step(cycles)
 

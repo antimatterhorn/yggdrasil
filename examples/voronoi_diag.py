@@ -7,7 +7,7 @@ if __name__ == "__main__":
     commandLine = CommandLineArguments(numNodes = 100,
                                        bmin = [-4,-4],
                                        bmax = [4,4],
-                                       method = "random")
+                                       method = "fibonacci")
     
     assert method in ["random", "fibonacci", "glass", 
                         "constantDTheta", "poisson", 
@@ -62,10 +62,10 @@ if __name__ == "__main__":
 
     print("field names =",myNodeList.fieldNames)
 
-    pos = myNodeList.getFieldVector2d("position")
+    pos = myNodeList.position
 
     for i in range(numNodes):
-        pos.setValue(i,Vector2d(posF[i][0], posF[i][1])*0.5*(bmax[1]-bmin[1]))
+        pos[i] = Vector2d(posF[i][0], posF[i][1])*0.5*(bmax[1]-bmin[1])
 
     print("Creating VoronoiMesh2d")
     vor = VoronoiMesh2d(pos)

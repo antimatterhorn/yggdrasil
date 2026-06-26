@@ -8,11 +8,11 @@ class dumpState:
         self.energy = []
         self.G = G
     def __call__(self,cycle,time,dt):
-        v2 = self.nodeList.getFieldVector2d("velocity")[0].mag2
+        v2 = self.nodeList.velocity[0].mag2
         ke = 0.5*v2
-        r = self.nodeList.getFieldVector2d("position")[0].magnitude
+        r = self.nodeList.position[0].magnitude
         pe = self.G/r
-        self.dump.append((self.nodeList.getFieldVector2d("position")[0].x,self.nodeList.getFieldVector2d("position")[0].y))
+        self.dump.append((self.nodeList.position[0].x,self.nodeList.position[0].y))
         self.energy.append((time,ke-pe))
 
 
@@ -34,7 +34,7 @@ def run():
     integrator = RungeKutta4Integrator2d(packages=packages,
                                          dtmin=1e-3)
   
-    pos = myNodeList.getFieldVector2d("position")[0]
+    pos = myNodeList.position[0]
     pos.x = -2.0
 
     norbits = 4
@@ -44,7 +44,7 @@ def run():
 
     v0 = -0.5*sqrt(constants.G*1/abs(pos.x))
     #v0 = -0.4*8.7298e-4
-    velocity = myNodeList.getFieldVector2d("velocity")[0]
+    velocity = myNodeList.velocity[0]
     velocity.y = v0
 
     import numpy as np

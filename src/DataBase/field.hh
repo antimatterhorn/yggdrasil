@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <complex>
 #include "../Type/name.hh"
 
 // Base class for all Field types
@@ -27,6 +28,8 @@ private:
     Name name;
 
 public:
+    using ElementType = T;
+    
     Field();
     Field(const std::string& fieldName);
     Field(const std::string& fieldName, unsigned int numElements);
@@ -56,6 +59,16 @@ public:
     std::string getNameString() const override;
 
     void fill(unsigned int n, T val);
+
+    inline
+    T* data() {
+        return values.data();
+    }
+
+    inline
+    const T* data() const {
+        return values.data();
+    }
 };
 
 #include "field.cc"

@@ -11,10 +11,17 @@ PYB11includes = ['"physics.hh"',
                 '"eulerHydro.cc"',
                 '"gridHydroHLLE.cc"',
                 '"gridHydroHLLC.cc"',
+                '"gridHydroKT.cc"',
                 '"kinetics.cc"',
                 '"fem.cc"',
                 '"thermalConduction.cc"',
-                '"phaseCoupling.cc"']
+                '"phaseCoupling.cc"',
+                '"treeGravity.cc"',
+                '"reactionDiffusion.cc"',
+                '"complexWaveEquation.cc"',
+                '"magField.cc"',
+                '"cncPathPhysics.cc"',
+                ]
 
 from physics import *
 from constantGravity import *
@@ -28,7 +35,13 @@ from implicitPhysics import *
 from eulerHydro import *
 from gridHydroHLLE import *
 from gridHydroHLLC import *
+from gridHydroKT import *
 from kinetics import *
 from fem import *
 from thermalConduction import *
 from phaseCoupling import *
+from treeGravity import *
+from reactionDiffusion import *
+from complexWaveEquation import *
+from magField import *
+from cncPathPhysics import *

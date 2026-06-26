@@ -23,8 +23,8 @@ class Controller:
                 for work in self.periodicWork:
                     if cycle % work.cycle == 0:
                         work(cycle,time,dt)
-            for package in self.integrator.getPackages():
-                package.UpdateState()
+            # for package in self.integrator.getPackages():
+            #     package.UpdateState()
             self.time = self.integrator.Time()
             self.cycle = self.integrator.Cycle()
             self.dt = self.integrator.dt
