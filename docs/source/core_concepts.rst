@@ -210,14 +210,33 @@ The full list of available methods for ``DirichletGridBoundaries`` is given belo
     :language: python
     :lines: 8-17
 
-The ``addDomain`` method applies Dirichlet conditions to all of the bounds (left-most,right-most,etc.)
-of the mesh. The other grid boundary types merely perform ``addDomain`` at constructor time and do not
-have any special methods.
+The ``addDomain`` method applies Dirichlet conditions to all of the bounds (left-most, right-most, etc.)
+of the mesh.
 
-.. warning::
-    At this time, Yggdrasil's reflecting, periodic, and outlfow boundaries apply to all of the bounds
-    of your mesh, *i.e* the left and right-most cells will be periodic as well as the top and bottom-most
-    cells in 2d. 
+The reflecting, outflow, and periodic boundary types apply to **all faces** by default. To restrict a
+boundary condition to a subset of faces, call ``setFaces`` after construction and pass a list of face
+names. Valid names are ``"left"``, ``"right"``, ``"bottom"``, ``"top"`` (and ``"front"``, ``"back"``
+in 3d), where *bottom* is the minimum-y face and *top* is the maximum-y face.
+
+.. code-block:: python
+
+    wall = ReflectingGridBoundary2d(grid=myGrid)
+    wall.setFaces(["bottom"])          # reflecting wall on the bottom face only
+
+    outflow = OutflowGridBoundary2d(grid=myGrid)
+    outflow.setFaces(["left", "right", "top"])  # outflow on three faces
+
+Multiple boundary conditions targeting different faces can be added to the same physics package and
+will each be applied in order:
+
+.. code-block:: python
+
+    hydro.addBoundary(wall)
+    hydro.addBoundary(outflow)
+
+For ``PeriodicGridBoundary``, ``setFaces`` always activates both members of an axis-aligned pair:
+specifying ``"bottom"`` automatically also activates ``"top"``, and vice versa, because periodic
+boundaries must be bidirectional.
 
 Collider Boundaries
 ^^^^^^^^^^^^^^^^^^^
