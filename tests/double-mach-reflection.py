@@ -43,6 +43,12 @@ if __name__ == "__main__":
     outflow.setFaces(["right"])
     hydro.addBoundary(outflow)
 
+    # Left and top: outflow as a fallback during RK4 substeps.
+    # DMRBoundary overrides these each full step with the correct inflow values.
+    substep_bc = OutflowGridBoundary2d(grid=myGrid)
+    substep_bc.setFaces(["left", "top"])
+    hydro.addBoundary(substep_bc)
+
     integrator = RungeKutta4Integrator2d([hydro], dtmin=dtmin, verbose=intVerbose)
 
     density  = myNodeList.getFieldDouble("density")
