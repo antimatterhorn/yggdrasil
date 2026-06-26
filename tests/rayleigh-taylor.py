@@ -5,10 +5,12 @@ from Mesh import Grid2d
 from Physics import GridHydroKT2d, GridHydroHLLE2d, ConstantGridAccel2d
 from EOS import IdealGasEOS
 from Boundaries import ReflectingGridBoundary2d,DirichletGridBoundary2d
+from Utilities import SiloDump
 
 if __name__ == "__main__":
-    commandLine = CommandLineArguments(animate = True,
-                                        siloDump = False,
+    commandLine = CommandLineArguments(animate = False,
+                                        siloDump = True,
+                                        dumpCycle = 50,
                                         cycles = 3000,
                                         nx = 100,
                                         ny = 100,

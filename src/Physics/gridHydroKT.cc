@@ -84,6 +84,7 @@ public:
                 const Field<double>& u,
                 const Field<double>& p,
                 const Field<double>& cs) const override {
+        (void)cs;
         double dx = this->grid->spacing(axis);
 
         // Cell-centered values
@@ -91,7 +92,6 @@ public:
         Vector v0L  = v.getValue(iL), v0R = v.getValue(iR);
         double u0L  = u.getValue(iL), u0R = u.getValue(iR);
         double p0L  = p.getValue(iL), p0R = p.getValue(iR);
-        double c0L  = cs.getValue(iL), c0R = cs.getValue(iR);
 
         // Slopes
         double drhoL    = slopeLimitedValue(rho, iL, axis);
@@ -102,8 +102,6 @@ public:
         double duR      = slopeLimitedValue(u, iR, axis);
         double dpL      = slopeLimitedValue(p, iL, axis);
         double dpR      = slopeLimitedValue(p, iR, axis);
-        double dcL      = slopeLimitedValue(cs, iL, axis);
-        double dcR      = slopeLimitedValue(cs, iR, axis);
 
         // Reconstructed interface values
         double rhoL = rho0L + 0.5 * drhoL;
@@ -114,8 +112,11 @@ public:
         double uR   = u0R - 0.5 * duR;
         double pL   = p0L + 0.5 * dpL;
         double pR   = p0R - 0.5 * dpR;
-        double cL   = c0L + 0.5 * dcL;
-        double cR   = c0R - 0.5 * dcR;
+
+        // Sound speed from EOS at reconstructed states (consistent with rho, u)
+        double cL, cR;
+        this->eos->setSoundSpeed(&cL, &rhoL, &uL);
+        this->eos->setSoundSpeed(&cR, &rhoR, &uR);
 
         double vnL  = vL[axis], vnR = vR[axis];
 

@@ -1,13 +1,16 @@
+import numpy as np
 from yggdrasil import *
 from Animation import *
 from Mesh import Grid2d
 from Physics import GridHydroKT2d,GridHydroHLLC2d,GridHydroHLLE2d
 from EOS import IdealGasEOS
 from Boundaries import PeriodicGridBoundary2d
+from Utilities import SiloDump
 
 if __name__ == "__main__":
-    commandLine = CommandLineArguments(animate = True,
-                                        siloDump = False,
+    commandLine = CommandLineArguments(animate = False,
+                                        siloDump = True,
+                                        dumpCycle= 50,
                                         cycles = 3000,
                                         nx = 200,
                                         ny = 100,
@@ -56,16 +59,15 @@ if __name__ == "__main__":
 
             if j < ny // 4:
                 rho = 1.0
-                vx = -3.0
+                vx = -0.5
             elif j < 3 * ny // 4:
                 rho = 2.0
-                vx = -0.5
+                vx = 0.5
             else:
                 rho = 1.0
-                vx = 0.0
+                vx = -0.5
 
-            a = 1 * np.sin(4 * np.pi * x)
-
+            vy = 0.1 * np.sin(4 * np.pi * x)
 
             velocity.setValue(idx, Vector2d(vx, vy))
             density.setValue(idx, rho)
@@ -78,7 +80,7 @@ if __name__ == "__main__":
         meshWriter = SiloDump(baseName="HLL",
                                 nodeList=myNodeList,
                                 fieldNames=["density","specificInternalEnergy","pressure","velocity"],
-                                dumpCycle=50)
+                                dumpCycle=dumpCycle)
         periodicWork += [meshWriter]
 
     controller = Controller(integrator=integrator,periodicWork=periodicWork,statStep=1)

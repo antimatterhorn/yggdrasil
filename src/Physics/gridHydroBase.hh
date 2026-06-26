@@ -133,7 +133,7 @@ public:
 
             drhodt->setValue(i, net_rho_flux);
             Vector dvi = (net_mom_flux - vi * net_rho_flux) / rhoi;
-            double dui = (net_E_flux - vi.dot(net_mom_flux) - 0.5 * vi.mag2() * net_rho_flux) / rhoi;
+            double dui = (net_E_flux - vi.dot(net_mom_flux) + 0.5 * vi.mag2() * net_rho_flux - ui * net_rho_flux) / rhoi;
 
             dvdt->setValue(i, dvi);
             dudt->setValue(i, dui);
