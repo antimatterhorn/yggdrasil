@@ -3,7 +3,11 @@ from boundary import *
 
 @PYB11template("dim")
 class GridBoundary(Boundary):
-    def pyinit(self,grid="Mesh::Grid<%(dim)s>*"):
+    def pyinit(self, grid="Mesh::Grid<%(dim)s>*"):
+        return
+
+    def setFaces(self, faces="std::vector<std::string>"):
+        "Restrict this BC to a subset of faces. Valid names: left, right, top, bottom, front, back."
         return
     
 GridBoundary1d = PYB11TemplateClass(GridBoundary,

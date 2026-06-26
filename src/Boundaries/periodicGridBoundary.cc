@@ -13,9 +13,10 @@ private:
     std::vector<std::vector<int>> boundaryLists;
 
     template <typename T>
-    void ApplyThis(Field<T>* field) { 
+    void ApplyThis(Field<T>* field) {
         #pragma omp parallel for
-        for (int i=0; i<2*dim;++i) {
+        for (int i = 0; i < 2 * dim; ++i) {
+            if (!this->activeFaces[i]) continue;
             std::vector<int> b = boundaryLists[2*i];
             std::vector<int> c = boundaryLists[2*i+1];
             CopyBoundaryData<T>(field, b, c);
@@ -155,6 +156,16 @@ public:
     }
     
     virtual ~PeriodicGridBoundary() = default;
+
+    // Periodic BCs must always come in axis-aligned pairs (left↔right,
+    // top↔bottom, front↔back). Activating one face implicitly activates
+    // its partner so the ghost-cell copy is always bidirectional.
+    virtual void setFaces(const std::vector<std::string>& faces) override {
+        GridBoundary<dim>::setFaces(faces);
+        for (int i = 0; i < 2 * dim; i += 2)
+            if (this->activeFaces[i] || this->activeFaces[i + 1])
+                this->activeFaces[i] = this->activeFaces[i + 1] = true;
+    }
 
     IMPLEMENT_APPLY_INTERFACE(ScalarField, Scalar, double)
     IMPLEMENT_APPLY_INTERFACE(VectorField, Vector, Vector)

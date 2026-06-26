@@ -13,12 +13,22 @@ template <int dim>
 class GridBoundary : public Boundary<dim> {
 protected:
     Mesh::Grid<dim>* grid;
+    std::vector<bool> activeFaces;
+
 public:
-    GridBoundary(Mesh::Grid<dim>* grid) : 
-        grid(grid) {}
-    
+    GridBoundary(Mesh::Grid<dim>* grid) :
+        grid(grid), activeFaces(2 * dim, true) {}
+
     virtual ~GridBoundary() {}
 
+    virtual void setFaces(const std::vector<std::string>& faces) {
+        static const std::array<std::string, 6> names =
+            {"left", "right", "top", "bottom", "front", "back"};
+        std::fill(activeFaces.begin(), activeFaces.end(), false);
+        for (const auto& f : faces)
+            for (int i = 0; i < 2 * dim; ++i)
+                if (names[i] == f) { activeFaces[i] = true; break; }
+    }
 };
 
 #endif // GRIDBoundary_HH

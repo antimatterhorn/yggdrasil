@@ -14,9 +14,10 @@ private:
     std::vector<std::vector<int>> interiorLists;
 
     template <typename T>
-    void ApplyThis(Field<T>* field) { 
+    void ApplyThis(Field<T>* field) {
         #pragma omp parallel for
-        for (int i = 0; i < boundaryLists.size(); ++i) {
+        for (int i = 0; i < (int)boundaryLists.size(); ++i) {
+            if (!this->activeFaces[i]) continue;
             const auto& b = boundaryLists[i];
             const auto& iids = interiorLists[i];
             for (size_t j = 0; j < b.size(); ++j) {

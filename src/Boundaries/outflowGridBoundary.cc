@@ -13,6 +13,7 @@ private:
     template <typename T>
     void ApplyThis(Field<T>* field) {
         for (int face = 0; face < 2 * dim; ++face) {
+            if (!this->activeFaces[face]) continue;
             const std::vector<int>& ghost = boundaryIds[2 * face];     // ghost cells
             const std::vector<int>& inner = boundaryIds[2 * face + 1]; // first interior cells
 

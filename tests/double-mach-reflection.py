@@ -5,7 +5,7 @@ from Animation import *
 from Mesh import Grid2d
 from Physics import GridHydroKT2d
 from EOS import IdealGasEOS
-from Boundaries import ReflectingGridBoundary2d
+from Boundaries import ReflectingGridBoundary2d, OutflowGridBoundary2d
 from Utilities import SiloDump
 
 # Woodward-Colella double Mach reflection benchmark (JCP 1984).
@@ -33,9 +33,15 @@ if __name__ == "__main__":
 
     hydro = GridHydroKT2d(myNodeList, constants, eos, myGrid)
 
-    # Reflecting bottom wall models the 30-degree wedge surface.
+    # Bottom wall only: reflecting (models the 30-degree wedge surface).
     wall = ReflectingGridBoundary2d(grid=myGrid)
+    wall.setFaces(["bottom"])
     hydro.addBoundary(wall)
+
+    # Right wall only: outflow (pre-shock gas exits without reflection).
+    outflow = OutflowGridBoundary2d(grid=myGrid)
+    outflow.setFaces(["right"])
+    hydro.addBoundary(outflow)
 
     integrator = RungeKutta4Integrator2d([hydro], dtmin=dtmin, verbose=intVerbose)
 
@@ -83,8 +89,8 @@ if __name__ == "__main__":
 
     class DMRBoundary:
         """
-        Enforces the time-varying Woodward-Colella DMR boundary conditions
-        each cycle, overriding the reflecting BC on the walls that need inflow.
+        Handles the three time-varying inflow boundaries each cycle.
+        The right wall is handled statically by OutflowGridBoundary.
         """
         def __init__(self):
             self.cycle = 1
@@ -110,16 +116,8 @@ if __name__ == "__main__":
             for j in range(ny):
                 self._post(myGrid.index(0, j, 0))
 
-            # Right wall: zero-gradient outflow (copy from second-to-last column).
-            for j in range(ny):
-                src = myGrid.index(nx - 2, j, 0)
-                dst = myGrid.index(nx - 1, j, 0)
-                self._rho.setValue(dst, self._rho[src])
-                self._v.setValue(dst, self._v[src])
-                self._u.setValue(dst, self._u[src])
-
             # Bottom wall: post-shock inflow left of the moving shock foot;
-            # the reflecting BC (applied earlier) handles the wedge to the right.
+            # ReflectingGridBoundary handles the wedge to the right.
             for i in range(nx):
                 if (i + 0.5) * dx < x_foot:
                     self._post(myGrid.index(i, 0, 0))
