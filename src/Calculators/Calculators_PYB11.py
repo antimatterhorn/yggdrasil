@@ -44,7 +44,8 @@ class StringArt:
 class Mandelbrot:
     def pyinit(self,
                nodeList="NodeList*",
-               grid="Mesh::Grid<2>*"):
+               grid="Mesh::Grid<2>*",
+               maxIter=("int", 200)):
         return
     def compute(self):
         return

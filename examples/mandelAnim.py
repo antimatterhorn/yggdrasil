@@ -14,6 +14,7 @@ class AnimatedMandelbrotZoom:
         self.center_y = (ymin + ymax) / 2
         self.width = xmax - xmin
         self.height = ymax - ymin
+        self.initial_width = self.width
         self.num_nodes = nx * ny
         self.t = 0
 
@@ -23,8 +24,12 @@ class AnimatedMandelbrotZoom:
         self.grid.setOrigin(origin)
         self.compute()
 
+    def dynamic_max_iter(self):
+        zoom_depth = self.initial_width / self.width
+        return int(200 * (1 + 0.5 * np.log2(zoom_depth)))
+
     def compute(self):
-        mand = Mandelbrot(self.nodeList, self.grid)
+        mand = Mandelbrot(self.nodeList, self.grid, self.dynamic_max_iter())
         mand.compute()
         self.values = [self.nodeList.mandelbrot[i] for i in range(self.num_nodes)]
 
@@ -59,4 +64,4 @@ ymin, ymax = 0.240362, 0.241187
 ne = 300
 
 sim = AnimatedMandelbrotZoom(ne, ne, xmin, xmax, ymin, ymax)
-AnimateGrid2d((ne, ne), sim, frames=150, interval=50, cmap='inferno', extremis=(0, 100))
+AnimateGrid2d((ne, ne), sim, frames=150, interval=50, cmap='inferno')

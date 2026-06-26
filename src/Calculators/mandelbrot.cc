@@ -14,8 +14,10 @@ public:
     using Vector = Lin::Vector<2>;
     using VectorField = Field<Vector>;
 
-    Mandelbrot(NodeList* nodeList, Mesh::Grid<2>* grid) 
-        : nodeList(nodeList),grid(grid) {
+    int maxIter;
+
+    Mandelbrot(NodeList* nodeList, Mesh::Grid<2>* grid, int maxIter=200)
+        : nodeList(nodeList), grid(grid), maxIter(maxIter) {
         nodeList->template insertField<std::complex<double>>("complexPosition");
         nodeList->template insertField<double>("mandelbrot");
     }
@@ -41,7 +43,7 @@ public:
 
         const int numNodes = nodeList->size();
         int lastPercent = -1;
-        const int maxIterations = 200;
+        const int maxIterations = maxIter;
         std::vector<std::complex<double>> complexData = complexPosition->getValues();
         #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < numNodes; ++i) {
