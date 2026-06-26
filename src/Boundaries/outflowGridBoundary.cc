@@ -46,6 +46,10 @@ private:
                                 const std::vector<int>& boundaryIds,
                                 const std::vector<int>& copyIds,
                                 const std::vector<int>& nextInteriorIds) {
+        assert(copyIds.size() == boundaryIds.size() &&
+               "OutflowGridBoundary: ghost and inner cell lists are different sizes");
+        assert(nextInteriorIds.size() == boundaryIds.size() &&
+               "OutflowGridBoundary: next-interior list size mismatch");
         for (size_t i = 0; i < boundaryIds.size(); ++i) {
             T val = field->getValue(copyIds[i]) * 2.0 - field->getValue(nextInteriorIds[i]);
             field->setValue(boundaryIds[i], val);
@@ -85,12 +89,14 @@ public:
             std::vector<int> bottomIds = grid->bottomMost();
             std::vector<int> bottomcol;
             
-            for (int j=0; j<bottomIds.size(); ++j) {
+            // left/right inner cols: one entry per row (ny entries)
+            for (int j=0; j<(int)leftIds.size(); ++j) {
                 leftcol.push_back(grid->index(1,j));
                 rightcol.push_back(grid->index(bottomIds.size()-2,j));
             }
 
-            for (int i=0; i<leftIds.size(); ++i) {
+            // top/bottom inner rows: one entry per column (nx entries)
+            for (int i=0; i<(int)bottomIds.size(); ++i) {
                 topcol.push_back(grid->index(i,1));
                 bottomcol.push_back(grid->index(i,leftIds.size()-2));
             }

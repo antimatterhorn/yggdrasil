@@ -23,7 +23,7 @@ public:
 
     virtual void setFaces(const std::vector<std::string>& faces) {
         static const std::array<std::string, 6> names =
-            {"left", "right", "top", "bottom", "front", "back"};
+            {"left", "right", "bottom", "top", "front", "back"};
         std::fill(activeFaces.begin(), activeFaces.end(), false);
         for (const auto& f : faces)
             for (int i = 0; i < 2 * dim; ++i)

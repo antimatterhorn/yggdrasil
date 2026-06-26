@@ -6,6 +6,7 @@ class Physics:
                nodeList="NodeList*",
                constants="PhysicalConstants&"):
         return
+    @PYB11keepalive(1, 2)
     def addBoundary(self,
                     boundary="Boundary<dim>*"):
         return
