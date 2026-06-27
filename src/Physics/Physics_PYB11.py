@@ -1,5 +1,8 @@
 from PYB11Generator import *
 PYB11includes = ['"physics.hh"',
+                '"../Materials/material.hh"',
+                '"../Materials/linearElastic.cc"',
+                '"femLinearElasticity.cc"',
                 '"constantGravity.cc"',
                 '"constantGridAccel.cc"',
                 '"pointSourceGravity.cc"',
@@ -38,6 +41,7 @@ from gridHydroHLLC import *
 from gridHydroKT import *
 from kinetics import *
 from fem import *
+from femLinearElasticity import *
 from thermalConduction import *
 from phaseCoupling import *
 from treeGravity import *
