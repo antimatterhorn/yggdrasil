@@ -46,40 +46,44 @@ if __name__ == "__main__":
     velocity = myNodeList.getFieldVector2d("velocity")
     position = myNodeList.getFieldVector2d("position")
 
-    p0 = 2.5
-    p_top = p0
+    # p0 must be large enough that cs >> v_RT everywhere.
+    # v_RT ~ sqrt(At * |g| * H) ~ sqrt(2/3 * 980 * 100) ~ 255 cm/s.
+    # With rho_heavy=5 at the top, cs_top = sqrt(gamma*p0/rho_heavy).
+    # p0 = 1e6 gives cs_top ~ 529 cm/s (Ma ~ 0.5, marginal).
+    # p0 = 1e7 gives cs_top ~ 1673 cm/s (Ma ~ 0.15, safely subsonic).
+    p0    = 1.0e7
     gamma = eos.gamma
 
-    p = np.zeros((nx, ny))
     rho = np.zeros((nx, ny))
 
-    # Set up the interface shape
+    # Interface shape: sinusoidal perturbation centered at mid-domain
     interface_y = np.zeros(nx)
     for i in range(nx):
         x = (i + 0.5) * dx
-        interface_y[i] = ny / 2 + 4.0 * np.sin(9.0 * np.pi * x / nx + np.pi)
+        interface_y[i] = ny / 2 + 1.0 * np.sin(3.0 * np.pi * x / nx + np.pi)
 
+    # First pass: assign density from the interface (heavy above, light below)
     for i in range(nx):
-        for j in reversed(range(ny)):
+        for j in range(ny):
             y = (j + 0.5) * dy
+            rho[i, j] = 5.0 if y >= interface_y[i] else 1.0
+
+    # Build a HORIZONTALLY UNIFORM 1D hydrostatic pressure by integrating
+    # the row-averaged density from the top downward.  Using a column-local
+    # density would create spurious horizontal pressure gradients in the IC
+    # that drive immediate horizontal flow before the instability can develop.
+    p_1d = np.zeros(ny)
+    p_1d[ny - 1] = p0
+    for j in range(ny - 2, -1, -1):
+        rho_row = np.mean(rho[:, j + 1])
+        p_1d[j] = p_1d[j + 1] - rho_row * g * dy   # g < 0, so pressure increases downward
+
+    # Second pass: set density and energy fields
+    for i in range(nx):
+        for j in range(ny):
             idx = myGrid.index(i, j, 0)
-
-            if y >= interface_y[i]:
-                rho_ij = 5.0
-            else:
-                rho_ij = 1.0
-
-            rho[i, j] = rho_ij
-
-            if j == ny - 1:
-                p[i, j] = p_top
-            else:
-                p[i, j] = p[i, j+1] - rho[i, j+1] * g * dy  # integrate dp = -ρg dy
-
-            # Now set fields
             density.setValue(idx, rho[i, j])
-            u = p[i, j] / ((gamma - 1.0) * rho[i, j])
-            energy.setValue(idx, u)
+            energy.setValue(idx, p_1d[j] / ((gamma - 1.0) * rho[i, j]))
 
     periodicWork = []
 
@@ -100,6 +104,6 @@ if __name__ == "__main__":
                                                 stepper=controller.Step,
                                                 title=title,
                                                 fieldName="density")
-        AnimateGrid2d(bounds,update_method,extremis=[1,3],frames=cycles,cmap=rbbl)
+        AnimateGrid2d(bounds,update_method,extremis=[1,5],frames=cycles,cmap='RdBu_r')
     else:
         controller.Step(cycles)
