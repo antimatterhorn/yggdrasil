@@ -12,7 +12,7 @@ if __name__ == "__main__":
     assert method in ["random", "fibonacci", "glass", 
                         "constantDTheta", "poisson", 
                         "glassDisk", "poissonDisk", "lattice",
-                        "cvt", "cvtDisk","hcp"]
+                        "cvt", "cvtDisk","hcp", "tanh"]
 
 
     if method == "random":
@@ -56,6 +56,9 @@ if __name__ == "__main__":
     elif method == "lattice":
         from LatticeNodeGenerator import Lattice2d
         posF = Lattice2d(int(sqrt(numNodes)),int(sqrt(numNodes))).positions
+    elif method == "tanh":
+        from TanhNodeGenerator import TanhNodeGenerator2d
+        posF = TanhNodeGenerator2d(int(sqrt(numNodes)),int(sqrt(numNodes))).positions
 
     myNodeList = NodeList(numNodes)
     myNodeList.insertFieldVector2d("position")
