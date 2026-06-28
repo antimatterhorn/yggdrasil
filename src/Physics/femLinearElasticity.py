@@ -9,7 +9,6 @@ class FEMLinearElasticity(Physics):
                mesh="Mesh::FEMesh<%(dim)s>*",
                material="FEMMaterial<%(dim)s>*",
                rho="double",
-               bodyForce="Lin::Vector<%(dim)s>",
                alpha="double",
                beta="double"):
         return
