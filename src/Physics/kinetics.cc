@@ -6,8 +6,8 @@
 template <int dim>
 class Kinetics : public Kinematics<dim> {
 protected:
-    double dtmin;
-    double timeVisited;
+    double dtmin = 1e30;
+    double timeVisited = -1.0;
 public:
     using Vector = Lin::Vector<dim>;
     using VectorField = Field<Vector>;
