@@ -29,7 +29,7 @@ public:
 
     virtual ~Constraint() {}
 
-    virtual void ZeroTimeInitialize() override {
+    virtual void ZeroTimeInitialize(NodeList*) override {
         std::vector<std::string> names = nodeList->fieldNames();
         
         for (int i = 0; i < names.size(); ++i) {

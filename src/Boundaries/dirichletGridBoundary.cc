@@ -1,6 +1,7 @@
 // Copyright (C) 2025  Cody Raskin
 
 #include <vector>
+#include <unordered_map>
 #include "gridBoundary.hh"
 #include "../Math/vectorMath.hh"
 #include <complex>
@@ -11,30 +12,6 @@
 // Base class for Grid Boundary
 template <int dim>
 class DirichletGridBoundary : public GridBoundary<dim> {
-private:
-    std::vector<int> ids;
-    Mesh::Grid<dim>* grid;
-
-    void
-    addIds(std::vector<int> vec) {
-        for (int i=0; i<vec.size();i++) {
-            ids.push_back(vec[i]);
-        }
-    }
-
-    template <typename T>
-    void ApplyThis(Field<T>* field) { 
-        #pragma omp parallel for
-        for (int i = 0; i < ids.size(); ++i) {
-            int k = ids[i];
-            if constexpr (std::is_same_v<T, double>) {
-                field->setValue(k, 0.0);
-            } else {
-                field->setValue(k, T());
-            }
-        }
-    }
-
 public:
     using Vector      = Lin::Vector<dim>;
     using VectorField = Field<Vector>;
@@ -42,91 +19,172 @@ public:
     using Complex     = std::complex<double>;
     using ComplexField= Field<Complex>;
 
-    DirichletGridBoundary(Mesh::Grid<dim>* grid) : 
-        GridBoundary<dim>(grid),
-        grid(grid) {}
-    
-    virtual ~DirichletGridBoundary() {}
+private:
+    std::vector<int> ids;
+    Mesh::Grid<dim>* grid;
 
-    virtual void
-    addBox(Vector p1, Vector p2){
-        #pragma omp parallel for
-        for (int idx = 0; idx<grid->size(); ++idx) {
-            Vector thisPos = grid->getPosition(idx);
-            bool inside = true;
-            for(int i=0;i<dim;++i)
-                if(thisPos[i] < p1[i] || thisPos[i] > p2[i]) {
-                    inside = false;
-                    break;
-                }
-            if(inside)
-                ids.push_back(idx);
+    // Saved initial-condition values at Dirichlet cell indices.
+    // Populated by ZeroTimeInitialize after the user sets ICs.
+    // Restored every step so obstacle cells never become a vacuum.
+    std::unordered_map<std::string, std::vector<double>> savedScalars;
+    std::unordered_map<std::string, std::vector<Vector>> savedVectors;
+    bool initialized = false;
+
+    void
+    addIds(std::vector<int> vec) {
+        for (int i=0; i<(int)vec.size();i++) {
+            ids.push_back(vec[i]);
         }
     }
 
-    virtual void 
+    template <typename T>
+    void ApplyThis(Field<T>* field) {
+        if (!initialized) return;
+        const std::string name = field->getNameString();
+        if constexpr (std::is_same_v<T, double>) {
+            auto it = savedScalars.find(name);
+            if (it == savedScalars.end()) return;
+            const auto& vals = it->second;
+            #pragma omp parallel for
+            for (int i = 0; i < (int)ids.size(); ++i)
+                field->setValue(ids[i], vals[i]);
+        } else if constexpr (std::is_same_v<T, Vector>) {
+            auto it = savedVectors.find(name);
+            if (it == savedVectors.end()) return;
+            const auto& vals = it->second;
+            #pragma omp parallel for
+            for (int i = 0; i < (int)ids.size(); ++i)
+                field->setValue(ids[i], vals[i]);
+        }
+        // Complex fields: not saved, left unchanged
+    }
+
+public:
+    DirichletGridBoundary(Mesh::Grid<dim>* grid) :
+        GridBoundary<dim>(grid),
+        grid(grid) {}
+
+    virtual ~DirichletGridBoundary() {}
+
+    // Capture the initial-condition values at all registered Dirichlet cells.
+    // Called by Physics::InitializeBoundaries() after the user's IC loop runs.
+    virtual void ZeroTimeInitialize(NodeList* nodeList) override {
+        std::vector<std::string> names = nodeList->fieldNames();
+        for (int fi = 0; fi < (int)names.size(); ++fi) {
+            const std::string& name = names[fi];
+            FieldBase* fb = nodeList->getFieldByIndex(fi);
+            if (auto* sf = dynamic_cast<ScalarField*>(fb)) {
+                auto& vals = savedScalars[name];
+                vals.resize(ids.size());
+                for (int i = 0; i < (int)ids.size(); ++i)
+                    vals[i] = sf->getValue(ids[i]);
+            } else if (auto* vf = dynamic_cast<VectorField*>(fb)) {
+                auto& vals = savedVectors[name];
+                vals.resize(ids.size());
+                for (int i = 0; i < (int)ids.size(); ++i)
+                    vals[i] = vf->getValue(ids[i]);
+            }
+        }
+        initialized = true;
+    }
+
+    virtual void
+    addBox(Vector p1, Vector p2){
+        std::vector<int> local;
+        #pragma omp parallel
+        {
+            std::vector<int> chunk;
+            #pragma omp for nowait
+            for (int idx = 0; idx < grid->size(); ++idx) {
+                Vector thisPos = grid->getPosition(idx);
+                bool inside = true;
+                for (int i = 0; i < dim; ++i)
+                    if (thisPos[i] < p1[i] || thisPos[i] > p2[i]) {
+                        inside = false; break;
+                    }
+                if (inside) chunk.push_back(idx);
+            }
+            #pragma omp critical
+            local.insert(local.end(), chunk.begin(), chunk.end());
+        }
+        ids.insert(ids.end(), local.begin(), local.end());
+    }
+
+    virtual void
     removeBox(Vector p1, Vector p2) {
-        #pragma omp parallel for
-        for (int idx = 0; idx < grid->size(); ++idx) {
-            Vector thisPos = grid->getPosition(idx);
-            bool inside = true;
-            for (int i = 0; i < dim; ++i) {
-                if (thisPos[i] < p1[i] || thisPos[i] > p2[i]) {
-                    inside = false;
-                    break;
-                }
+        std::vector<int> toRemove;
+        #pragma omp parallel
+        {
+            std::vector<int> chunk;
+            #pragma omp for nowait
+            for (int idx = 0; idx < grid->size(); ++idx) {
+                Vector thisPos = grid->getPosition(idx);
+                bool inside = true;
+                for (int i = 0; i < dim; ++i)
+                    if (thisPos[i] < p1[i] || thisPos[i] > p2[i]) {
+                        inside = false; break;
+                    }
+                if (inside) chunk.push_back(idx);
             }
-            if (inside) {
-                // Check if idx is in the ids vector
-                auto it = std::find(ids.begin(), ids.end(), idx);
-                if (it != ids.end()) {
-                    // Element found, remove it
-                    #pragma omp critical
-                    ids.erase(it);
-                }
-            }
+            #pragma omp critical
+            toRemove.insert(toRemove.end(), chunk.begin(), chunk.end());
+        }
+        for (int r : toRemove) {
+            auto it = std::find(ids.begin(), ids.end(), r);
+            if (it != ids.end()) ids.erase(it);
         }
     }
 
     virtual void
     addSphere(Vector p, double radius){
-        #pragma omp parallel for
-        for (int idx = 0; idx<grid->size(); ++idx) {
-            Vector thisPos = grid->getPosition(idx);
-            bool inside = true;
-            if ((thisPos - p).mag2() <= radius*radius)
-                ids.push_back(idx);
+        std::vector<int> local;
+        #pragma omp parallel
+        {
+            std::vector<int> chunk;
+            #pragma omp for nowait
+            for (int idx = 0; idx < grid->size(); ++idx) {
+                Vector thisPos = grid->getPosition(idx);
+                if ((thisPos - p).mag2() <= radius * radius)
+                    chunk.push_back(idx);
+            }
+            #pragma omp critical
+            local.insert(local.end(), chunk.begin(), chunk.end());
         }
+        ids.insert(ids.end(), local.begin(), local.end());
     }
 
     virtual void
     removeSphere(Vector p, double radius){
-        #pragma omp parallel for
-        for (int idx = 0; idx<grid->size(); ++idx) {
-            Vector thisPos = grid->getPosition(idx);
-            bool inside = true;
-            if ((thisPos - p).mag2() <= radius*radius) {
-                auto it = std::find(ids.begin(), ids.end(), idx);
-                if (it != ids.end()) {
-                    // Element found, remove it
-                    #pragma omp critical
-                    ids.erase(it);
-                }
-            }              
+        std::vector<int> toRemove;
+        #pragma omp parallel
+        {
+            std::vector<int> chunk;
+            #pragma omp for nowait
+            for (int idx = 0; idx < grid->size(); ++idx) {
+                Vector thisPos = grid->getPosition(idx);
+                if ((thisPos - p).mag2() <= radius * radius)
+                    chunk.push_back(idx);
+            }
+            #pragma omp critical
+            toRemove.insert(toRemove.end(), chunk.begin(), chunk.end());
+        }
+        for (int r : toRemove) {
+            auto it = std::find(ids.begin(), ids.end(), r);
+            if (it != ids.end()) ids.erase(it);
         }
     }
 
     virtual void
     addDomain() {
         if (dim == 1) {
-            std::vector<int> leftIds = grid->leftMost();  
+            std::vector<int> leftIds = grid->leftMost();
             std::vector<int> rightIds = grid->rightMost();
 
             addIds(leftIds);
             addIds(rightIds);
         }
         else if (dim == 2) {
-            std::vector<int> leftIds   = grid->leftMost();  
+            std::vector<int> leftIds   = grid->leftMost();
             std::vector<int> rightIds  = grid->rightMost();
             std::vector<int> topIds    = grid->topMost();
             std::vector<int> bottomIds = grid->bottomMost();
@@ -137,7 +195,7 @@ public:
             addIds(bottomIds);
         }
         else if (dim == 3) {
-            std::vector<int> leftIds   = grid->leftMost();  
+            std::vector<int> leftIds   = grid->leftMost();
             std::vector<int> rightIds  = grid->rightMost();
             std::vector<int> topIds    = grid->topMost();
             std::vector<int> bottomIds = grid->bottomMost();
@@ -153,7 +211,7 @@ public:
         }
     }
 
-    virtual std::vector<int> 
+    virtual std::vector<int>
     boundaryIds() {
         return ids;
     }

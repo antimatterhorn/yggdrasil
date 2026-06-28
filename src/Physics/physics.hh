@@ -61,7 +61,7 @@ public:
     virtual void
     InitializeBoundaries() {
         for (Boundary<dim>* boundary : boundaries)
-            boundary->ZeroTimeInitialize();
+            boundary->ZeroTimeInitialize(nodeList);
     }
 
     virtual void

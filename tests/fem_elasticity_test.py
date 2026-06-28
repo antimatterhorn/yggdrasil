@@ -11,9 +11,9 @@ from Utilities import SiloDump
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(
-        cycles    = 500,
+        cycles    = 5000,
         dtmin     = 1e-5,
-        dumpCycle = 10,
+        dumpCycle = 50,
         animate   = False,
     )
 

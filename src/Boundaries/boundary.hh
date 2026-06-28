@@ -22,7 +22,7 @@ public:
     
     virtual ~Boundary() {}
 
-    virtual void ZeroTimeInitialize() {}
+    virtual void ZeroTimeInitialize(NodeList* nodeList) {}
 
     virtual void
     ApplyBoundaries(State<dim>* state, NodeList* nodeList) {
