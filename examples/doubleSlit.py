@@ -25,6 +25,7 @@ from Utilities import SiloDump
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
+                                       dumpCycle=50,
                                        save = None, # doubleSlit.gif
                                        cycles = 800,
                                        nx = 100,
@@ -72,7 +73,7 @@ if __name__ == "__main__":
     osc = oscillate(nodeList=myNodeList,grid=grid,width=nx,height=ny,workCycle=1)
     periodicWork = [osc]
     if (not animate):
-        vtk = SiloDump("testMesh",myNodeList,fieldNames=["phi","xi"],dumpCycle=50)
+        vtk = SiloDump("doubleSlit",myNodeList,fieldNames=["phi","xi","maxphi","waveEnergyDensity"],dumpCycle=dumpCycle)
         periodicWork.append(vtk)
 
     controller = Controller(integrator=integrator,
