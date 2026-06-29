@@ -24,6 +24,11 @@ public:
 
     virtual void ZeroTimeInitialize(NodeList* nodeList) {}
 
+    // Returns the list of interior obstacle cell indices that should be excluded
+    // from the physics update loop.  Only reflecting-interior boundaries need
+    // to override this; all other boundary types return an empty list.
+    virtual std::vector<int> getObstacleIds() const { return {}; }
+
     virtual void
     ApplyBoundaries(State<dim>* state, NodeList* nodeList) {
         for (int i = 0; i < state->count(); ++i) {

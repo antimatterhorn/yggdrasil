@@ -4,6 +4,7 @@
 #include "../Mesh/grid.hh"
 #include "../IO/importDepthMap.hh"
 #include <iostream>
+#include <unordered_set>
 
 template <int dim>
 class WaveEquation : public Physics<dim> {
@@ -72,20 +73,28 @@ public:
 
     virtual void
     ZeroTimeInitialize() override {
-        int numNodes = this->nodeList->size();
-        for (int i=0; i<numNodes; ++i) {
-            if (ocean) {
-                if (!grid2d->onBoundary(i))
-                    insideIds.push_back(i);
-            }
-            else {
-                if (!grid->onBoundary(i))
-                    insideIds.push_back(i);
-            }
-        }
-
         this->UpdateState();
+        // InitializeBoundaries must run first so that any ReflectingGridBoundary
+        // obstacles have their IDs deduped and their neighbor lists built before
+        // we query getObstacleIds() below.
         this->InitializeBoundaries();
+
+        // Collect interior obstacle cells from all registered boundaries.
+        // ReflectingGridBoundary obstacles must be excluded from the physics
+        // update loop — otherwise the wave equation still computes DxiDt and
+        // DphiDt there, which defeats the Neumann BC.
+        std::unordered_set<int> obstacleSet;
+        for (auto* bc : this->boundaries)
+            for (int id : bc->getObstacleIds())
+                obstacleSet.insert(id);
+
+        insideIds.clear();
+        int numNodes = this->nodeList->size();
+        for (int i = 0; i < numNodes; ++i) {
+            bool onBound = ocean ? grid2d->onBoundary(i) : grid->onBoundary(i);
+            if (!onBound && obstacleSet.count(i) == 0)
+                insideIds.push_back(i);
+        }
     }
 
     void
