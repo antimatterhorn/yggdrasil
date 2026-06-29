@@ -48,8 +48,8 @@ if __name__ == "__main__":
     elasticity = FEMLinearElasticity2d(myNodeList, constants, mesh, material,
                                        rho, alpha, beta)
 
-    gravity_vec = Vector2d(0.0, -1.0)
-    gravity = ConstantBodyForce2d(myNodeList, constants, gravity_vec)
+    comp_vec = Vector2d(-100.0, 0.0)
+    compress = ConstantBodyForce2d(myNodeList, constants, comp_vec)
 
     # -----------------------------------------------------------------------
     # Pin the left edge (x < x_min + 0.1) — fixed-wall cantilever support
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     # -----------------------------------------------------------------------
     # Integrate
     # -----------------------------------------------------------------------
-    integrator = RungeKutta2Integrator2d([gravity, elasticity], dtmin=dtmin, verbose=False)
+    integrator = RungeKutta2Integrator2d([compress, elasticity], dtmin=dtmin, verbose=False)
     controller = Controller(integrator=integrator, periodicWork=[dump], statStep=50)
 
     print(f"Running {cycles} cycles...")
