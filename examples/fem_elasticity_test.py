@@ -1,6 +1,6 @@
 from yggdrasil import *
 from Mesh import FEMesh2d
-from Physics import FEMLinearElasticity2d
+from Physics import FEMLinearElasticity2d, ConstantBodyForce2d
 from Materials import IsotropicLinearElastic2d, PlaneCondition
 from Boundaries import MotionConstraint2d
 from Utilities import SiloDump
@@ -41,13 +41,15 @@ if __name__ == "__main__":
     rho = 1.0
 
     material = IsotropicLinearElastic2d(E, nu, PlaneCondition.Stress)
-    gravity  = Vector2d(0.0, -1.0)
 
     alpha = 5.0
     beta  = 1e-5
 
     elasticity = FEMLinearElasticity2d(myNodeList, constants, mesh, material,
-                                       rho, gravity, alpha, beta)
+                                       rho, alpha, beta)
+
+    comp_vec = Vector2d(-100.0, 0.0)
+    compress = ConstantBodyForce2d(myNodeList, constants, comp_vec)
 
     # -----------------------------------------------------------------------
     # Pin the left edge (x < x_min + 0.1) — fixed-wall cantilever support
@@ -73,7 +75,7 @@ if __name__ == "__main__":
     # -----------------------------------------------------------------------
     # Integrate
     # -----------------------------------------------------------------------
-    integrator = RungeKutta2Integrator2d([elasticity], dtmin=dtmin, verbose=False)
+    integrator = RungeKutta2Integrator2d([compress, elasticity], dtmin=dtmin, verbose=False)
     controller = Controller(integrator=integrator, periodicWork=[dump], statStep=50)
 
     print(f"Running {cycles} cycles...")

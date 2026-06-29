@@ -11,7 +11,6 @@ protected:
     Mesh::FEMesh<dim>* mesh;
     FEMMaterial<dim>*  material;
     double rho;
-    Lin::Vector<dim>   bodyForce;
     double alpha, beta;  // Rayleigh damping: f_damp = -(alpha*M + beta*K_diag) * v
     double dtmin = 1e30;
     std::vector<Lin::Vector<dim>> refPositions;
@@ -23,12 +22,11 @@ public:
 
     FEMLinearElasticity(NodeList* nodeList, PhysicalConstants& constants,
                         Mesh::FEMesh<dim>* mesh, FEMMaterial<dim>* material,
-                        double rho, Vector bodyForce,
+                        double rho,
                         double alpha = 0.0, double beta = 0.0)
         : Physics<dim>(nodeList, constants),
           mesh(mesh), material(material),
-          rho(rho), bodyForce(bodyForce),
-          alpha(alpha), beta(beta) {
+          rho(rho), alpha(alpha), beta(beta) {
         this->template EnrollFields<Vector>({"position", "velocity", "displacement"});
         this->template EnrollFields<double>({"vonMises", "sigmaXX", "sigmaYY", "sigmaXY"});
         this->template EnrollStateFields<Vector>({"position", "velocity"});
@@ -54,11 +52,12 @@ public:
         const auto& connectivity = mesh->getConnectivityMap();
         const auto& meshPos      = mesh->getNodes();
 
-        VectorField* pos  = state->template getField<Vector>("position");
-        VectorField* vel  = state->template getField<Vector>("velocity");
-        VectorField* dxdt = deriv.template getField<Vector>("position");
-        VectorField* dvdt = deriv.template getField<Vector>("velocity");
+        VectorField* pos       = state->template getField<Vector>("position");
+        VectorField* vel       = state->template getField<Vector>("velocity");
+        VectorField* dxdt      = deriv.template getField<Vector>("position");
+        VectorField* dvdt      = deriv.template getField<Vector>("velocity");
         ScalarField* massField = this->nodeList->template getField<double>("mass");
+        VectorField* accelField = this->nodeList->template getField<Vector>("acceleration");
 
         Eigen::MatrixXd D = material->materialMatrix();
         int numNodes = this->nodeList->size();
@@ -106,7 +105,8 @@ public:
             for (int d = 0; d < dim; ++d)
                 f_damping[d] = -c * v[d];
 
-            Vector a = (f_elastic + f_damping) * (1.0 / mi) + bodyForce;
+            Vector externalAccel = accelField ? accelField->getValue(i) : Vector::zero();
+            Vector a = (f_elastic + f_damping) * (1.0 / mi) + externalAccel;
 
             dxdt->setValue(i, v + dt * a);
             dvdt->setValue(i, a);
