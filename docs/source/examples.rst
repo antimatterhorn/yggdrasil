@@ -27,6 +27,14 @@ Simulates a double slit experiment.
    :width: 80%
    :align: center
 
+fem_elasticity.py
+---------------------
+Simulates the deformation of a 2D elastic material under a compressive load.
+
+.. image:: fem.gif
+   :width: 80%
+   :align: center
+
 imageToStringArt.py
 ---------------------
 Creates the instructions for (and previews) an image made from strings stretched across a wheel with a chosen number of pins.
