@@ -25,6 +25,8 @@ PYB11includes = ['"physics.hh"',
                 '"complexWaveEquation.cc"',
                 '"magField.cc"',
                 '"cncPathPhysics.cc"',
+                '"dem.cc"',
+                '"demConstantForce.cc"',
                 ]
 
 from physics import *
@@ -51,3 +53,5 @@ from reactionDiffusion import *
 from complexWaveEquation import *
 from magField import *
 from cncPathPhysics import *
+from dem import *
+from demConstantForce import *
