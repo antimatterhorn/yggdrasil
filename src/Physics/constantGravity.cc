@@ -38,24 +38,21 @@ public:
 
         dvdt->copyValues(acceleration);
 
-        double local_dtmin = 1e30;
+        double amag = gravityVector.mag2();
+        double vmax_sq = 0.0;
         VectorField* velocity = initialState->template getField<Vector>("velocity");
 
-        #pragma omp parallel for reduction(min:local_dtmin)
-        for (int i=0; i<numNodes; ++i) {
-            double amag = acceleration->getValue(i).mag2();
-            double vmag = velocity->getValue(i).mag2();
-            if (amag > 0.0)
-                local_dtmin = std::min(local_dtmin, vmag / amag);
-        }
-        dtmin = local_dtmin;
+        #pragma omp parallel for reduction(max:vmax_sq)
+        for (int i=0; i<numNodes; ++i)
+            vmax_sq = std::max(vmax_sq, velocity->getValue(i).mag2());
+
+        dtmin = (amag > 0.0 && vmax_sq > 0.0) ? vmax_sq / amag : 1e30;
         this->lastDt = dt;
     }
 
     virtual double
     EstimateTimestep() const override {
-        double timestepCoefficient = 1e-4;
-        return timestepCoefficient * sqrt(dtmin);
+        return 0.5 * sqrt(dtmin);  // dt ~ 0.5 * v_max / |a|
     }
 
     virtual std::string name() const override { return "constantGravity"; }

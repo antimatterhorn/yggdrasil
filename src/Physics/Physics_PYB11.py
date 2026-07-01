@@ -8,7 +8,6 @@ PYB11includes = ['"physics.hh"',
                 '"femBodyForce.cc"',
                 '"femLinearElasticity.cc"',
                 '"constantGravity.cc"',
-                '"constantGridAccel.cc"',
                 '"pointSourceGravity.cc"',
                 '"nBodyGravity.cc"',
                 '"waveEquation.cc"',
@@ -34,7 +33,6 @@ from physics import *
 from kinematics import *
 from femBodyForce import *
 from constantGravity import *
-from constantGridAccel import *
 from pointSourceGravity import *
 from nBodyGravity import *
 from waveEquation import *
