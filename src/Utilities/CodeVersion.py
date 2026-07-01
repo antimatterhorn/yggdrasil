@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 print("               _             _ _ ")
 print(" _ _ ___ ___ _| |___ ___ ___|_| |")
 print("| | | . | . | . |  _| .'|_ -| | |")

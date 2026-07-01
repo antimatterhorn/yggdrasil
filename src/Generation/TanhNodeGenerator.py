@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 import math
 
 def _tanh_1d(n, beta, mode):

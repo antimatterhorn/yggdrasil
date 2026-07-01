@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 import random
 import math
 

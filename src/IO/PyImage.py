@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 print("this package requires that you've installed PIL already")
 
 from PIL import Image,ImageOps # requires pip3 install PIL

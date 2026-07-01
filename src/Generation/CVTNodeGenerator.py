@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 import numpy as np
 from scipy.spatial import Voronoi
 

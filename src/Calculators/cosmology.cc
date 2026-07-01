@@ -1,4 +1,4 @@
-// Copyright (C) 2025  Cody Raskin
+// Copyright (C) 2026  Cody Raskin
 
 /*
 calculates a cosmology for a given redshift and cosmological parameters

@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 from DataBase import *
 from LinearAlgebra import *
 

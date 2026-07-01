@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 from LinearAlgebra import *
 from math import cos,sin,acos,asin,sqrt
 from numpy import pi

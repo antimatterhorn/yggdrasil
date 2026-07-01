@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 from yggdrasil import *
 
 class HCPNodeGenerator2d:

@@ -1,4 +1,4 @@
-// Copyright (C) 2025  Cody Raskin
+// Copyright (C) 2026  Cody Raskin
 
 #ifndef TENSORMATH_CC
 #define TENSORMATH_CC

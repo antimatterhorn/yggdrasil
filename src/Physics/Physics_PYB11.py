@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 from PYB11Generator import *
 PYB11includes = ['"physics.hh"',
                 '"kinematics.hh"',

@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 from LinearAlgebra import *
 from numpy import pi,sqrt,cos,sin
 

@@ -1,3 +1,5 @@
+// Copyright (C) 2026  Cody Raskin
+
 #include <complex>
 #include "../Math/vectorMath.hh"
 #include "../DataBase/nodeList.hh"

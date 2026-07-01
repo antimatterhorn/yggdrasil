@@ -1,4 +1,4 @@
-// Copyright (C) 2025  Cody Raskin
+// Copyright (C) 2026  Cody Raskin
 // this method is intended for probe particles in a mag field - it will not work for grid-based physics
 
 #include "kinematics.hh"

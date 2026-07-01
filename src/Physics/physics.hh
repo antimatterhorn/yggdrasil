@@ -1,4 +1,4 @@
-// Copyright (C) 2025  Cody Raskin
+// Copyright (C) 2026  Cody Raskin
 
 #ifndef PHYSICS_HH
 #define PHYSICS_HH

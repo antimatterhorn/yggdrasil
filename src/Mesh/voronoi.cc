@@ -1,4 +1,4 @@
-// Copyright (C) 2025  Cody Raskin
+// Copyright (C) 2026  Cody Raskin
 
 #include "voronoi.hh"
 #include <stdexcept>

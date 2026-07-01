@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 from yggdrasil import *
 import matplotlib.pyplot as plt
 import numpy as np

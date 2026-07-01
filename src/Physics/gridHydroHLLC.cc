@@ -1,3 +1,5 @@
+// Copyright (C) 2026  Cody Raskin
+
 // GridHydroHLLC.hh
 #pragma once
 #include "gridHydroBase.hh"

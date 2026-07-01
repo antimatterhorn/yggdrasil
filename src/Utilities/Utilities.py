@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 from yggdrasil import SiloMeshWriter2d
 import wave
 import numpy as np

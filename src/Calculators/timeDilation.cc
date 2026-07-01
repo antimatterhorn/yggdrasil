@@ -1,4 +1,4 @@
-// Copyright (C) 2025  Cody Raskin
+// Copyright (C) 2026  Cody Raskin
 
 /*
 calculates the velocity required and earth time passed to travel to a distant

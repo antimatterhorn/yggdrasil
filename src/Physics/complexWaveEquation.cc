@@ -1,3 +1,5 @@
+// Copyright (C) 2026  Cody Raskin
+
 #include <complex>
 #include "physics.hh"
 #include "../Mesh/grid.hh"
