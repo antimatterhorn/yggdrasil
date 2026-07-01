@@ -25,22 +25,21 @@ def run():
                                   ) 
     loc = Vector2d(0, 0)
 
+    kinematics = Kinematics2d(nodeList=myNodeList, constants=constants)
     sourceGrav = PointSourceGravity2d(nodeList=myNodeList,
                                       constants=constants,
                                       pointSourceLocation=loc,
                                       pointSourceMass=1,
                                       pointSourceVelocity = Vector2d(0,0))
-    packages = [sourceGrav]
+    packages = [kinematics, sourceGrav]
     integrator = RungeKutta4Integrator2d(packages=packages,
-                                         dtmin=1e-3)
+                                         dtmin=1e-1)
   
     pos = myNodeList.position[0]
     pos.x = -2.0
 
     norbits = 4
 
-    dump = dumpState(myNodeList,workCycle=2000,G=constants.G)
-    periodicWork = [dump]
 
     v0 = -0.5*sqrt(constants.G*1/abs(pos.x))
     #v0 = -0.4*8.7298e-4

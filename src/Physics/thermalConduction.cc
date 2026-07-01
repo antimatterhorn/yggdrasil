@@ -29,7 +29,7 @@ public:
     VerifyFields(NodeList* nodeList) {
         this->template EnrollFields<double>({"pressure", "density", "specificInternalEnergy", "soundSpeed", "temperature", "conductivity"});
         this->template EnrollFields<Vector>({"position"});
-        this->template EnrollStateFields<double>({"specificInternalEnergy"});
+        this->template EnrollStateFields<double>({"specificInternalEnergy"}, FieldPolicy::INTEGRATE);
     }
 
     void SetConductivity() {

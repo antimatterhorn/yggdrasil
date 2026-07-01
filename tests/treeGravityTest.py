@@ -1,6 +1,6 @@
 from yggdrasil import *
 from Animation import *
-from Physics import TreeGravity2d
+from Physics import TreeGravity2d, Kinematics2d
 from RandomNodeGenerator import RandomNodeGenerator2d
 import numpy as np
 
@@ -19,7 +19,7 @@ class dumpState:
 if __name__ == "__main__":
     bounds = np.asarray([[-1,-1],[1,1]])
     vbounds = bounds * 0.015
-    numNodes = 100
+    numNodes = 20
     posGenerator = RandomNodeGenerator2d(numNodes=numNodes,bounds=bounds)
     velGenerator = RandomNodeGenerator2d(numNodes=numNodes,bounds=vbounds)
     myNodeList = NodeList(numNodes)
@@ -31,21 +31,22 @@ if __name__ == "__main__":
                                   1.0) 
     loc = Vector2d(0, 0)
 
+    kinematics = Kinematics2d(nodeList=myNodeList, constants=constants)
     nBodyGrav = TreeGravity2d(nodeList=myNodeList,
                                constants=constants,
                                plummerLength=0.01)
-    packages = [nBodyGrav]
+    packages = [kinematics, nBodyGrav]
 
     positions   = myNodeList.getFieldVector2d("position")
     velocity    = myNodeList.getFieldVector2d("velocity")
     mass        = myNodeList.getFieldDouble("mass")
     for i in range(numNodes):
-        mass.setValue(i,1.0)
+        mass.setValue(i,10.0)
         positions.setValue(i,Vector2d(posGenerator.positions[i][0],posGenerator.positions[i][1]))
         velocity.setValue(i,Vector2d(velGenerator.positions[i][0],velGenerator.positions[i][1])*0.5)
 
     integrator = RungeKutta4Integrator2d(packages=packages,
-                                         dtmin=0.001,verbose=False)
+                                         dtmin=0.01,verbose=False)
   
 
     dump = dumpState(myNodeList,workCycle=1000,G=constants.G)

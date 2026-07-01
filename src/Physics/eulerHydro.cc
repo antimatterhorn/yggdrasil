@@ -20,8 +20,8 @@ public:
         Hydro<dim>(nodeList,constants,eos), grid(grid){
         this->template EnrollFields<Vector>({"position"});
 
-        this->template EnrollStateFields<double>({"density", "specificInternalEnergy"});
-        this->template EnrollStateFields<Vector>({"velocity"});
+        this->template EnrollStateFields<double>({"density", "specificInternalEnergy"}, FieldPolicy::INTEGRATE);
+        this->template EnrollStateFields<Vector>({"velocity"}, FieldPolicy::INTEGRATE);
 
         for(int i=0;i<grid->size();i++)
             if(!grid->onBoundary(i))

@@ -10,8 +10,9 @@ public:
 
     ~CrankNicolsonIntegrator() {}
 
-    virtual State<dim> 
-    Integrate(Physics<dim>* physics) override { 
+    virtual State<dim>
+    Integrate(Physics<dim>* physics,
+              const std::vector<Physics<dim>*>& accumulators) override {
         double dt = this->dt;
         double time = this->time;
 
@@ -23,8 +24,17 @@ public:
         k1.ghost(state);
         k2.ghost(state);
 
-        // Derivatives at current time/state
-        physics->EvaluateDerivatives(state, k1, time, 0.0);
+        auto evalWithAccum = [&](const State<dim>* s, State<dim>& k, double t, double subDt) {
+            physics->EvaluateDerivatives(s, k, t, subDt);
+            for (auto* acc : accumulators) {
+                State<dim> accK(state->size());
+                accK.ghost(acc->getState());
+                acc->EvaluateDerivatives(s, accK, t, subDt);
+                k.accumulateFrom(accK, acc->accumulateFieldNames());
+            }
+        };
+
+        evalWithAccum(state, k1, time, 0.0);
 
         // Initial guess: Euler forward
         State<dim> predicted = state->deepCopy();
@@ -35,7 +45,7 @@ public:
         const int maxIterations = 10;
 
         for (int iter = 0; iter < maxIterations; ++iter) {
-            physics->EvaluateDerivatives(&predicted, k2, time, dt);
+            evalWithAccum(&predicted, k2, time, dt);
 
             State<dim> newPredicted = state->deepCopy();
             State<dim> avgDeriv = k1.deepCopy();
@@ -50,12 +60,12 @@ public:
                 std::cout << "CrankNicolson iteration " << iter << ": Δ = " << delta << "\n";
 
             if (delta < tolerance) {
-                this->dtMultiplier *= (iter < maxIterations*0.5 ? 
-                        1.2 : (iter > maxIterations*0.8 ? 0.8 : 1));
+                this->dtMultiplier *= (iter < maxIterations * 0.5 ?
+                        1.2 : (iter > maxIterations * 0.8 ? 0.8 : 1));
                 break;
-            }                    
+            }
 
-            predicted.swap(newPredicted);  // update for next iteration
+            predicted.swap(newPredicted);
         }
 
         return predicted;

@@ -45,10 +45,11 @@ public:
 
     template <typename T>
     void
-    EnrollStateFields(std::initializer_list<const std::string> fields) {
+    EnrollStateFields(std::initializer_list<const std::string> fields,
+                      FieldPolicy policy = FieldPolicy::INTEGRATE) {
         for (const std::string& name : fields) {
             Field<T>* field = nodeList->getField<T>(name);
-            state.template addField<T>(field);
+            state.template addField<T>(field, policy);
         }
     }
 
@@ -77,6 +78,8 @@ public:
         for (int i = 0; i < finalState->count(); ++i) {
             FieldBase* FieldToCopy = finalState->getFieldByIndex(i);
             Name fname = FieldToCopy->getName();
+            if (finalState->getPolicy(fname.name()) != FieldPolicy::INTEGRATE)
+                continue;
             if (auto* resultDouble = dynamic_cast<Field<double>*>(FieldToCopy)) {
                 ScalarField* nField = nodeList->template getField<double>(fname.name());
                 nField->copyValues(resultDouble);
@@ -84,7 +87,7 @@ public:
                 VectorField* nField = nodeList->template getField<Vector>(fname.name());
                 nField->copyValues(resultVector);
             }
-        } 
+        }
         FinalChecks();
     };
 
@@ -134,6 +137,10 @@ public:
                 boundary->ApplyBoundaries(bState,nodeList);
     }
     
+    std::vector<std::string> integrateFieldNames() const { return state.integrateFieldNames(); }
+    std::vector<std::string> accumulateFieldNames() const { return state.accumulateFieldNames(); }
+    bool hasIntegrateFields() const { return state.hasIntegrateFields(); }
+
     virtual std::string
     name() const { return "Physics"; }
 

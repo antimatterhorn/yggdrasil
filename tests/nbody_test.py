@@ -1,6 +1,6 @@
 from yggdrasil import *
 from Animation import *
-from Physics import NBodyGravity2d
+from Physics import NBodyGravity2d, Kinematics2d
 from RandomNodeGenerator import RandomNodeGenerator2d
 
 class dumpState:
@@ -28,10 +28,11 @@ if __name__ == "__main__":
                                   1.0) 
     loc = Vector2d(0, 0)
 
+    kinematics = Kinematics2d(nodeList=myNodeList, constants=constants)
     nBodyGrav = NBodyGravity2d(nodeList=myNodeList,
                                constants=constants,
                                plummerLength=0.01)
-    packages = [nBodyGrav]
+    packages = [kinematics, nBodyGrav]
 
     positions   = myNodeList.getFieldVector2d("position")
     mass        = myNodeList.getFieldDouble("mass")

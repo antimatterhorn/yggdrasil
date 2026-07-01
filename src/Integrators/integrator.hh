@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vector>
+#include <algorithm>
 #include <iostream>
 #include "../Math/vectorMath.hh"
 #include "../State/state.hh"
@@ -19,12 +20,16 @@ protected:
     bool verbose;
     double time, dt, dtmin, dtMultiplier = 1;
 
+    // Returns all packages that ACCUMULATE into any field that owner INTEGRATEs.
+    std::vector<Physics<dim>*> findAccumulators(Physics<dim>* owner);
+
 public:
     Integrator(std::vector<Physics<dim>*> packages, double dtmin, bool verbose = false);
     ~Integrator();
 
     virtual void Step();
-    virtual State<dim> Integrate(Physics<dim>* physics);
+    virtual State<dim> Integrate(Physics<dim>* physics,
+                                  const std::vector<Physics<dim>*>& accumulators);
     virtual void VoteDt();
     virtual double const Time();
     virtual unsigned int Cycle();
@@ -33,4 +38,3 @@ public:
 };
 
 #include "integrator.cc"
-

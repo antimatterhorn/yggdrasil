@@ -1,5 +1,6 @@
 from PYB11Generator import *
 PYB11includes = ['"physics.hh"',
+                '"kinematics.hh"',
                 '"../Materials/material.hh"',
                 '"../Materials/linearElastic.cc"',
                 '"femBodyForce.cc"',
@@ -28,6 +29,7 @@ PYB11includes = ['"physics.hh"',
                 ]
 
 from physics import *
+from kinematics import *
 from femBodyForce import *
 from constantGravity import *
 from constantGridAccel import *

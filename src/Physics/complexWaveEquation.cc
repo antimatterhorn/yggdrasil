@@ -32,7 +32,7 @@ public:
 
     void VerifyWaveFields() {
         this->template EnrollFields<Complex>({"psi"});
-        this->template EnrollStateFields<Complex>({"psi"});
+        this->template EnrollStateFields<Complex>({"psi"}, FieldPolicy::INTEGRATE);
         this->template EnrollFields<double>({"soundSpeed", "waveEnergyDensity"});
     }
 

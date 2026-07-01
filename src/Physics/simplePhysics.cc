@@ -18,7 +18,7 @@ public:
 
         int numNodes = nodeList->size();
         this->template EnrollFields<double>({"y"});
-        this->template EnrollStateFields<double>({"y"});
+        this->template EnrollStateFields<double>({"y"}, FieldPolicy::INTEGRATE);
     }
 
     ~SimplePhysics() {}

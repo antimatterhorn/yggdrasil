@@ -47,7 +47,7 @@ public:
     Enroll() {
         this->template EnrollFields<double>({"kphase","kstrength","komega"});
         this->template EnrollFields<Vector>({"position"});  // let kinetics handle the evo of this field
-        this->template EnrollStateFields<double>({"kphase"});
+        this->template EnrollStateFields<double>({"kphase"}, FieldPolicy::INTEGRATE);
     }
 
     ~PhaseCoupling() {}

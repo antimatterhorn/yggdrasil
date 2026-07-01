@@ -24,7 +24,7 @@ public:
         for (int i = 0; i < numZones; ++i)
             nodeList->getField<Vector>("acceleration")->setValue(i, gravityVector);
 
-        this->template EnrollStateFields<Vector>({"velocity"});
+        this->template EnrollStateFields<Vector>({"velocity"}, FieldPolicy::ACCUMULATE);
     }
 
     virtual void EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {

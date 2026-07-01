@@ -12,18 +12,40 @@ template <int dim>
 Integrator<dim>::~Integrator() {}
 
 template <int dim>
-void Integrator<dim>::Step() {  
+std::vector<Physics<dim>*>
+Integrator<dim>::findAccumulators(Physics<dim>* owner) {
+    std::vector<std::string> ownedFields = owner->integrateFieldNames();
+    std::vector<Physics<dim>*> result;
+    for (auto* p : packages) {
+        if (p == owner) continue;
+        for (const std::string& name : p->accumulateFieldNames()) {
+            if (std::find(ownedFields.begin(), ownedFields.end(), name) != ownedFields.end()) {
+                result.push_back(p);
+                break;
+            }
+        }
+    }
+    return result;
+}
+
+template <int dim>
+void Integrator<dim>::Step() {
     if (cycle == 0) {
         for (Physics<dim>* physics : packages)
             physics->ZeroTimeInitialize();
     }
 
-    for (Physics<dim>* physics : packages)
-    {
+    // Snapshot all states before any FinalizeStep modifies the NodeList.
+    for (Physics<dim>* physics : packages) {
         physics->UpdateState();
         physics->PreStepInitialize();
-        
-        State<dim> finalState = Integrate(physics);
+    }
+
+    for (Physics<dim>* physics : packages) {
+        if (!physics->hasIntegrateFields()) continue;
+
+        std::vector<Physics<dim>*> accumulators = findAccumulators(physics);
+        State<dim> finalState = Integrate(physics, accumulators);
 
         physics->ApplyBoundaries(&finalState);
         physics->FinalizeStep(&finalState);
@@ -35,14 +57,23 @@ void Integrator<dim>::Step() {
     VoteDt();
 }
 
+// Base (Euler) integration — concrete integrators override this.
 template <int dim>
-State<dim> 
-Integrator<dim>::Integrate(Physics<dim>* physics) {
+State<dim>
+Integrator<dim>::Integrate(Physics<dim>* physics,
+                            const std::vector<Physics<dim>*>& accumulators) {
     const State<dim>* state = physics->getState();
     State<dim> derivatives(state->size());
     derivatives.ghost(state);
 
     physics->EvaluateDerivatives(state, derivatives, time, 0);
+
+    for (auto* acc : accumulators) {
+        State<dim> accDeriv(state->size());
+        accDeriv.ghost(acc->getState());
+        acc->EvaluateDerivatives(state, accDeriv, time, 0);
+        derivatives.accumulateFrom(accDeriv, acc->accumulateFieldNames());
+    }
 
     derivatives *= dt;
     State<dim> newState(state->size());

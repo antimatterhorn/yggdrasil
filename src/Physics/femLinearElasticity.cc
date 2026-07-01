@@ -29,7 +29,7 @@ public:
           rho(rho), alpha(alpha), beta(beta) {
         this->template EnrollFields<Vector>({"position", "velocity", "displacement"});
         this->template EnrollFields<double>({"vonMises", "sigmaXX", "sigmaYY", "sigmaXY"});
-        this->template EnrollStateFields<Vector>({"position", "velocity"});
+        this->template EnrollStateFields<Vector>({"position", "velocity"}, FieldPolicy::INTEGRATE);
     }
 
     void ZeroTimeInitialize() override {
