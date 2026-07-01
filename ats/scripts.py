@@ -6,5 +6,6 @@ tests = {
     "hllesod",
     "hllcsod",
     "orbit",
-    "reactionDiffusion"
+    "reactionDiffusion",
+    "kelvin-helmholtz"
 }
