@@ -2,7 +2,7 @@
 ```mermaid
 classDiagram
     Kinematics <|-- PointSourceGravity
-    Kinematics <|-- ConstantGravity
+    Kinematics <|-- ConstantForce
     Kinematics <|-- NBodyGravity
     Physics <|-- PhaseCoupling
     Physics <|-- WaveEquation
@@ -24,7 +24,7 @@ classDiagram
         +Vector pointSourceVelocity
         +double pointSourceMass
     }
-    class ConstantGravity{
+    class ConstantForce{
         +Vector gravity
     }
     class NBodyGravity{

@@ -1,6 +1,6 @@
 from yggdrasil import *
 from Mesh import FEMesh2d
-from Physics import FEMLinearElasticity2d, ConstantBodyForce2d
+from Physics import FEMLinearElasticity2d, ConstantForce2d
 from Materials import IsotropicLinearElastic2d, PlaneCondition
 from Boundaries import MotionConstraint2d
 from Utilities import SiloDump
@@ -49,7 +49,7 @@ if __name__ == "__main__":
                                        rho, alpha, beta)
 
     comp_vec = Vector2d(-100.0, 0.0)
-    compress = ConstantBodyForce2d(myNodeList, constants, comp_vec)
+    compress = ConstantForce2d(myNodeList, constants, comp_vec)
 
     # -----------------------------------------------------------------------
     # Pin the left edge (x < x_min + 0.1) — fixed-wall cantilever support

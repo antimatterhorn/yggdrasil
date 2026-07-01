@@ -2,7 +2,7 @@ from yggdrasil import *
 import matplotlib.pyplot as plt
 from Animation import *
 from Mesh import Grid2d
-from Physics import GridHydroKT2d, GridHydroHLLE2d, ConstantGravity2d
+from Physics import GridHydroKT2d, GridHydroHLLE2d, ConstantForce2d
 from EOS import IdealGasEOS
 from Boundaries import ReflectingGridBoundary2d,DirichletGridBoundary2d
 from Utilities import SiloDump
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     hydro.addBoundary(box)
 
     gravityVector = Vector2d(0.,g)
-    gravity  = ConstantGravity2d(myNodeList,constants,gravityVector)
+    gravity  = ConstantForce2d(myNodeList,constants,gravityVector)
 
     integrator = RungeKutta4Integrator2d([hydro,gravity],dtmin=dtmin,verbose=intVerbose)
 

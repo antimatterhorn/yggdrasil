@@ -5,9 +5,8 @@ PYB11includes = ['"physics.hh"',
                 '"kinematics.hh"',
                 '"../Materials/material.hh"',
                 '"../Materials/linearElastic.cc"',
-                '"femBodyForce.cc"',
                 '"femLinearElasticity.cc"',
-                '"constantGravity.cc"',
+                '"constantForce.cc"',
                 '"pointSourceGravity.cc"',
                 '"nBodyGravity.cc"',
                 '"waveEquation.cc"',
@@ -31,8 +30,7 @@ PYB11includes = ['"physics.hh"',
 
 from physics import *
 from kinematics import *
-from femBodyForce import *
-from constantGravity import *
+from constantForce import *
 from pointSourceGravity import *
 from nBodyGravity import *
 from waveEquation import *

@@ -11,9 +11,9 @@ def run():
 
     gravVec = Vector2d(0, 0)
 
-    constantGravity = ConstantGravity2d(myNodeList, constants, gravVec)
+    constantForce = ConstantForce2d(myNodeList, constants, gravVec)
     kinetics = Kinetics2d(myNodeList,constants)
-    packages = [constantGravity,kinetics]
+    packages = [constantForce,kinetics]
 
     integrator = RungeKutta4Integrator2d(packages=packages, dtmin=0.01,verbose=False)
 

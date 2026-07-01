@@ -51,9 +51,9 @@ def run():
     myNodeList = NodeList(numNodes)
     gravVec = Vector2d(0, g)
 
-    constantGravity = ConstantGravity2d(myNodeList, constants, gravVec)
+    constantForce = ConstantForce2d(myNodeList, constants, gravVec)
     kinetics = Kinetics2d(myNodeList,constants)
-    packages = [constantGravity,kinetics]
+    packages = [constantForce,kinetics]
 
     colliders = []
     cbounds = []

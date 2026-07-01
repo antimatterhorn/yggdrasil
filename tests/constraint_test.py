@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
 import random
-from Physics import ConstantGravity2d, Kinetics2d
+from Physics import ConstantForce2d, Kinetics2d
 from Boundaries import SphereCollider2d, BoxCollider2d, MotionConstraint2d
 from HCPNodeGenerator import HCPNodeGenerator2d
 from LatticeNodeGenerator import Lattice2d
@@ -22,9 +22,9 @@ if __name__ == "__main__":
     gravVec = Vector2d(0, g)
 
     lattice         = HCPNodeGenerator2d(nx,ny)
-    constantGravity = ConstantGravity2d(myNodeList, constants, gravVec)
+    constantForce = ConstantForce2d(myNodeList, constants, gravVec)
     kinetics        = Kinetics2d(myNodeList,constants)
-    packages        = [constantGravity,kinetics]
+    packages        = [constantForce,kinetics]
 
     for i in range(numNodes):
         lattice.positions[i] = [lattice.positions[i][0]*8,lattice.positions[i][1]+8]

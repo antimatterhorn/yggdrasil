@@ -23,9 +23,9 @@ in this case is a Nodelist with a single node.
    :end-before: Node_created
    :linenos:
 
-Next, we want to create our physics packages, so we'll define a gravity vector pointing downwards in 2d space, and then create the constant gravity package.
+Next, we want to create our physics packages, so we'll define a gravity vector pointing downwards in 2d space, and then create the constant force package.
 In Yggdrasil, if you're using particles as simple hard spheres, it's a good idea to also construct the Kinetics package as that will ensure that the mass, radius,
-and velocity fields are created and assigned to your Nodelist. Then we place both physics
+and velocity fields are created and assigned to your Nodelist (you can also use Kinematics instead if you don't want collisions). Then we place both physics
 packages into a convenient Python list. 
 
 .. note::

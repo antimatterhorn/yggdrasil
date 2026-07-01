@@ -4,28 +4,28 @@
 #include <iostream>
 
 template <int dim>
-class ConstantGravity : public Physics<dim> {
+class ConstantForce : public Physics<dim> {
 protected:
-    Lin::Vector<dim> gravityVector;
+    Lin::Vector<dim> forceVector;
     double dtmin;
 public:
     using Vector = Lin::Vector<dim>;
     using VectorField = Field<Vector>;
     using ScalarField = Field<double>;
 
-    ConstantGravity(NodeList* nodeList, PhysicalConstants& constants, Vector& gravityVector) :
+    ConstantForce(NodeList* nodeList, PhysicalConstants& constants, Vector& forceVector) :
         Physics<dim>(nodeList,constants),
-        gravityVector(gravityVector) {
+        forceVector(forceVector) {
 
         this->template EnrollFields<Vector>({"acceleration"});
         this->template EnrollStateFields<Vector>({"velocity"}, FieldPolicy::ACCUMULATE);
 
         int numNodes = nodeList->size();
         for (int i=0; i<numNodes; ++i)
-            nodeList->getField<Vector>("acceleration")->setValue(i, gravityVector);
+            nodeList->getField<Vector>("acceleration")->setValue(i, forceVector);
     }
 
-    ~ConstantGravity() {}
+    ~ConstantForce() {}
 
     virtual void
     EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv,
@@ -38,7 +38,7 @@ public:
 
         dvdt->copyValues(acceleration);
 
-        double amag = gravityVector.mag2();
+        double amag = forceVector.mag2();
         double vmax_sq = 0.0;
         VectorField* velocity = initialState->template getField<Vector>("velocity");
 
@@ -55,7 +55,7 @@ public:
         return 0.5 * sqrt(dtmin);  // dt ~ 0.5 * v_max / |a|
     }
 
-    virtual std::string name() const override { return "constantGravity"; }
+    virtual std::string name() const override { return "constantForce"; }
     virtual std::string description() const override {
         return "Constant acceleration"; }
 };

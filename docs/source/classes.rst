@@ -13,44 +13,43 @@ throughout a step.
 Yggdrasil's integrators expect assigned (derived) physics classes to override the physics base class method ``EvaluateDerivatives``
 at least, and some may also override ``PrestepInitialize`` and ``FinalizeStep`` as well. 
 
-Let's use ``constantGravity.cc`` in the ``src/Physics`` directory as an example of a derived class that overrides only the derivatives.
+Let's use ``constanForce.cc`` in the ``src/Physics`` directory as an example of a derived class that overrides only the derivatives.
 
-.. literalinclude:: constantGravity.cc
+.. literalinclude:: constantForce.cc
    :language: c++
    :linenos:
    :lines: 4-27
    :lineno-start: 4
 
-In the constructor for ``ConstantGravity``, we pass in the ``NodeList`` pointer, a ``PhysicalConstants`` object, and a ``Vector`` that
+In the constructor for ``ConstantForce``, we pass in the ``NodeList`` pointer, a ``PhysicalConstants`` object, and a ``Vector`` that
 prescribes the direction and magnitude of the acceleration. Then we enroll the ``acceleration``, ``velocity``, and ``position`` Vector 
 Fields using the type templated EnrollFields method from the Physics base class. 
 This ensures that these fields exist on the NodeList, and if they don't, this 
 method will create them. 
 
-Next we enroll the ``position`` and ``velocity`` Fields to the ``State``.
-In the case of 
-the constant gravity package, the only derivatives are the position derivative and velocity derivative, and as a standard, we keep
-Fields whose derivatives we want to iterate throughout an integration step
-on the ``State`` object. For that reason, we do not assign ``acceleration`` to the ``State`` 
-object for this physics class since it never changes.
+Next we enroll the ``acceleration`` vector to the Nodelist and the ``velocity`` Field to the ``State``. Since ``ConstantForce`` doesn't
+"own" ``velocity`` (Kinematics does), we enroll this with the ``ACCUMULATE`` policy so that the integrator will add the derivatives of ``velocity`` 
+from this physics class to the ``velocity`` derivatives from Kinematics.
 
-.. literalinclude:: constantGravity.cc
+
+.. literalinclude:: constantForce.cc
    :language: c++
    :linenos:
-   :lines: 29-57
-   :lineno-start: 36
+   :lines: 29-60
+   :lineno-start: 28
 
 ``EvaluateDerivatives`` is used to compute the derivatives of the ``State`` object at each node. In this case, we are computing the 
 change in velocity and position due to a constant acceleration, so we have a pair of ODEs:
 
 .. math::
     \begin{aligned}
-    \dot{x} &= v(t) + a \Delta t\\
-    \dot{v} &= a\\
+    \dot{x}(t) &= v(t)\\
+    \dot{v}(t) &= a\\
     \end{aligned}
 
 The integrator invokes this method with intial and derivatives ``State`` vectors and a time step, and the physics class stores the value of those
-derivatives back to the ``deriv`` ``State`` object.
+derivatives back to the ``deriv`` ``State`` object. Since this class uses only the ``ACCUMULATE`` policy for the ``velocity`` Field, we add the 
+constant acceleration to the ``dvdt`` State vector, and the ``Kinematics`` class will add the ``velocity`` derivatives to the ``dxdt`` State vector.
 
 .. note::
     The integrator will call this method multiple times per time step if the particular integrator in question is of high temporal order. 

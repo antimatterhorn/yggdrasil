@@ -57,7 +57,6 @@ public:
         VectorField* dxdt      = deriv.template getField<Vector>("position");
         VectorField* dvdt      = deriv.template getField<Vector>("velocity");
         ScalarField* massField = this->nodeList->template getField<double>("mass");
-        VectorField* accelField = this->nodeList->template getField<Vector>("acceleration");
 
         Eigen::MatrixXd D = material->materialMatrix();
         int numNodes = this->nodeList->size();
@@ -105,10 +104,9 @@ public:
             for (int d = 0; d < dim; ++d)
                 f_damping[d] = -c * v[d];
 
-            Vector externalAccel = accelField ? accelField->getValue(i) : Vector::zero();
-            Vector a = (f_elastic + f_damping) * (1.0 / mi) + externalAccel;
+            Vector a = (f_elastic + f_damping) * (1.0 / mi);
 
-            dxdt->setValue(i, v + dt * a);
+            dxdt->setValue(i, v);
             dvdt->setValue(i, a);
 
             if (kdiag[i] > 0.0)
