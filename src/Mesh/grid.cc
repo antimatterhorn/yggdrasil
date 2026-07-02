@@ -195,7 +195,7 @@ namespace Mesh {
                 for (int j = 0; j < ny; ++j) {
                     for (int k = 0; k < nz; ++k) {
                         lm.push_back(index(b, j, k));
-                        rm.push_back(index(size() - 1 - b, j, k));
+                        rm.push_back(index(nx - 1 - b, j, k));
                     }
                 }
                 for (int i = 0; i < nx; ++i) {

@@ -109,22 +109,27 @@ public:
             int Ny = grid->size_y();
             int Nz = grid->size_z();
 
-            for (int k = 0; k < Nz; ++k) {
-                for (int j = 0; j < Ny; ++j) {
+            // Iteration order here must match Grid<3>::findBoundaries exactly,
+            // since ApplyThis pairs boundaryLists[i][j] with interiorLists[i][j]
+            // by position: j outer / k inner for left-right (matches lm/rm).
+            for (int j = 0; j < Ny; ++j) {
+                for (int k = 0; k < Nz; ++k) {
                     leftInt.push_back(grid->index(1, j, k));
                     rightInt.push_back(grid->index(Nx - 2, j, k));
                 }
             }
 
-            for (int k = 0; k < Nz; ++k) {
-                for (int i = 0; i < Nx; ++i) {
+            // i outer / k inner for top-bottom (matches tm/bm).
+            for (int i = 0; i < Nx; ++i) {
+                for (int k = 0; k < Nz; ++k) {
                     topInt.push_back(grid->index(i, 1, k));
                     bottomInt.push_back(grid->index(i, Ny - 2, k));
                 }
             }
 
-            for (int j = 0; j < Ny; ++j) {
-                for (int i = 0; i < Nx; ++i) {
+            // i outer / j inner for front-back (matches fm/km).
+            for (int i = 0; i < Nx; ++i) {
+                for (int j = 0; j < Ny; ++j) {
                     frontInt.push_back(grid->index(i, j, 1));
                     backInt.push_back(grid->index(i, j, Nz - 2));
                 }

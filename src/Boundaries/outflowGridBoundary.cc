@@ -132,25 +132,31 @@ public:
 
             int Nx = grid->size_x();
             int Ny = grid->size_y();
+            int Nz = grid->size_z();
 
-            for (int k = 0; k < Ny; ++k) {
-                for (int j = 0; j < Nx; ++j) {
+            // Iteration order here must match Grid<3>::findBoundaries exactly,
+            // since these pair positionally with leftIds/rightIds/etc: j outer
+            // / k inner for left-right (matches lm/rm).
+            for (int j = 0; j < Ny; ++j) {
+                for (int k = 0; k < Nz; ++k) {
                     leftcol.push_back(grid->index(1, j, k));
                     rightcol.push_back(grid->index(Nx - 2, j, k));
                 }
             }
 
-            for (int k = 0; k < Ny; ++k) {
-                for (int i = 0; i < Nx; ++i) {
+            // i outer / k inner for top-bottom (matches tm/bm).
+            for (int i = 0; i < Nx; ++i) {
+                for (int k = 0; k < Nz; ++k) {
                     topcol.push_back(grid->index(i, 1, k));
                     bottomcol.push_back(grid->index(i, Ny - 2, k));
                 }
             }
 
-            for (int j = 0; j < Nx; ++j) {
-                for (int i = 0; i < Ny; ++i) {
+            // i outer / j inner for front-back (matches fm/km).
+            for (int i = 0; i < Nx; ++i) {
+                for (int j = 0; j < Ny; ++j) {
                     frontcol.push_back(grid->index(i, j, 1));
-                    backcol.push_back(grid->index(i, j, Ny - 2));
+                    backcol.push_back(grid->index(i, j, Nz - 2));
                 }
             }
 

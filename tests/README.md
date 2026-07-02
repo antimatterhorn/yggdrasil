@@ -6,7 +6,7 @@ A mix of lightweight unit-style checks for core data structures (mesh, tree, int
 
 | Script | Description |
 |---|---|
-| [boundary_test.py](boundary_test.py) | Pass/fail regression suite for `GridHydroKT2d` boundary conditions — reflecting, outflow, periodic, and combined multi-face setups, checked via ghost-cell velocity/density values after one RK4 step |
+| [boundary_test.py](boundary_test.py) | Pass/fail regression suite for grid boundary conditions — reflecting, outflow, periodic, and combined multi-face setups on `GridHydroKT2d`, checked via ghost-cell velocity/density values after one RK4 step; plus non-cubic 3D (`GridHydroKT3d`) coverage for Periodic/Outflow/Reflecting guarding against the axis-mislabeling bugs fixed 2026-07-02 |
 | [bowshock.py](bowshock.py) | 2D grid-hydro simulation of a dense, fast-moving blob plunging into an exponential ambient density field (bow shock formation), animated with `GridHydroKT2d` and periodic boundaries |
 | [buoyancy.py](buoyancy.py) | 2D grid-hydro Rayleigh–Taylor-style buoyancy setup: a dense circular region embedded in a hydrostatic two-density atmosphere under `ConstantForce2d` gravity |
 | [centroid_test.py](centroid_test.py) | Builds a `VoronoiMesh2d` from random seed points and prints each cell's centroid, catching any exceptions |

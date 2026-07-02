@@ -4,6 +4,7 @@
 #define FIELD_CC
 
 #include "field.hh"
+#include <cstdlib>
 
 template <typename T>
 Field<T>::Field() {}
@@ -44,13 +45,13 @@ Field<T>::getValues() const {
 
 template <typename T>
 const T& 
-Field<T>::getValue(const unsigned int index) const { 
-    if (index > values.size() - 1) {
-        std::cerr << "you've requested item " << index << " out of " << values.size() << 
+Field<T>::getValue(const unsigned int index) const {
+    if (index >= values.size()) {
+        std::cerr << "you've requested item " << index << " out of " << values.size() <<
             " in " << this->getNameString() << " which doesn't exist" << std::endl;
-        std::exit;
+        std::exit(1);
     }
-    return values[index]; 
+    return values[index];
 }
 
 template <typename T>
