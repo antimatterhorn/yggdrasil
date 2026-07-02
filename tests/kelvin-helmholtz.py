@@ -94,8 +94,9 @@ if __name__ == "__main__":
     if restoreCycle is not None:
         restoreFrom = restartFileName(restartDir, rootName, int(restoreCycle))
         if not os.path.exists(restoreFrom):
-            raise FileNotFoundError("--restoreCycle=%s requested but %s does not exist" %
+            print("--restoreCycle=%s requested but %s does not exist" %
                                      (restoreCycle, restoreFrom))
+            restorFrom = None
     else:
         restoreFrom = findLatestRestart(restartDir, rootName)
 
