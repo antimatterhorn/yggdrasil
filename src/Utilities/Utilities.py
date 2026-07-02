@@ -1,8 +1,11 @@
 # Copyright (C) 2026  Cody Raskin
 
-from yggdrasil import SiloMeshWriter2d
+from IO import SiloMeshWriter2d
 import wave
 import numpy as np
+import os
+import re
+import glob
 
 class TextMicrophone:
     def __init__(self, nodeList, grid,i,j,filename,workCycle=1):
@@ -127,3 +130,14 @@ class SiloDump:
         self.cycle = dumpCycle
     def __call__(self,cycle,time,dt):
         self.meshWriter.write("-cycle=%03d.silo"%(cycle))
+
+def findLatestRestart(restartDir, rootName):
+    """Returns the highest-cycle "<rootName>-restart-cycle<N>.ygr" checkpoint
+    in restartDir, or None if no matching checkpoint exists."""
+    matcher = re.compile(re.escape(rootName) + r"-restart-cycle(\d+)\.ygr$")
+    best, bestCycle = None, -1
+    for path in glob.glob(os.path.join(restartDir, "%s-restart-cycle*.ygr" % rootName)):
+        m = matcher.search(os.path.basename(path))
+        if m and int(m.group(1)) > bestCycle:
+            best, bestCycle = path, int(m.group(1))
+    return best

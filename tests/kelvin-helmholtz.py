@@ -9,6 +9,9 @@ from Boundaries import PeriodicGridBoundary2d
 from Utilities import SiloDump
 from IO import RestartWriter2d, RestartReader2d
 
+def restartFileName(restartDir, rootName, cycle):
+    return os.path.join(restartDir, "%s-restart-cycle%d.ygr" % (rootName, cycle))
+
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = False,
                                         siloDump = True,
@@ -20,8 +23,14 @@ if __name__ == "__main__":
                                         dy = 0.01,
                                         dtmin = 0.1e-7,
                                         intVerbose = False,
-                                        restartCycle = 20,
-                                        restartFile = "kelvin-helmholtz.ygr")
+                                        restartCycle = 250,
+                                        rootName = "kelvin-helmholtz",
+                                        vizDir = "KH/viz",
+                                        restartDir = "KH/restart",
+                                        restoreCycle = None)
+
+    os.makedirs(vizDir, exist_ok=True)
+    os.makedirs(restartDir, exist_ok=True)
 
     myGrid = Grid2d(nx,ny,dx,dy)
     print("grid size:",myGrid.size())
@@ -77,28 +86,39 @@ if __name__ == "__main__":
             density.setValue(idx, rho)
             energy.setValue(idx, p0 / ((gamma - 1.0) * rho))
 
-    # Pick up where a previous run left off, if a restart file is sitting
-    # here from an earlier invocation. Construction above is deterministic,
-    # so it's safe to always build the fresh IC first and then overwrite it.
-    if os.path.exists(restartFile):
-        RestartReader2d(myNodeList, integrator).read(restartFile)
+    # Pick up where a previous run left off. --restoreCycle=N picks up that
+    # exact checkpoint; otherwise (the default, restoreCycle=None) we pick up
+    # the highest-cycle checkpoint found in restartDir, if any. Construction
+    # above is deterministic, so it's safe to always build the fresh IC
+    # first and then overwrite it.
+    if restoreCycle is not None:
+        restoreFrom = restartFileName(restartDir, rootName, int(restoreCycle))
+        if not os.path.exists(restoreFrom):
+            raise FileNotFoundError("--restoreCycle=%s requested but %s does not exist" %
+                                     (restoreCycle, restoreFrom))
+    else:
+        restoreFrom = findLatestRestart(restartDir, rootName)
+
+    if restoreFrom is not None:
+        RestartReader2d(myNodeList, integrator).read(restoreFrom)
         print("Restored from %s at cycle %d, time %g" %
-              (restartFile, integrator.Cycle(), integrator.Time()))
+              (restoreFrom, integrator.Cycle(), integrator.Time()))
 
     periodicWork = []
 
     if siloDump:
-        meshWriter = SiloDump(baseName="HLL",
+        meshWriter = SiloDump(baseName=os.path.join(vizDir, rootName),
                                 nodeList=myNodeList,
                                 fieldNames=["density","specificInternalEnergy","pressure","velocity"],
                                 dumpCycle=dumpCycle)
         periodicWork += [meshWriter]
 
-    # Drop a checkpoint every restartCycle steps so the run can be resumed
-    # (e.g. after a crash, or a deliberate stop) by re-running this script.
+    # Drop a new checkpoint (named for the cycle it was taken at) every
+    # restartCycle steps, so old checkpoints are never overwritten and a run
+    # can be resumed from any of them via --restoreCycle.
     restartWriter = RestartWriter2d(myNodeList, integrator)
     def dropRestart(cycle, time, dt):
-        restartWriter.write(restartFile)
+        restartWriter.write(restartFileName(restartDir, rootName, cycle))
     dropRestart.cycle = restartCycle
     periodicWork += [dropRestart]
 
