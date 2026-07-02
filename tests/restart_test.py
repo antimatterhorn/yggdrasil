@@ -3,10 +3,10 @@ import os
 import tempfile
 from yggdrasil import *
 from Mesh import Grid2d
-from Physics import GridHydroKT2d
+from Physics import GridHydroKT2d, ConstantForce3d, Kinetics3d
 from EOS import IdealGasEOS
 from Boundaries import PeriodicGridBoundary2d
-from IO import RestartWriter2d, RestartReader2d
+from IO import RestartWriter, RestartReader
 
 GAMMA = 1.4
 
@@ -46,6 +46,28 @@ def make_kh_problem(nx, ny, dx=0.02, dy=0.02, dtmin=1e-6):
             energy.setValue(idx, p0 / ((GAMMA - 1.0) * rho))
 
     return grid, nodeList, hydro, integrator, constants, eos, box
+
+def make_drift_problem_3d(numNodes, dtmin=0.01):
+    # Simple 3D particle drift (ConstantForce3d + Kinetics3d, zero gravity) --
+    # deliberately not grid-hydro, just to exercise RestartWriter/RestartReader
+    # against a genuinely 3D NodeList without depending on GridHydroKT3d.
+    nodeList  = NodeList(numNodes)
+    constants = MKS()
+    force     = ConstantForce3d(nodeList, constants, Vector3d(0, 0, 0))
+    kinetics  = Kinetics3d(nodeList, constants)
+    integrator = RungeKutta4Integrator3d([force, kinetics], dtmin=dtmin, verbose=False)
+
+    radius   = nodeList.getFieldDouble("radius")
+    mass     = nodeList.getFieldDouble("mass")
+    position = nodeList.getFieldVector3d("position")
+    velocity = nodeList.getFieldVector3d("velocity")
+    for i in range(numNodes):
+        radius.setValue(i, 0.5)
+        mass.setValue(i, 0.2)
+        position.setValue(i, Vector3d(i * 1.0, i * 0.5, i * 0.25))
+        velocity.setValue(i, Vector3d(1.0, -0.5 if i % 2 == 0 else 0.5, 0.1))
+
+    return nodeList, force, kinetics, integrator, constants
 
 def fields_match(nodeListA, nodeListB, names, tol=1e-10):
     for name in names:
@@ -90,7 +112,7 @@ def test_restart_round_trip():
     grid, nodeList, hydro, integrator, *_keepalive = make_kh_problem(nx, ny)
     ctrl = Controller(integrator=integrator, statStep=10000)
     ctrl.Step(half)
-    RestartWriter2d(nodeList, integrator).write(restartFile)
+    RestartWriter(nodeList, integrator).write(restartFile)
     ctrl.Step(cycles - half)
     truthCycle = integrator.Cycle()
     truthTime  = integrator.Time()
@@ -98,7 +120,7 @@ def test_restart_round_trip():
     # Restart run: fresh construction, restore from the halfway checkpoint,
     # then finish the remaining steps.
     grid2, nodeList2, hydro2, integrator2, *_keepalive2 = make_kh_problem(nx, ny)
-    reader = RestartReader2d(nodeList2, integrator2)
+    reader = RestartReader(nodeList2, integrator2)
     reader.read(restartFile)
     check("cycle restored to halfway point", integrator2.Cycle() == half)
     ctrl2 = Controller(integrator=integrator2, statStep=10000)
@@ -128,15 +150,78 @@ def test_restart_rejects_size_mismatch():
     grid, nodeList, hydro, integrator, *_keepalive = make_kh_problem(nx, ny)
     ctrl = Controller(integrator=integrator, statStep=10000)
     ctrl.Step(5)
-    RestartWriter2d(nodeList, integrator).write(restartFile)
+    RestartWriter(nodeList, integrator).write(restartFile)
 
     grid2, nodeList2, hydro2, integrator2, *_keepalive2 = make_kh_problem(nx, ny + 2)
     raised = False
     try:
-        RestartReader2d(nodeList2, integrator2).read(restartFile)
+        RestartReader(nodeList2, integrator2).read(restartFile)
     except RuntimeError:
         raised = True
     check("mismatched NodeList size raises RuntimeError", raised)
+
+    os.remove(restartFile)
+
+# ---------------------------------------------------------------------------
+# Test 3: the same non-templated RestartWriter/RestartReader also work
+# unmodified against a 3D problem -- no RestartWriter3d/RestartReader3d
+# needed, since neither is templated on dim anymore.
+# ---------------------------------------------------------------------------
+def test_restart_dimension_agnostic_3d():
+    print("Test 3: same RestartWriter/RestartReader classes work for a 3D problem")
+    numNodes, cycles, half = 16, 10, 5
+    restartFile = os.path.join(tempfile.gettempdir(), "yggdrasil_restart_test_3d.ygr")
+    if os.path.exists(restartFile):
+        os.remove(restartFile)
+
+    nodeList, force, kinetics, integrator, _constants = make_drift_problem_3d(numNodes)
+    ctrl = Controller(integrator=integrator, statStep=10000)
+    ctrl.Step(half)
+    RestartWriter(nodeList, integrator).write(restartFile)
+    ctrl.Step(cycles - half)
+    truthCycle = integrator.Cycle()
+    truthPos   = [nodeList.getFieldVector3d("position")[i] for i in range(numNodes)]
+
+    nodeList2, force2, kinetics2, integrator2, _constants2 = make_drift_problem_3d(numNodes)
+    RestartReader(nodeList2, integrator2).read(restartFile)
+    check("3D cycle restored to halfway point", integrator2.Cycle() == half)
+    ctrl2 = Controller(integrator=integrator2, statStep=10000)
+    ctrl2.Step(cycles - half)
+
+    check("3D cycle matches continuous run", integrator2.Cycle() == truthCycle)
+    pos2 = nodeList2.getFieldVector3d("position")
+    check("3D position field matches continuous run",
+          all(abs(pos2[i].x - truthPos[i].x) < 1e-10 and
+              abs(pos2[i].y - truthPos[i].y) < 1e-10 and
+              abs(pos2[i].z - truthPos[i].z) < 1e-10
+              for i in range(numNodes)))
+
+    os.remove(restartFile)
+
+# ---------------------------------------------------------------------------
+# Test 4: a genuine dimension mismatch (same node count, different Vector
+# dim inferred from the "velocity" field) is still caught, even though
+# RestartReader no longer has a compile-time dim to check against.
+# ---------------------------------------------------------------------------
+def test_restart_rejects_dimension_mismatch():
+    print("Test 4: restart rejects a genuine 2D/3D dimension mismatch")
+    restartFile = os.path.join(tempfile.gettempdir(), "yggdrasil_restart_test_dimmismatch.ygr")
+    if os.path.exists(restartFile):
+        os.remove(restartFile)
+
+    # 4x4 2D grid (16 nodes) and 16-particle 3D drift problem (16 nodes) have
+    # the same size, so the id/size checks alone won't catch this; only the
+    # inferred-dim check (from the "velocity"/"position" field's Vector arity) will.
+    grid, nodeList, hydro, integrator, *_keepalive = make_kh_problem(4, 4)
+    RestartWriter(nodeList, integrator).write(restartFile)
+
+    nodeList2, force2, kinetics2, integrator2, _constants2 = make_drift_problem_3d(16)
+    raised = False
+    try:
+        RestartReader(nodeList2, integrator2).read(restartFile)
+    except RuntimeError:
+        raised = True
+    check("2D-into-3D dimension mismatch raises RuntimeError", raised)
 
     os.remove(restartFile)
 
@@ -147,6 +232,8 @@ def test_restart_rejects_size_mismatch():
 if __name__ == "__main__":
     test_restart_round_trip()
     test_restart_rejects_size_mismatch()
+    test_restart_dimension_agnostic_3d()
+    test_restart_rejects_dimension_mismatch()
 
     n_pass  = sum(_results)
     n_total = len(_results)

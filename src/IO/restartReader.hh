@@ -5,18 +5,17 @@
 
 #include <string>
 #include "../DataBase/nodeList.hh"
-#include "../Integrators/integrator.hh"
+#include "../Integrators/integratorBase.hh"
 
-template <int dim>
 class RestartReader {
 public:
-    RestartReader(NodeList& nodeList, Integrator<dim>& integrator);
+    RestartReader(NodeList& nodeList, IntegratorBase& integrator);
 
     void read(const std::string& fileName);
 
 private:
     NodeList& nodeList;
-    Integrator<dim>& integrator;
+    IntegratorBase& integrator;
 };
 
 #include "restartReader.cc"

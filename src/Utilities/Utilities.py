@@ -1,6 +1,6 @@
 # Copyright (C) 2026  Cody Raskin
 
-from IO import SiloMeshWriter2d
+from IO import SiloMeshWriter2d, RestartReader
 import wave
 import numpy as np
 import os
@@ -73,7 +73,6 @@ class Microphone:
             f.seek(40)
             f.write(int.to_bytes(file_size - 44, 4, 'little'))  # Update Subchunk2Size
 
-
 class Speaker:
     def __init__(self, filename):
         self.filename = filename
@@ -131,6 +130,11 @@ class SiloDump:
     def __call__(self,cycle,time,dt):
         self.meshWriter.write("-cycle=%03d.silo"%(cycle))
 
+def restartFileName(restartDir, rootName, cycle):
+    """The "<rootName>-restart-cycle<N>.ygr" checkpoint path RestartWriter
+    should write to (and RestartReader should read from) for a given cycle."""
+    return os.path.join(restartDir, "%s-restart-cycle%d.ygr" % (rootName, cycle))
+
 def findLatestRestart(restartDir, rootName):
     """Returns the highest-cycle "<rootName>-restart-cycle<N>.ygr" checkpoint
     in restartDir, or None if no matching checkpoint exists."""
@@ -141,3 +145,29 @@ def findLatestRestart(restartDir, rootName):
         if m and int(m.group(1)) > bestCycle:
             best, bestCycle = path, int(m.group(1))
     return best
+
+def restoreIfAvailable(nodeList, integrator, restartDir, rootName, restoreCycle=None):
+    """Restores nodeList/integrator from a checkpoint under restartDir using
+    the "<rootName>-restart-cycle<N>.ygr" naming convention, if one is
+    available. If restoreCycle is given, restores that exact cycle (printing
+    a warning and doing nothing if it doesn't exist); otherwise picks up the
+    highest-cycle checkpoint found, if any. RestartReader isn't templated on
+    dim, so this works regardless of the problem's dimensionality.
+
+    Returns the path restored from, or None if nothing was restored.
+    """
+    if restoreCycle is not None:
+        restoreFrom = restartFileName(restartDir, rootName, int(restoreCycle))
+        if not os.path.exists(restoreFrom):
+            print("--restoreCycle=%s requested but %s does not exist" %
+                  (restoreCycle, restoreFrom))
+            restoreFrom = None
+    else:
+        restoreFrom = findLatestRestart(restartDir, rootName)
+
+    if restoreFrom is not None:
+        RestartReader(nodeList, integrator).read(restoreFrom)
+        print("Restored from %s at cycle %d, time %g" %
+              (restoreFrom, integrator.Cycle(), integrator.Time()))
+
+    return restoreFrom

@@ -52,13 +52,11 @@ static bool readAndValidateIds(std::ifstream& in, NodeList& nodeList) {
     return true;
 }
 
-template <int dim>
-RestartReader<dim>::RestartReader(NodeList& nodeList, Integrator<dim>& integrator)
+RestartReader::RestartReader(NodeList& nodeList, IntegratorBase& integrator)
     : nodeList(nodeList), integrator(integrator) {}
 
-template <int dim>
 void
-RestartReader<dim>::read(const std::string& fileName) {
+RestartReader::read(const std::string& fileName) {
     std::ifstream in(fileName, std::ios::binary);
     if (!in) {
         throw std::runtime_error("RestartReader: could not open " + fileName + " for reading");
@@ -78,8 +76,12 @@ RestartReader<dim>::read(const std::string& fileName) {
     }
     int32_t fileDim;
     in.read(reinterpret_cast<char*>(&fileDim), sizeof(fileDim));
-    if (fileDim != dim) {
-        throw std::runtime_error("RestartReader: dimension mismatch in " + fileName);
+    int32_t localDim = RestartFormat::inferDim(nodeList);
+    if (fileDim != 0 && localDim != 0 && fileDim != localDim) {
+        std::ostringstream msg;
+        msg << "RestartReader: dimension mismatch in " << fileName
+            << " (file appears to be " << fileDim << "D, NodeList appears to be " << localDim << "D)";
+        throw std::runtime_error(msg.str());
     }
     uint32_t partitionCount, partitionIndex;
     in.read(reinterpret_cast<char*>(&partitionCount), sizeof(partitionCount));

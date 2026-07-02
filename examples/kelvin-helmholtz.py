@@ -3,11 +3,14 @@ import numpy as np
 from yggdrasil import *
 from Animation import *
 from Mesh import Grid2d
-from Physics import GridHydroKT2d,GridHydroHLLC2d,GridHydroHLLE2d
+from Physics import GridHydroKT2d
 from EOS import IdealGasEOS
 from Boundaries import PeriodicGridBoundary2d
 from Utilities import SiloDump
-from IO import RestartWriter
+from IO import RestartWriter2d, RestartReader2d
+
+def restartFileName(restartDir, rootName, cycle):
+    return os.path.join(restartDir, "%s-restart-cycle%d.ygr" % (rootName, cycle))
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = False,
@@ -41,7 +44,6 @@ if __name__ == "__main__":
     print(eos,"gamma =",eos.gamma)
 
     hydro = GridHydroKT2d(myNodeList,constants,eos,myGrid) 
-    #hydro = GridHydroHLLE2d(myNodeList,constants,eos,myGrid) 
     print("numNodes =",myNodeList.numNodes)
     print("field names =",myNodeList.fieldNames)
 
@@ -83,7 +85,24 @@ if __name__ == "__main__":
             density.setValue(idx, rho)
             energy.setValue(idx, p0 / ((gamma - 1.0) * rho))
 
-    restoreIfAvailable(myNodeList, integrator, restartDir, rootName, restoreCycle)
+    # Pick up where a previous run left off. --restoreCycle=N picks up that
+    # exact checkpoint; otherwise (the default, restoreCycle=None) we pick up
+    # the highest-cycle checkpoint found in restartDir, if any. Construction
+    # above is deterministic, so it's safe to always build the fresh IC
+    # first and then overwrite it.
+    if restoreCycle is not None:
+        restoreFrom = restartFileName(restartDir, rootName, int(restoreCycle))
+        if not os.path.exists(restoreFrom):
+            print("--restoreCycle=%s requested but %s does not exist" %
+                                     (restoreCycle, restoreFrom))
+            restorFrom = None
+    else:
+        restoreFrom = findLatestRestart(restartDir, rootName)
+
+    if restoreFrom is not None:
+        RestartReader2d(myNodeList, integrator).read(restoreFrom)
+        print("Restored from %s at cycle %d, time %g" %
+              (restoreFrom, integrator.Cycle(), integrator.Time()))
 
     periodicWork = []
 
@@ -94,7 +113,10 @@ if __name__ == "__main__":
                                 dumpCycle=dumpCycle)
         periodicWork += [meshWriter]
 
-    restartWriter = RestartWriter(myNodeList, integrator)
+    # Drop a new checkpoint (named for the cycle it was taken at) every
+    # restartCycle steps, so old checkpoints are never overwritten and a run
+    # can be resumed from any of them via --restoreCycle.
+    restartWriter = RestartWriter2d(myNodeList, integrator)
     def dropRestart(cycle, time, dt):
         restartWriter.write(restartFileName(restartDir, rootName, cycle))
     dropRestart.cycle = restartCycle

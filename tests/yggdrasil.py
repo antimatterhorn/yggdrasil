@@ -35,7 +35,7 @@ from CommandLineArgs import *
 #from Calculators import *
 #from Trees import *
 from IO import *
-from Utilities import findLatestRestart
+from Utilities import findLatestRestart, restartFileName, restoreIfAvailable
 #from TillotsonMaterials import *
 #from MieGruneisenMaterials import *
 from Patch import *

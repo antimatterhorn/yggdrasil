@@ -5,18 +5,17 @@
 
 #include <string>
 #include "../DataBase/nodeList.hh"
-#include "../Integrators/integrator.hh"
+#include "../Integrators/integratorBase.hh"
 
-template <int dim>
 class RestartWriter {
 public:
-    RestartWriter(const NodeList& nodeList, Integrator<dim>& integrator);
+    RestartWriter(const NodeList& nodeList, IntegratorBase& integrator);
 
     void write(const std::string& fileName);
 
 private:
     const NodeList& nodeList;
-    Integrator<dim>& integrator;
+    IntegratorBase& integrator;
 };
 
 #include "restartWriter.cc"

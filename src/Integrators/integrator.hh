@@ -8,12 +8,13 @@
 #include "../Math/vectorMath.hh"
 #include "../State/state.hh"
 #include "../Boundaries/boundary.hh"
+#include "integratorBase.hh"
 
 template <int dim>
 class Physics; // forward declaration
 
 template <int dim>
-class Integrator {
+class Integrator : public IntegratorBase {
 protected:
     std::vector<Physics<dim>*> packages;
     unsigned int cycle;
@@ -31,10 +32,10 @@ public:
     virtual State<dim> Integrate(Physics<dim>* physics,
                                   const std::vector<Physics<dim>*>& accumulators);
     virtual void VoteDt();
-    virtual double const Time();
-    virtual unsigned int Cycle();
-    virtual double const Dt();
-    virtual void restoreState(unsigned int cycle, double time, double dt);
+    double const Time() override;
+    unsigned int Cycle() override;
+    double const Dt() override;
+    void restoreState(unsigned int cycle, double time, double dt) override;
     inline std::vector<Physics<dim>*> getPackages() { return packages;};
 };
 

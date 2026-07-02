@@ -2,8 +2,11 @@
 
 from PYB11Generator import *
 
+class IntegratorBase:
+    "Non-templated base exposing cycle/time/dt access and restoreState(), so IO::RestartWriter/RestartReader can work across all dims without their own dimension-specific bindings."
+
 @PYB11template("dim")
-class Integrator:
+class Integrator(IntegratorBase):
     def pyinit(self,
                packages="std::vector<Physics<%(dim)s>*>",
                dtmin="double"):
