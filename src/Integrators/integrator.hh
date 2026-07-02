@@ -34,6 +34,7 @@ public:
     virtual double const Time();
     virtual unsigned int Cycle();
     virtual double const Dt();
+    virtual void restoreState(unsigned int cycle, double time, double dt);
     inline std::vector<Physics<dim>*> getPackages() { return packages;};
 };
 

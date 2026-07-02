@@ -8,6 +8,35 @@
 #include <memory>
 #include <complex>
 #include "../Type/name.hh"
+#include "../Math/vectorMath.hh"
+
+// Identifies the element type stored in a Field<T> without needing to know T,
+// so generic code (e.g. restart serialization) can dispatch by runtime tag
+// instead of guessing which Field<T> a FieldBase* actually points to.
+enum class FieldDataType {
+    Int,
+    Float,
+    Double,
+    Complex,
+    Vector1,
+    Vector2,
+    Vector3,
+    String,
+    Unknown
+};
+
+template <typename T>
+struct FieldDataTypeTraits {
+    static constexpr FieldDataType value = FieldDataType::Unknown;
+};
+template <> struct FieldDataTypeTraits<int> { static constexpr FieldDataType value = FieldDataType::Int; };
+template <> struct FieldDataTypeTraits<float> { static constexpr FieldDataType value = FieldDataType::Float; };
+template <> struct FieldDataTypeTraits<double> { static constexpr FieldDataType value = FieldDataType::Double; };
+template <> struct FieldDataTypeTraits<std::complex<double>> { static constexpr FieldDataType value = FieldDataType::Complex; };
+template <> struct FieldDataTypeTraits<std::string> { static constexpr FieldDataType value = FieldDataType::String; };
+template <> struct FieldDataTypeTraits<Lin::Vector<1>> { static constexpr FieldDataType value = FieldDataType::Vector1; };
+template <> struct FieldDataTypeTraits<Lin::Vector<2>> { static constexpr FieldDataType value = FieldDataType::Vector2; };
+template <> struct FieldDataTypeTraits<Lin::Vector<3>> { static constexpr FieldDataType value = FieldDataType::Vector3; };
 
 // Base class for all Field types
 class FieldBase {
@@ -19,6 +48,7 @@ public:
     virtual std::string getNameString() const = 0;
     virtual unsigned int getSize() const = 0;
     virtual unsigned int size() const = 0;
+    virtual FieldDataType type() const = 0;
 };
 
 template <typename T>
@@ -57,6 +87,8 @@ public:
     bool hasName() const override;
     Name getName() const override;
     std::string getNameString() const override;
+
+    FieldDataType type() const override { return FieldDataTypeTraits<T>::value; }
 
     void fill(unsigned int n, T val);
 

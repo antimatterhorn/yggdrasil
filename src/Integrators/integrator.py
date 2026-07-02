@@ -20,7 +20,9 @@ class Integrator:
         return
     def getPackages(self):
         return "std::vector<Physics<%(dim)s>*>"
-    
+    def restoreState(self, cycle="unsigned int", time="double", dt="double"):
+        return
+
     dt = PYB11property("double", getter="Dt", doc="timestep")
     time = PYB11property("double", getter="Time", doc="The time.")
     cycle = PYB11property("double", getter="Cycle", doc="The cycle.")

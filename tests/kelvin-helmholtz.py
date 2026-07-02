@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from yggdrasil import *
 from Animation import *
@@ -6,6 +7,7 @@ from Physics import GridHydroKT2d,GridHydroHLLC2d,GridHydroHLLE2d
 from EOS import IdealGasEOS
 from Boundaries import PeriodicGridBoundary2d
 from Utilities import SiloDump
+from IO import RestartWriter2d, RestartReader2d
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = False,
@@ -17,7 +19,9 @@ if __name__ == "__main__":
                                         dx = 0.01,
                                         dy = 0.01,
                                         dtmin = 0.1e-7,
-                                        intVerbose = False)
+                                        intVerbose = False,
+                                        restartCycle = 20,
+                                        restartFile = "kelvin-helmholtz.ygr")
 
     myGrid = Grid2d(nx,ny,dx,dy)
     print("grid size:",myGrid.size())
@@ -73,6 +77,13 @@ if __name__ == "__main__":
             density.setValue(idx, rho)
             energy.setValue(idx, p0 / ((gamma - 1.0) * rho))
 
+    # Pick up where a previous run left off, if a restart file is sitting
+    # here from an earlier invocation. Construction above is deterministic,
+    # so it's safe to always build the fresh IC first and then overwrite it.
+    if os.path.exists(restartFile):
+        RestartReader2d(myNodeList, integrator).read(restartFile)
+        print("Restored from %s at cycle %d, time %g" %
+              (restartFile, integrator.Cycle(), integrator.Time()))
 
     periodicWork = []
 
@@ -82,6 +93,14 @@ if __name__ == "__main__":
                                 fieldNames=["density","specificInternalEnergy","pressure","velocity"],
                                 dumpCycle=dumpCycle)
         periodicWork += [meshWriter]
+
+    # Drop a checkpoint every restartCycle steps so the run can be resumed
+    # (e.g. after a crash, or a deliberate stop) by re-running this script.
+    restartWriter = RestartWriter2d(myNodeList, integrator)
+    def dropRestart(cycle, time, dt):
+        restartWriter.write(restartFile)
+    dropRestart.cycle = restartCycle
+    periodicWork += [dropRestart]
 
     controller = Controller(integrator=integrator,periodicWork=periodicWork,statStep=1)
 

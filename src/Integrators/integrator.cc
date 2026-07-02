@@ -107,3 +107,10 @@ unsigned int Integrator<dim>::Cycle() { return cycle; }
 
 template <int dim>
 double const Integrator<dim>::Dt() { return dt; }
+
+template <int dim>
+void Integrator<dim>::restoreState(unsigned int cycle, double time, double dt) {
+    this->cycle = cycle;
+    this->time = time;
+    this->dt = dt;
+}
