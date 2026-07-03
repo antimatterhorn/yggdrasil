@@ -1,6 +1,6 @@
 # Copyright (C) 2026  Cody Raskin
 
-from IO import SiloMeshWriter2d, RestartReader
+from IO import SiloMeshWriter1d, SiloMeshWriter2d, SiloMeshWriter3d, RestartReader
 import wave
 import numpy as np
 import os
@@ -124,8 +124,10 @@ class DampedHarmonicOscillator:
         return self.amplitude*np.sin(2*np.pi*self.frequency*time)*np.exp(self.damping*time)
 
 class SiloDump:
-    def __init__(self,baseName,nodeList,fieldNames,dumpCycle=10):
-        self.meshWriter = SiloMeshWriter2d(baseName=baseName,nodeList=nodeList,fieldNames=fieldNames)
+    _writerClasses = {1: SiloMeshWriter1d, 2: SiloMeshWriter2d, 3: SiloMeshWriter3d}
+
+    def __init__(self,baseName,nodeList,fieldNames,dumpCycle=10,dim=2):
+        self.meshWriter = self._writerClasses[dim](baseName=baseName,nodeList=nodeList,fieldNames=fieldNames)
         self.cycle = dumpCycle
     def __call__(self,cycle,time,dt):
         self.meshWriter.write("-cycle=%03d.silo"%(cycle))
