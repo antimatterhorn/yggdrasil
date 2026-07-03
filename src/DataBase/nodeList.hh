@@ -63,6 +63,13 @@ public:
     Field<int>& nodes();
     unsigned int size() const;
 
+    // Best-effort spatial dimensionality, inferred from the first
+    // Vector1/Vector2/Vector3-typed field found (position, velocity, ...).
+    // Returns 0 if none is found, e.g. a purely cell-centered NodeList with
+    // no vector fields -- callers that need dim should treat 0 as "unknown"
+    // rather than guessing.
+    int inferDim() const;
+
     template <int dim>
     void updatePositions(const std::vector<std::array<double, dim>>& py_positions) {
         Field<Lin::Vector<dim>>& posField = *this->position<dim>();

@@ -126,7 +126,11 @@ class DampedHarmonicOscillator:
 class SiloDump:
     _writerClasses = {1: SiloMeshWriter1d, 2: SiloMeshWriter2d, 3: SiloMeshWriter3d}
 
-    def __init__(self,baseName,nodeList,fieldNames,dumpCycle=10,dim=2):
+    def __init__(self,baseName,nodeList,fieldNames,dumpCycle=10):
+        dim = nodeList.inferDim()
+        if dim not in self._writerClasses:
+            raise ValueError("SiloDump: couldn't infer a spatial dimension from nodeList "
+                              "(no Vector1/2/3 field like 'position' found) -- can't write a point mesh")
         self.meshWriter = self._writerClasses[dim](baseName=baseName,nodeList=nodeList,fieldNames=fieldNames)
         self.cycle = dumpCycle
     def __call__(self,cycle,time,dt):

@@ -43,7 +43,7 @@ RestartWriter::write(const std::string& fileName) {
     out.write(RestartFormat::magic, sizeof(RestartFormat::magic));
     uint32_t version = RestartFormat::version;
     out.write(reinterpret_cast<const char*>(&version), sizeof(version));
-    int32_t dimVal = RestartFormat::inferDim(nodeList);
+    int32_t dimVal = nodeList.inferDim();
     out.write(reinterpret_cast<const char*>(&dimVal), sizeof(dimVal));
     uint32_t partitionCount = 1, partitionIndex = 0;
     out.write(reinterpret_cast<const char*>(&partitionCount), sizeof(partitionCount));

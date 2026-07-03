@@ -66,9 +66,23 @@ NodeList::fieldNames() const {
     return names;
 }
 
-Field<int>& 
+Field<int>&
 NodeList::nodes() {
     return _ids;
+}
+
+int
+NodeList::inferDim() const {
+    for (const auto& fieldPtr : _fields) {
+        if (!fieldPtr) continue;
+        switch (fieldPtr->type()) {
+            case FieldDataType::Vector1: return 1;
+            case FieldDataType::Vector2: return 2;
+            case FieldDataType::Vector3: return 3;
+            default: break;
+        }
+    }
+    return 0;
 }
 
 unsigned int 

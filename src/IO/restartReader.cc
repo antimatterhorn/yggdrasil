@@ -76,7 +76,7 @@ RestartReader::read(const std::string& fileName) {
     }
     int32_t fileDim;
     in.read(reinterpret_cast<char*>(&fileDim), sizeof(fileDim));
-    int32_t localDim = RestartFormat::inferDim(nodeList);
+    int32_t localDim = nodeList.inferDim();
     if (fileDim != 0 && localDim != 0 && fileDim != localDim) {
         std::ostringstream msg;
         msg << "RestartReader: dimension mismatch in " << fileName

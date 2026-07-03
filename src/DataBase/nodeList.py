@@ -20,6 +20,10 @@ class NodeList:
     @PYB11template("dim")
     def updatePositions(self, py_positions="std::vector<std::array>&"):
         return
+    def inferDim(self):
+        "Best-effort spatial dimensionality, inferred from the first Vector-typed field found (position, velocity, ...); 0 if none is found."
+        return "int"
+
     numNodes = PYB11property("int", getter="getNumNodes", doc="The number of nodes in the nodeList.")
     count = PYB11property("int", getter="getFieldCount", doc="The number of fields in the nodeList.")
     fieldNames = PYB11property("std::vector<std::string>", getter="fieldNames", doc="The names of fields in the nodeList.")
