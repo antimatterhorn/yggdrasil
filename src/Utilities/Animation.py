@@ -83,7 +83,7 @@ def AnimateGrid2d(bounds, update_method, threeColors=False, frames=100, interval
 # Example usage:
 # AnimateGrid2d((10, 10), update_method, save_as='animation.mp4')
 
-def AnimateScatter(bounds, stepper, positions, frames=100, interval=50, save_as=None,
+def AnimateScatter(bounds, stepper, positions, size=20, frames=100, interval=50, save_as=None,
                    get_color_field=None, cmap='plasma', color_limits=None, background=None,
                    extra_points=None, extra_colors='white', extra_size=60):
     """
@@ -118,7 +118,7 @@ def AnimateScatter(bounds, stepper, positions, frames=100, interval=50, save_as=
         fig.patch.set_facecolor(background)
         ax.set_facecolor(background)
 
-    scat = ax.scatter([], [])
+    scat = ax.scatter([], [], s=size)
     extra_scat = ax.scatter([], [], s=extra_size) if extra_points else None
     norm = Normalize(*color_limits) if color_limits else None
 

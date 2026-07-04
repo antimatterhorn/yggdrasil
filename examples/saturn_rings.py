@@ -6,6 +6,7 @@ from Animation import *
 from math import sin,cos,atan2
 from Physics import PointSourceGravity2d, Kinematics2d
 from IO import RestartWriter
+from Utilities import SiloDump
 
 
 def keplerPosition(time, GM, a, e):
@@ -38,7 +39,7 @@ class MoonMover:
 
 
 if __name__ == "__main__":
-    commandLine = CommandLineArguments(nBodies = 2000,
+    commandLine = CommandLineArguments(nBodies = 8000,
                                         cmass = 1.0,
                                         mmass = 2e-3,
                                         moonSemiMajorAxis = 9,
@@ -46,9 +47,12 @@ if __name__ == "__main__":
                                         cycles = 1200000,
                                         rootName = "saturn-rings",
                                         restartDir = "sr/restart",
+                                        vizDir = "sr/viz",
                                         restartCycle = 500,
-                                        restoreCycle = None)
+                                        restoreCycle = None,
+                                        dumpCycle = 100)
     os.makedirs(restartDir, exist_ok=True)
+    os.makedirs(vizDir, exist_ok=True)
 
     constants = PhysicalConstants(58232e+3,     # saturn radius in m
                                   5.683e+26,    # saturn mass in kg
@@ -114,11 +118,18 @@ if __name__ == "__main__":
     dropRestart.cycle = restartCycle
     periodicWork += [dropRestart]
 
+    meshWriter = SiloDump(baseName=os.path.join(vizDir, rootName),
+                            nodeList=myNodeList,
+                            fieldNames=["velocity"],
+                            dumpCycle=dumpCycle)
+    periodicWork += [meshWriter]
+
+    print(myNodeList.numNodes)
 
     controller = Controller(integrator=integrator,periodicWork=periodicWork,statStep=10000)
 
-    bounds = (-10, 10, -10, 10)
-    AnimateScatter(bounds, stepper=controller, positions=pos, frames=10, interval=50,
+    bounds = (-12, 12, -12, 12)
+    AnimateScatter(bounds, stepper=controller, positions=pos, frames=10, interval=50, size=10,
                   extra_points=lambda: [(cmLoc.x, cmLoc.y),
                                          (moonGrav.pointSourceLocation.x, moonGrav.pointSourceLocation.y)],
                   extra_colors=['orange', 'red'], extra_size=80)
