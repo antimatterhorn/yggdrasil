@@ -4,14 +4,18 @@ import random
 import math
 
 class PoissonDisk2d:
-    def __init__(self, npoints, k=30):
+    def __init__(self, npoints, k=30, seed=None):
         """
         npoints: approximate number of points to generate
         k: number of candidate attempts per active point
         """
         self.positions = []
         self.k = k
+        self.seed = seed
+        if seed is not None:
+            random.seed(seed)
         self._generate_points(npoints)
+        
 
     def _generate_points(self, npoints):
         radius = 1.0  # unit disk

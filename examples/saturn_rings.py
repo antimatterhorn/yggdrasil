@@ -1,9 +1,11 @@
 import numpy as np
+import os
 import random
 from yggdrasil import *
 from Animation import *
 from math import sin,cos,atan2
 from Physics import PointSourceGravity2d, Kinematics2d
+from IO import RestartWriter
 
 
 def keplerPosition(time, GM, a, e):
@@ -36,12 +38,17 @@ class MoonMover:
 
 
 if __name__ == "__main__":
-    commandLine = CommandLineArguments(nBodies = 200,
-                                       cmass = 1.0,
-                                       mmass = 2e-3,
-                                       moonSemiMajorAxis = 9,
-                                       moonEccentricity = 0.02,
-                                       cycles = 1200000)
+    commandLine = CommandLineArguments(nBodies = 2000,
+                                        cmass = 1.0,
+                                        mmass = 2e-3,
+                                        moonSemiMajorAxis = 9,
+                                        moonEccentricity = 0.02,
+                                        cycles = 1200000,
+                                        rootName = "saturn-rings",
+                                        restartDir = "sr/restart",
+                                        restartCycle = 500,
+                                        restoreCycle = None)
+    os.makedirs(restartDir, exist_ok=True)
 
     constants = PhysicalConstants(58232e+3,     # saturn radius in m
                                   5.683e+26,    # saturn mass in kg
@@ -52,7 +59,7 @@ if __name__ == "__main__":
     cmLoc = Vector2d(0,0)
 
     from PoissonNodeGenerator import PoissonDisk2d
-    pd = PoissonDisk2d(nBodies)
+    pd = PoissonDisk2d(nBodies,seed=1)
 
     for i in range(len(pd.positions)):
         pd.positions[i] = (pd.positions[i][0]*6.87,pd.positions[i][1]*6.87)
@@ -99,6 +106,13 @@ if __name__ == "__main__":
 
     moonMover = MoonMover(moonGrav, moonGM, moonSemiMajorAxis, moonEccentricity, workCycle=1)
     periodicWork = [moonMover]
+
+    restoreIfAvailable(myNodeList, integrator, restartDir, rootName, restoreCycle)
+    restartWriter = RestartWriter(myNodeList, integrator)
+    def dropRestart(cycle, time, dt):
+        restartWriter.write(restartFileName(restartDir, rootName, cycle))
+    dropRestart.cycle = restartCycle
+    periodicWork += [dropRestart]
 
 
     controller = Controller(integrator=integrator,periodicWork=periodicWork,statStep=10000)

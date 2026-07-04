@@ -3,7 +3,7 @@ import numpy as np
 from yggdrasil import *
 from Animation import *
 from Mesh import Grid2d
-from Physics import GridHydroKT2d,GridHydroHLLC2d,GridHydroHLLE2d
+from Physics import GridHydroKT2d
 from EOS import IdealGasEOS
 from Boundaries import PeriodicGridBoundary2d
 from Utilities import SiloDump
