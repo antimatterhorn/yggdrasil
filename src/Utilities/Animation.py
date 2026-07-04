@@ -84,7 +84,8 @@ def AnimateGrid2d(bounds, update_method, threeColors=False, frames=100, interval
 # AnimateGrid2d((10, 10), update_method, save_as='animation.mp4')
 
 def AnimateScatter(bounds, stepper, positions, frames=100, interval=50, save_as=None,
-                   get_color_field=None, cmap='plasma', color_limits=None, background=None):
+                   get_color_field=None, cmap='plasma', color_limits=None, background=None,
+                   extra_points=None, extra_colors='white', extra_size=60):
     """
     Animate a scatter plot of points, optionally colored by a field value.
 
@@ -99,6 +100,10 @@ def AnimateScatter(bounds, stepper, positions, frames=100, interval=50, save_as=
     - cmap: matplotlib colormap name
     - color_limits: tuple (vmin, vmax) for color normalization
     - background: optional color string or RGB tuple (sets axes and figure background)
+    - extra_points: optional callable () -> list of (x, y) pairs, drawn each frame as a
+      second scatter overlay (e.g. a central body plus a moon)
+    - extra_colors: color or list of colors for extra_points, in the same order
+    - extra_size: marker size for extra_points
     """
     import matplotlib.pyplot as plt
     import numpy as np
@@ -114,10 +119,14 @@ def AnimateScatter(bounds, stepper, positions, frames=100, interval=50, save_as=
         ax.set_facecolor(background)
 
     scat = ax.scatter([], [])
+    extra_scat = ax.scatter([], [], s=extra_size) if extra_points else None
     norm = Normalize(*color_limits) if color_limits else None
 
     def init():
         scat.set_offsets(np.empty((0, 2)))
+        if extra_scat is not None:
+            extra_scat.set_offsets(np.empty((0, 2)))
+            return scat, extra_scat
         return scat,
 
     def update(frame):
@@ -133,6 +142,11 @@ def AnimateScatter(bounds, stepper, positions, frames=100, interval=50, save_as=
             scat.set_cmap(cmap)
             if color_limits:
                 scat.set_clim(*color_limits)
+
+        if extra_scat is not None:
+            extra_scat.set_offsets(np.array(extra_points()))
+            extra_scat.set_color(extra_colors)
+            return scat, extra_scat
 
         return scat,
 

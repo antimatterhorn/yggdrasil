@@ -34,6 +34,9 @@ public:
 
     ~PointSourceGravity() {}
 
+    Vector getPointSourceLocation() const { return pointSourceLocation; }
+    void setPointSourceLocation(Vector loc) { pointSourceLocation = loc; }
+
     virtual void
     EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv,
                         const double time, const double dt) override {
