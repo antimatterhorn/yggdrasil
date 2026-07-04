@@ -8,6 +8,7 @@ oort.py,"Simulates a star passing through the Oort cloud, causing a comet to bec
 plinko.py,Simulates the Plinko game.
 relativity.py,Calculates the time dilation for a relativistic traveler.
 rps.py,"Simulates the destruction of chemical mixtures in a rock-paper-scissors-like reaction setup, where A->B->C->A."
+saturn_rings.py,Simulates the formation of gaps in Saturn's rings under the influence of Saturn's gravity and the gravity of a passing moon.
 tensors.py,Creates some tensors and does some linear algebra with them.
 vectors.py,Creates some vectors and does some linear algebra with them.
 waveLogo.py,Simulates acoustic waves inside a region with Dirichlet boundary conditions arranged in a unique fashion.
