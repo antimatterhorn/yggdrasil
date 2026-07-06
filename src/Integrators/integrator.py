@@ -28,7 +28,7 @@ class Integrator(IntegratorBase):
 
     dt = PYB11property("double", getter="Dt", doc="timestep")
     time = PYB11property("double", getter="Time", doc="The time.")
-    cycle = PYB11property("double", getter="Cycle", doc="The cycle.")
+    cycle = PYB11property("unsigned int", getter="Cycle", doc="The cycle.")
     
 Integrator1d = PYB11TemplateClass(Integrator,
                               template_parameters = ("1"),
