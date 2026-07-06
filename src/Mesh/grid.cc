@@ -98,50 +98,30 @@ namespace Mesh {
         return gridPositions[id];
     }
 
+    // Always returns exactly 2*dim entries, in fixed axis-major order
+    // [-axis0, +axis0, -axis1, +axis1, -axis2, +axis2], using -1 for any
+    // direction that runs off the domain. Callers (e.g. GridHydroKT's
+    // slopeLimitedValue) rely on both the fixed size/position and the -1
+    // sentinel to detect a missing neighbor near a boundary -- do not go
+    // back to conditionally omitting entries, which silently reindexes
+    // every neighbor after the gap and invites out-of-bounds reads.
     template <int dim>
-    std::vector<int> 
+    std::vector<int>
     Grid<dim>::getNeighboringCells(int idx) const {
         std::array<int, 3> coords = indexToCoordinates(idx);
-        std::vector<int> neighbors;
+        std::vector<int> neighbors(2 * dim, -1);
 
-        // Check left neighbor
-        if (coords[0] > 0) {
-            int leftIdx = index(coords[0] - 1, coords[1], coords[2]);
-            neighbors.push_back(leftIdx);
+        neighbors[0] = (coords[0] > 0)      ? index(coords[0] - 1, coords[1], coords[2]) : -1;
+        neighbors[1] = (coords[0] < nx - 1) ? index(coords[0] + 1, coords[1], coords[2]) : -1;
+
+        if constexpr (dim > 1) {
+            neighbors[2] = (coords[1] > 0)      ? index(coords[0], coords[1] - 1, coords[2]) : -1;
+            neighbors[3] = (coords[1] < ny - 1) ? index(coords[0], coords[1] + 1, coords[2]) : -1;
         }
 
-        // Check right neighbor
-        if (coords[0] < nx - 1) {
-            int rightIdx = index(coords[0] + 1, coords[1], coords[2]);
-            neighbors.push_back(rightIdx);
-        }
-
-        // Check up neighbor
-        if (coords[1] > 0) {
-            int upIdx = index(coords[0], coords[1] - 1, coords[2]);
-            neighbors.push_back(upIdx);
-        }
-
-        // Check down neighbor
-        if (coords[1] < ny - 1) {
-            int downIdx = index(coords[0], coords[1] + 1, coords[2]);
-            neighbors.push_back(downIdx);
-        }
-
-        // Check back neighbor (for 3D grid)
         if constexpr (dim == 3) {
-            if (coords[2] < nz - 1) {
-                int backIdx = index(coords[0], coords[1], coords[2] + 1);
-                neighbors.push_back(backIdx);
-            }
-        }
-
-        // Check front neighbor (for 3D grid)
-        if constexpr (dim == 3) {
-            if (coords[2] > 0) {
-                int frontIdx = index(coords[0], coords[1], coords[2] - 1);
-                neighbors.push_back(frontIdx);
-            }
+            neighbors[4] = (coords[2] > 0)      ? index(coords[0], coords[1], coords[2] - 1) : -1;
+            neighbors[5] = (coords[2] < nz - 1) ? index(coords[0], coords[1], coords[2] + 1) : -1;
         }
 
         return neighbors;

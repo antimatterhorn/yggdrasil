@@ -159,6 +159,7 @@ public:
         for (int i = 0; i < (int)obstacleIds.size(); ++i) {
             obstacleNeighbors[i].clear();
             for (int n : this->grid->getNeighboringCells(obstacleIds[i])) {
+                if (n < 0) continue;  // off the domain edge, not a real neighbor
                 if (obstacleSet.count(n) == 0)
                     obstacleNeighbors[i].push_back(n);
             }

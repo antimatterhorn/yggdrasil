@@ -30,8 +30,13 @@ public:
         auto neighborsL = this->grid->getNeighboringCells(iL);
         auto neighborsR = this->grid->getNeighboringCells(iR);
 
+        // Near a domain edge the second-layer neighbor may not exist (-1);
+        // fall back to the immediate neighbor so the corresponding minmod
+        // difference collapses to zero instead of reading an invalid index.
         int iLL = neighborsL[2 * axis];
         int iRR = neighborsR[2 * axis + 1];
+        if (iLL < 0) iLL = iL;
+        if (iRR < 0) iRR = iR;
 
         auto minmod = [](double a, double b) {
             return (a * b <= 0.0) ? 0.0 : ((std::abs(a) < std::abs(b)) ? a : b);
