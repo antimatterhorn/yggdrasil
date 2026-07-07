@@ -1,7 +1,10 @@
+// Copyright (C) 2026  Cody Raskin
+
 #include "physics.hh"
 #include "../Mesh/grid.hh"
 #include "../IO/importDepthMap.hh"
 #include <iostream>
+#include <unordered_set>
 
 template <int dim>
 class WaveEquation : public Physics<dim> {
@@ -70,37 +73,39 @@ public:
 
     virtual void
     ZeroTimeInitialize() override {
-        NodeList* nodeList = this->nodeList;
-        int numNodes = nodeList->size();
-        for (int i=0; i<numNodes; ++i) {
-            if (ocean) {
-                if (!grid2d->onBoundary(i))
-                    insideIds.push_back(i);
-            }
-            else {
-                if (!grid->onBoundary(i))
-                    insideIds.push_back(i);
-            }
+        this->UpdateState();
+        // InitializeBoundaries must run first so that any ReflectingGridBoundary
+        // obstacles have their IDs deduped and their neighbor lists built before
+        // we query getObstacleIds() below.
+        this->InitializeBoundaries();
+
+        // Collect interior obstacle cells from all registered boundaries.
+        // ReflectingGridBoundary obstacles must be excluded from the physics
+        // update loop — otherwise the wave equation still computes DxiDt and
+        // DphiDt there, which defeats the Neumann BC.
+        std::unordered_set<int> obstacleSet;
+        for (auto* bc : this->boundaries)
+            for (int id : bc->getObstacleIds())
+                obstacleSet.insert(id);
+
+        insideIds.clear();
+        int numNodes = this->nodeList->size();
+        for (int i = 0; i < numNodes; ++i) {
+            bool onBound = ocean ? grid2d->onBoundary(i) : grid->onBoundary(i);
+            if (!onBound && obstacleSet.count(i) == 0)
+                insideIds.push_back(i);
         }
     }
 
     void
     VerifyWaveFields() {
-        this->template EnrollFields<double>({"phi", "xi", "maxphi", "phisq", "soundSpeed"});
+        this->template EnrollFields<double>({"phi", "xi", "maxphi", "phisq", "soundSpeed", "waveEnergyDensity"});
         this->template EnrollStateFields<double>({"phi", "xi"});
     }
 
     virtual void
-    PreStepInitialize() override {
-        State<dim> state = this->state;
-        NodeList* nodeList = this->nodeList;
-        state.updateFields(nodeList);
-    }
-
-    virtual void
     EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {  
-        NodeList* nodeList = this->nodeList;
-        int numNodes = nodeList->size();
+        int numNodes = this->nodeList->size();
         
         ScalarField* xi     = initialState->template getField<double>("xi");
         ScalarField* phi    = initialState->template getField<double>("phi");
@@ -108,63 +113,25 @@ public:
         ScalarField* DxiDt  = deriv.template getField<double>("xi");
         ScalarField* DphiDt = deriv.template getField<double>("phi");
 
-        ScalarField* cs     = nodeList->getField<double>("soundSpeed");
+        ScalarField* cs     = this->nodeList->template getField<double>("soundSpeed");
+        ScalarField* e      = this->nodeList->template getField<double>("waveEnergyDensity");
 
         double local_dtmin = 1e30;
 
         #pragma omp parallel for reduction(min:local_dtmin)
         for (int p = 0; p < insideIds.size(); ++p) {
             int i = insideIds[p];
-        
-            double c = cs->getValue(i);
-            double phi_i = phi->getValue(i);
-            double laplace = 0.0;
-        
-            if constexpr (dim == 1) {
-                double dx = grid->dx;
-                int left = i - 1;
-                int right = i + 1;
-                if (left < 0) left = i;
-                if (right >= grid->nx) right = i;
-        
-                laplace = (phi->getValue(right) - 2 * phi_i + phi->getValue(left)) / (dx * dx);
-            }
-        
-            if constexpr (dim == 2) {
-                auto [ix, iy, _] = grid->indexToCoordinates(i);
-                double dx = grid->dx;
-                double dy = grid->dy;
-                int nx = grid->getnx();
-                int ny = grid->getny();
-            
-                auto get = [&](int x, int y) -> double {
-                    if (x < 0 || x >= nx || y < 0 || y >= ny) return phi_i;
-                    return phi->getValue(grid->index(x, y));
-                };
-            
-                laplace = (get(ix+1, iy) - 2*phi_i + get(ix-1, iy)) / (dx * dx) +
-                          (get(ix, iy+1) - 2*phi_i + get(ix, iy-1)) / (dy * dy);
-            }
-            
-        
-            if constexpr (dim == 3) {
-                auto [ix, iy, iz] = grid->indexToCoordinates(i);
-                double dx = grid->dx, dy = grid->dy, dz = grid->dz;
-                int nx = grid->getnx(), ny = grid->getny(), nz = grid->getnz();
-            
-                auto get = [&](int x, int y, int z) -> double {
-                    if (x < 0 || x >= nx || y < 0 || y >= ny || z < 0 || z >= nz) return phi_i;
-                    return phi->getValue(grid->index(x, y, z));
-                };
-            
-                laplace = (get(ix+1, iy, iz) - 2*phi_i + get(ix-1, iy, iz)) / (dx * dx) +
-                          (get(ix, iy+1, iz) - 2*phi_i + get(ix, iy-1, iz)) / (dy * dy) +
-                          (get(ix, iy, iz+1) - 2*phi_i + get(ix, iy, iz-1)) / (dz * dz);
-            }
-            
-        
+
+            double c        = cs->getValue(i);
+            double xi_i     = xi->getValue(i);
+
+            double laplace  = grid->laplacian(i, phi);
+            auto grad       = grid->gradient(i, phi);
+            double grad2    = grad.mag2(); 
+
             DxiDt->setValue(i, laplace * c * c);
-            DphiDt->setValue(i, dt * DxiDt->getValue(i) + xi->getValue(i));
+            DphiDt->setValue(i, dt * DxiDt->getValue(i) + xi_i);
+            e->setValue(i, 0.5 * (xi_i * xi_i + c * c * grad2));
 
             local_dtmin = std::min(local_dtmin, 0.2 * dxmin / c);
         }
@@ -174,33 +141,24 @@ public:
     double
     getCell(int i,int j, std::string fieldName="phi") {
         int idx = (ocean ? grid2d->index(i,j,0) : grid->index(i,j,0));
-        NodeList* nodeList  = this->nodeList;
-        ScalarField* phi    = nodeList->getField<double>(fieldName);
+        ScalarField* phi    = this->nodeList->template getField<double>(fieldName);
         return phi->getValue(idx);
     }
 
     virtual void
-    FinalizeStep(const State<dim>* finalState) override {
-        NodeList* nodeList = this->nodeList;
-        int numNodes = nodeList->size();
-
-        ScalarField* fxi    = finalState->template getField<double>("xi");
-        ScalarField* fphi   = finalState->template getField<double>("phi");
-
-        ScalarField* xi     = nodeList->getField<double>("xi");
-        ScalarField* phi    = nodeList->getField<double>("phi");
-        ScalarField* mphi   = nodeList->getField<double>("maxphi");
-        ScalarField* phis   = nodeList->getField<double>("phisq");
-
-        xi->copyValues(fxi);
-        phi->copyValues(fphi);
+    FinalChecks() override {
+        int numNodes = this->nodeList->size();
         
+        ScalarField* xi     = this->nodeList->template getField<double>("xi");
+        ScalarField* phi    = this->nodeList->template getField<double>("phi");
 
+        ScalarField* mphi   = this->nodeList->template getField<double>("maxphi"); // diagnostic fields for plotting
+        ScalarField* phis   = this->nodeList->template getField<double>("phisq");  // diagnostic fields for plotting
+        
         for (int i=0; i<numNodes; ++i) {
             mphi->setValue(i,std::max(mphi->getValue(i),phi->getValue(i)*phi->getValue(i)));
             phis->setValue(i,phi->getValue(i)*phi->getValue(i));
         }
-            
     }
 
     virtual double 

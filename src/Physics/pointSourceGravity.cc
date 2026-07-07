@@ -1,3 +1,5 @@
+// Copyright (C) 2026  Cody Raskin
+
 #include "physics.hh"
 #include <iostream>
 
@@ -8,7 +10,7 @@ protected:
     Lin::Vector<dim> pointSourceVelocity;
     double pointSourceMass;
     double dtmin;
-    double lastUpdateTime = -1.0; // Tracks last update time
+    double lastUpdateTime = -1.0;
 public:
     using Vector = Lin::Vector<dim>;
     using VectorField = Field<Vector>;
@@ -23,60 +25,51 @@ public:
         pointSourceLocation(pointSourceLocation),
         pointSourceVelocity(pointSourceVelocity),
         pointSourceMass(pointSourceMass) {
-        
 
-        int numNodes = nodeList->size();
-        this->template EnrollFields<Vector>({"acceleration", "velocity", "position"});
-        this->template EnrollStateFields<Vector>({"velocity", "position"});
-        
-        std::cout << "point source mass: "<< pointSourceMass<<"\n";
+        this->template EnrollFields<Vector>({"acceleration"});
+        // ACCUMULATE: contributes dvdt but does not own or finalize velocity.
+        // position is read from the INTEGRATE package's sub-stage state via initialState.
+        this->template EnrollStateFields<Vector>({"velocity"}, FieldPolicy::ACCUMULATE);
     }
 
-    // PointSourceGravity(NodeList* nodeList,
-    //         PhysicalConstants& constants,
-    //         Vector& pointSourceLocation,
-    //         double pointSourceMass) :
-    //     PointSourceGravity(nodeList, constants, pointSourceLocation, Vector::zero(), pointSourceMass) {}
-    // This can't work since it has to be a pointer to a vector and nobody is holding it!
-
-    
     ~PointSourceGravity() {}
 
+    Vector getPointSourceLocation() const { return pointSourceLocation; }
+    void setPointSourceLocation(Vector loc) { pointSourceLocation = loc; }
+
     virtual void
-    EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {
-        // Update point source position once per timestep
+    EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv,
+                        const double time, const double dt) override {
+        // Advance point source once per timestep (not per RK sub-stage).
         if (time != lastUpdateTime) {
             pointSourceLocation += pointSourceVelocity * dt;
             lastUpdateTime = time;
         }
-        
-        //compute accelerations
+
         NodeList* nodeList = this->nodeList;
         PhysicalConstants constants = this->constants;
         int numNodes = nodeList->size();
 
-        VectorField* position       = initialState->template getField<Vector>("position");
-        VectorField* acceleration   = nodeList->getField<Vector>("acceleration");
-        // ^ this field is just for reference and isn't actually used to calculate anything
-        VectorField* velocity       = initialState->template getField<Vector>("velocity");
-
-        VectorField* dxdt           = deriv.template getField<Vector>("position");
-        VectorField* dvdt           = deriv.template getField<Vector>("velocity");
+        VectorField* position     = initialState->template getField<Vector>("position");
+        VectorField* velocity     = initialState->template getField<Vector>("velocity");
+        VectorField* acceleration = nodeList->getField<Vector>("acceleration");
+        VectorField* dvdt         = deriv.template getField<Vector>("velocity");
 
         double local_dtmin = 1e30;
 
         #pragma omp parallel for reduction(min:local_dtmin)
-        for (int i=0; i<numNodes ; ++i) {
+        for (int i=0; i<numNodes; ++i) {
             Vector pos = position->getValue(i);
-            Vector r = (pointSourceLocation - pos);
-            Vector a = pointSourceMass*constants.G()/(r.mag2())*r.normal();
-            Vector v = velocity->getValue(i);
-            acceleration->setValue(i,a);
+            Vector r   = pointSourceLocation - pos;
+            Vector a   = pointSourceMass * constants.G() / r.mag2() * r.normal();
+            Vector v   = velocity->getValue(i);
+            acceleration->setValue(i, a);
+            dvdt->setValue(i, a);
+
             double amag = a.mag2();
             double vmag = v.mag2();
-            local_dtmin = std::min(local_dtmin,vmag/amag);
-            dxdt->setValue(i,v+dt*a);
-            dvdt->setValue(i,a);
+            if (amag > 0.0)
+                local_dtmin = std::min(local_dtmin, vmag / amag);
         }
 
         dtmin = local_dtmin;
@@ -85,39 +78,8 @@ public:
 
     virtual double
     EstimateTimestep() const override {
-        double timestepCoefficient = 1e-4; // Adjust as needed
-        double timestep = timestepCoefficient * sqrt(dtmin);
-
-        return timestep;
-    }
-
-    virtual void
-    FinalizeStep(const State<dim>* finalState) override {
-        PushState(finalState);
-    }
-
-    virtual void
-    PushState(const State<dim>* stateToPush) override {
-        NodeList* nodeList = this->nodeList;
-        int numNodes = nodeList->size();
-        State<dim> state = this->state;
-
-        VectorField* position       = nodeList->template getField<Vector>("position");
-        VectorField* velocity       = nodeList->template getField<Vector>("velocity");
-
-        VectorField* fposition       = stateToPush->template getField<Vector>("position");
-        VectorField* fvelocity       = stateToPush->template getField<Vector>("velocity");
-
-        position->copyValues(fposition);
-        velocity->copyValues(fvelocity);
-
-        if (stateToPush != &(state))
-        {
-            VectorField* sposition       = state.template getField<Vector>("position");
-            VectorField* svelocity       = state.template getField<Vector>("velocity");
-            sposition->copyValues(fposition);
-            svelocity->copyValues(fvelocity);
-        }
+        double timestepCoefficient = 1e-4;
+        return timestepCoefficient * sqrt(dtmin);
     }
 
     virtual std::string name() const override { return "pointSourceGravity"; }

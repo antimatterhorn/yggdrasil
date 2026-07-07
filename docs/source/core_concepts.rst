@@ -1,6 +1,12 @@
 Core Concepts
 =============
 
+Python Scripting of the C++ Modules
+------------------------------------
+
+Yggdrasil is first and foremost a C++ code, but the user does not run the code from a C++ ``main();``. Rather, the user constructs 
+a Python script that invokes the relevant C++ modules and passes data between them in Python's ``__main__():``. 
+
 Dimensionality
 --------------
 
@@ -58,11 +64,33 @@ of data, for pairing of different Field data into a state, and for state copying
 to be passed as a constructor argument to keep track of
 which state vectors the physics package is intended to evolve. 
 
+When a Field is assigned to a NodeList, it can be accessed from within Python as an attribute on that NodeList, e.g.
+``myNodeList.density`` which returns a Pythonic list of the Field's type, in this case Python floats. 
+However, this requires that the Field has been assigned to the ``Nodelist`` first, either via the construction 
+of a Physics package that creates it (and enrolls it) or manually from within the Python runscript via 
+``myNodeList.insertFieldDouble("density")``.
+
 .. note::
     Yggdrasil does not assume any specific Fields (except ``id``) are necessary without a physics package first 
     creating that Field and then assigning it to the ``Nodelist``. If you try to access a Field called ``density`` inside
     a problem without any physics classes that use ``density``, Yggdrasil will raise an error, unless you have manually created that Field yourself
     within your problem script.
+
+Generators
+-----------
+Generators create point distributions for use in particle-based simulations or Voronoi mesh generation. Generators return a python list of points
+in 2d or 3d coordinates inside a unitary bounding box or unit circle/sphere for a chosen number of points. 
+
+Below is an example generated distribution of points using the ``FibbonaciDisk2d`` generator used as
+seed generators for a Voronoi mesh.
+
+.. image:: fibonacci.png
+   :align: center
+
+.. note::
+    Because all of Yggdrasil's generators return points inside a unitary bounding box or unit circle/sphere,
+    you'll likely want to scale, move, and cull them to fit your particular problem. See the nodeGenerator tests
+    inside the ``tests`` directory for examples.
 
 Physics Packages
 --------------------
@@ -72,23 +100,8 @@ Hydrodynamics physics packages also require an equation of state (``eos``). Phys
 hold onto State vectors of pertinent Fields and prescribe how their derivatives are to be
 calculated. However, physics packages do not themselves advance the state - the Integrators do.
 
-The current list of available physics packages and their constructors is
-
-.. code-block:: text
-
-    ConstantGravityXd(nodeList,constants,gravityVector)
-    EulerHydroXd(nodeList,constants,eos,grid)
-    FEMXd(nodeList,constants,mesh)
-    GridHydroHLLXd(nodeList,constants,eos,grid)
-    KineticsXd(nodeList,constants)
-    NBodyGravityXd(nodeList,constants,plummerLength)
-    PointSourceGravityXd(nodeList,constants,pointSourceLocation,pointSourceVelocity,pointSourceMass)
-    RockPaperScissors(grid,A,D)
-    WaveEquationXd(nodeList,constants,grid,C)
-    WaveEquationXd(nodeList,constants,grid,depthMap)
-
-For each of these, replace the ``Xd`` with your desired dimensionality (1d,2d,3d). Consult the
-python class definitions in the ``src/Physics`` directory for specific implementation details.
+Consult the python class definitions in the ``src/Physics`` directory for specific implementation details for each
+of the available physics packages.
 
 Assigning multiple physics packages to
 the integrator is as simple as passing a Python list of constructed physics objects to the integrator's constructor. 
@@ -158,10 +171,17 @@ Element Meshes
 ^^^^^^^^^^^^^^
 <wip>
 
+Voronoi Meshes
+^^^^^^^^^^^^^^^
+Currently, Yggdrasil can construct 2d Voronoi meshes from a ``Field<Vector<2>>`` or a ``FieldofVector2d`` if constructed 
+from within Python. Unique topology is not guaranteed.
+See the ``voronoi_diag.py`` example for a use-case. 
+
 Boundary Conditions
 --------------------
-Currently, Yggdrasil has two species of boundary objects: grid boundaries and collider boundaries.
-Grid boundaries apply to mesh-based physics and collider boundaries apply to lagrangian particles.
+Currently, Yggdrasil has three species of boundary objects: grid boundaries, collider boundaries, and node constraints.
+Grid boundaries apply to mesh-based physics and collider boundaries apply to lagrangian particles. Node constraints can
+in principle apply to anything in a NodeList, but are mostly designed for FEM calculations.
 
 Grid Boundaries
 ^^^^^^^^^^^^^^^
@@ -169,35 +189,54 @@ The types of grid boundaries used in Yggdrasil are:
 
 .. code-block:: text
     
-    DirichletGridBoundaries
-    OutflowGridBoundaries
-    PeriodicGridBoundaries
-    ReflectingGridBoundaries 
+    DirichletGridBoundary
+    OutflowGridBoundary
+    PeriodicGridBoundary
+    ReflectingGridBoundary 
 
 Each of these is available in any of 1d, 2d, or 3d varieties. Grid boundaries are applied directly
 to the grid cells and so must be pointed at the correct grid object at construction.
 
 .. code-block:: python
 
-    box = DirichletGridBoundaries2d(grid=myGrid)
+    box = DirichletGridBoundary2d(grid=myGrid)
 
 Dirichlet grid boundaries have methods for applying boundaries to cells within the grid such as 
 ``box.addBox(Vector2d(16,20),Vector2d(20,44))`` which would add Dirichlet conditions to the cells
 whose positions span 16-20 in *x* and 20-44 in *y*.
 The full list of available methods for ``DirichletGridBoundaries`` is given below.
 
-.. literalinclude:: ../../src/Boundaries/dirichletGridBoundaries.py
+.. literalinclude:: ../../src/Boundaries/dirichletGridBoundary.py
     :language: python
     :lines: 8-17
 
-The ``addDomain`` method applies Dirichlet conditions to all of the bounds (left-most,right-most,etc.)
-of the mesh. The other grid boundary types merely perform ``addDomain`` at constructor time and do not
-have any special methods.
+The ``addDomain`` method applies Dirichlet conditions to all of the bounds (left-most, right-most, etc.)
+of the mesh.
 
-.. warning::
-    At this time, Yggdrasil's reflecting, periodic, and outlfow boundaries apply to all of the bounds
-    of your mesh, *i.e* the left and right-most cells will be periodic as well as the top and bottom-most
-    cells in 2d. 
+The reflecting, outflow, and periodic boundary types apply to **all faces** by default. To restrict a
+boundary condition to a subset of faces, call ``setFaces`` after construction and pass a list of face
+names. Valid names are ``"left"``, ``"right"``, ``"bottom"``, ``"top"`` (and ``"front"``, ``"back"``
+in 3d), where *bottom* is the minimum-y face and *top* is the maximum-y face.
+
+.. code-block:: python
+
+    wall = ReflectingGridBoundary2d(grid=myGrid)
+    wall.setFaces(["bottom"])          # reflecting wall on the bottom face only
+
+    outflow = OutflowGridBoundary2d(grid=myGrid)
+    outflow.setFaces(["left", "right", "top"])  # outflow on three faces
+
+Multiple boundary conditions targeting different faces can be added to the same physics package and
+will each be applied in order:
+
+.. code-block:: python
+
+    hydro.addBoundary(wall)
+    hydro.addBoundary(outflow)
+
+For ``PeriodicGridBoundary``, ``setFaces`` always activates both members of an axis-aligned pair:
+specifying ``"bottom"`` automatically also activates ``"top"``, and vice versa, because periodic
+boundaries must be bidirectional.
 
 Collider Boundaries
 ^^^^^^^^^^^^^^^^^^^
@@ -224,6 +263,15 @@ Collider boundaries can be assigned to lagrangian physics packages with the ``ad
 
     myKineticsPhysicsPkg.addBoundary(myBoxCollider)
 
+Node Constraints
+^^^^^^^^^^^^^^^^^^^
+Node constraints are a special kind of boundary class that restrict the motion or behavior of nodes. These are mostly
+useful for FEM or for debugging. Currently, the available constraints within Yggdrasil are:
+
+.. code-block:: text
+    
+    MotionConstraint
+
 Integrators
 --------------------
 Yggdrasil's integrators all have essentially the same interface: they take as arguments your physics packages
@@ -247,4 +295,48 @@ if a ``tstop`` is supplied. The controller is simple enough to be reproduced in 
 
 .. literalinclude:: ../../src/Utilities/Controller.py
    :language: python
-   
+
+The Flow of the Script
+-----------------------
+
+Yggdrasil's runscripts should be reminiscent of building Legos. Start with the ``constants`` object and a ``NodeList`` (and a ``Grid`` if 
+you're simulating something with a Mesh). 
+
+.. code-block:: python
+
+    myConstants = MKS()
+    numNodes = nx*ny
+    myNodeList = NodeList(numNodes)
+    myGrid = Grid2d(nx,ny,1,1)
+
+Then create your Physics package(s) that use these objects in their constructors.
+
+.. code-block:: python
+
+    waveEqn = WaveEquation2d(nodeList=myNodeList,
+                             constants=myConstants,
+                             grid=myGrid,C=cs)
+    packages = [waveEqn]
+
+Next, assign boundary conditions to your Physics package.
+
+.. code-block:: python
+
+    pm = PeriodicGridBoundary2d(grid=myGrid)
+    waveEqn.addBoundary(pm)
+
+Construct an integrator that points to the Physics package(s) you want to evolve.
+
+.. code-block:: python
+
+    myIntegrator = RungeKutta4Integrator2d(packages=packages,
+                                         dtmin=0.01,verbose=False)
+
+Finally, create the Controller and step through the simulation.
+
+.. code-block:: python
+
+    controller = Controller(integrator=myIntegrator,
+                            statStep=10,
+                            periodicWork=[])
+    controller.Step(1000)

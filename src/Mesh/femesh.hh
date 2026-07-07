@@ -1,3 +1,5 @@
+// Copyright (C) 2026  Cody Raskin
+
 #ifndef FEMESH_HH
 #define FEMESH_HH
 
@@ -11,7 +13,6 @@
 #include "../Math/vectorMath.hh"
 #include "../DataBase/field.hh"
 #include "../DataBase/nodeList.hh"
-#include "elementType.hh"
 #include "element.hh"
 
 namespace Mesh {    
@@ -24,6 +25,9 @@ namespace Mesh {
 
         std::unordered_map<size_t, std::vector<size_t>> neighbors;
         std::vector<size_t> boundaryNodes;
+
+        std::vector<std::vector<size_t>> connectivityMap;
+        std::unordered_map<size_t, std::vector<size_t>> nodeToElementMap;
 
     public:
         using Vector = Lin::Vector<dim>;
@@ -51,6 +55,12 @@ namespace Mesh {
 
         void buildFromObj(const std::string& filepath, const std::string& axes);
         void writeVTK(const std::string& filepath) const;
+
+        void computeConnectivityMap();
+        const std::vector<std::vector<size_t>>& getConnectivityMap() const;
+        const std::unordered_map<size_t, std::vector<size_t>>& getNodeToElementMap() const;
+
+        FEMesh(const FEMesh& other) = default;
     };
 }
 

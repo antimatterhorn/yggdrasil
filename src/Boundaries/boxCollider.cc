@@ -1,3 +1,5 @@
+// Copyright (C) 2026  Cody Raskin
+
 #include <vector>
 #include "../Physics/physics.hh"
 #include "../DataBase/nodeList.hh"
@@ -35,13 +37,13 @@ public:
     virtual ~BoxCollider() {}
 
     virtual void
-    ApplyBoundaries(State<dim>& state, NodeList* nodeList) override {  
-        int numNodes            = state.size();
-        VectorField* positions  = nodeList->getField<Vector>("position");
-        VectorField* velocities = nodeList->getField<Vector>("velocity");
+    ApplyBoundaries(State<dim>* state, NodeList* nodeList) override {
+        int numNodes            = state->size();
+        VectorField* positions  = state->template getField<Vector>("position");
+        VectorField* velocities = state->template getField<Vector>("velocity");
         ScalarField* radii      = nodeList->getField<double>("radius");
-        
-        if (radii!= nullptr) {
+
+        if (radii != nullptr) {
             for (int i=0; i<numNodes; ++i) {
                 Vector pos = positions->getValue(i);
                 double rad = radii->getValue(i);
@@ -49,16 +51,11 @@ public:
                     Vector v1 = velocities->getValue(i);
                     Vector n  = faceNormal(pos);
                     Vector v2 = v1 - 2.0*(v1*n)*n;
-                    velocities->setValue(i,v2*elasticity);                 // reflect across the normal
-                    Vector dp = state.getLastDt()*velocities->getValue(i);
-                    Vector newPos = pos + (0.5*dp);  // move it out of the boundary by a half-step
-                    positions->setValue(i,newPos);
+                    velocities->setValue(i, v2*elasticity);
+                    Vector dp = state->getLastDt()*velocities->getValue(i);
+                    positions->setValue(i, pos + (0.5*dp));
                 }
             }
-            //physics->PushState(state);
-            /* i'm changing boundaries to modify the nodeList directly for now rather than the state
-               this may not be a good idea for full generality, but at the moment, there is just a lot
-               of copying back and forth to and from the state and that incurs a cost. */
         }
         else
         {

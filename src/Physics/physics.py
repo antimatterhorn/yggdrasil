@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 from PYB11Generator import *
 
 @PYB11template("dim")
@@ -6,8 +8,11 @@ class Physics:
                nodeList="NodeList*",
                constants="PhysicalConstants&"):
         return
+    @PYB11keepalive(1, 2)
     def addBoundary(self,
-                    boundary="Boundaries<dim>*"):
+                    boundary="Boundary<dim>*"):
+        return
+    def UpdateState(self):
         return
     
 Physics1d = PYB11TemplateClass(Physics,

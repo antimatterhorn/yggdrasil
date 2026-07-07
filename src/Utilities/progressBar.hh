@@ -1,3 +1,6 @@
+// Copyright (C) 2026  Cody Raskin
+#pragma once
+
 #include <iostream>
 
 #include <cmath> // for round

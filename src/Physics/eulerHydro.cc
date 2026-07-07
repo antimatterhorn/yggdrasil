@@ -1,3 +1,5 @@
+// Copyright (C) 2026  Cody Raskin
+
 #include "hydro.hh"
 #include "../Mesh/grid.hh"
 #include <iostream>
@@ -18,8 +20,8 @@ public:
         Hydro<dim>(nodeList,constants,eos), grid(grid){
         this->template EnrollFields<Vector>({"position"});
 
-        this->template EnrollStateFields<double>({"density", "specificInternalEnergy"});
-        this->template EnrollStateFields<Vector>({"velocity"});
+        this->template EnrollStateFields<double>({"density", "specificInternalEnergy"}, FieldPolicy::INTEGRATE);
+        this->template EnrollStateFields<Vector>({"velocity"}, FieldPolicy::INTEGRATE);
 
         for(int i=0;i<grid->size();i++)
             if(!grid->onBoundary(i))
@@ -34,12 +36,9 @@ public:
 
     virtual void
     ZeroTimeInitialize() override {      
-        NodeList* nodeList = this->nodeList;
-        Field<Lin::Vector<dim>>* v  = nodeList->getField<Lin::Vector<dim>>("velocity");
-        Field<double>* rho          = nodeList->getField<double>("density");
-        Field<double>* u            = nodeList->getField<double>("specificInternalEnergy");
-
         EOSLookup();
+        this->UpdateState();
+        this->InitializeBoundaries();
     }
 
     virtual void EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {
@@ -93,21 +92,7 @@ public:
 
 
     virtual void
-    FinalizeStep(const State<dim>* finalState) override {
-        NodeList* nodeList = this->nodeList;
-
-        Field<double>* fdensity                 = finalState->template getField<double>("density");
-        Field<Lin::Vector<dim>>* fvelocity      = finalState->template getField<Lin::Vector<dim>>("velocity");
-        Field<double>* fu                       = finalState->template getField<double>("specificInternalEnergy");
-
-        Field<double>* density                  = nodeList->getField<double>("density");
-        Field<Lin::Vector<dim>>* velocity       = nodeList->getField<Lin::Vector<dim>>("velocity");
-        Field<double>* u                        = nodeList->getField<double>("specificInternalEnergy");
-
-        density->copyValues(fdensity);
-        velocity->copyValues(fvelocity);
-        u->copyValues(fu);
-
+    FinalChecks() override {
         EOSLookup();
     }
 

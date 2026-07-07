@@ -1,3 +1,5 @@
+// Copyright (C) 2026  Cody Raskin
+
 #pragma once
 #include "gridHydroBase.hh"
 #include "HLL.cc"
@@ -15,7 +17,8 @@ public:
 
     virtual std::string name() const override { return "GridHydroHLLC"; }
 
-    virtual HLLFlux<dim> computeFlux(int iL, int iR, int axis,
+    virtual HLLFlux<dim> 
+    computeFlux(int iL, int iR, int axis,
                                      const Field<double>& rho,
                                      const Field<Vector>& v,
                                      const Field<double>& u,

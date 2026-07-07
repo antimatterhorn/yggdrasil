@@ -1,3 +1,5 @@
+// Copyright (C) 2026  Cody Raskin
+
 #ifndef NODELIST_CC
 #define NODELIST_CC
 
@@ -15,38 +17,46 @@ NodeList::NodeList(int numNodes) {
 
 NodeList::~NodeList() {}
 
-void NodeList::addField(const std::shared_ptr<FieldBase>& fieldPtr) {
+void 
+NodeList::addField(const std::shared_ptr<FieldBase>& fieldPtr) {
     _fields.push_back(fieldPtr);
 }
 
-void NodeList::addNodeList(const NodeList& other) {
+void 
+NodeList::addNodeList(const NodeList& other) {
     _fields.insert(_fields.end(), other._fields.begin(), other._fields.end());
 }
 
-NodeList NodeList::operator+(const NodeList& other) const {
+NodeList 
+NodeList::operator+(const NodeList& other) const {
     NodeList newNodeList = *this; 
     newNodeList.addNodeList(other);
     return newNodeList;
 }
 
-NodeList& NodeList::operator+=(const NodeList& other) {
+NodeList& 
+NodeList::operator+=(const NodeList& other) {
     addNodeList(other);
     return *this;
 }
 
-Field<double>* NodeList::mass() const {
+Field<double>* 
+NodeList::mass() const {
     return getFieldByName<double>(Name("mass"));
 }
 
-size_t NodeList::getFieldCount() const {
+size_t 
+NodeList::getFieldCount() const {
     return _fields.size();
 }
 
-size_t NodeList::getNumNodes() const {
+size_t 
+NodeList::getNumNodes() const {
     return _fields[0]->getSize();
 }
 
-std::vector<std::string> NodeList::fieldNames() const {
+std::vector<std::string> 
+NodeList::fieldNames() const {
     std::vector<std::string> names;
     for (const auto& field : _fields) {
         if (field && field->hasName()) {
@@ -56,24 +66,44 @@ std::vector<std::string> NodeList::fieldNames() const {
     return names;
 }
 
-Field<int>& NodeList::nodes() {
+Field<int>&
+NodeList::nodes() {
     return _ids;
 }
 
-unsigned int NodeList::size() const {
+int
+NodeList::inferDim() const {
+    for (const auto& fieldPtr : _fields) {
+        if (!fieldPtr) continue;
+        switch (fieldPtr->type()) {
+            case FieldDataType::Vector1: return 1;
+            case FieldDataType::Vector2: return 2;
+            case FieldDataType::Vector3: return 3;
+            default: break;
+        }
+    }
+    return 0;
+}
+
+unsigned int 
+NodeList::size() const {
     return getNumNodes();
 }
 
 // Template Implementations
 template <typename T>
-void NodeList::insertField(const std::string& name) {
-    auto newField = std::make_shared<Field<T>>(name, this->size());
-    _extraFields.push_back(newField);
-    addField(newField);
+void 
+NodeList::insertField(const std::string& name) {
+    if (getField<T>(name) == nullptr) {
+        auto newField = std::make_shared<Field<T>>(name, this->size());
+        _extraFields.push_back(newField);
+        addField(newField);
+    }
 }
 
 template <typename T>
-Field<T>* NodeList::getFieldByName(const Name& name) const {
+Field<T>* 
+NodeList::getFieldByName(const Name& name) const {
     for (const auto& fieldPtr : _fields) {
         if (fieldPtr->hasName() && fieldPtr->getNameString() == name.name()) {
             Field<T>* castedField = dynamic_cast<Field<T>*>(fieldPtr.get());
@@ -82,16 +112,27 @@ Field<T>* NodeList::getFieldByName(const Name& name) const {
             }
         }
     }
+    //std::cout << "No field on this NodeList with name " << name.name() << std::endl;
     return nullptr;
 }
 
 template <typename T>
-Field<T>* NodeList::getField(const std::string& name) const {
+Field<T>* 
+NodeList::getField(const std::string& name) const {
     return getFieldByName<T>(Name(name));
 }
 
+template<typename T>
+Field<T>* 
+NodeList::getFieldOrThrow(const std::string& name) const {
+    Field<T>* ptr = getFieldByName<T>(Name(name));
+    if (!ptr) throw pybind11::key_error("Field '" + name + "' not found in NodeList.");
+    return ptr;
+}
+
 template <int dim>
-Field<Lin::Vector<dim>>* NodeList::velocity() const {
+Field<Lin::Vector<dim>>* 
+NodeList::velocity() const {
     for (const auto& fieldPtr : _fields) {
         if (fieldPtr->hasName() && fieldPtr->getName() == Name("velocity")) {
             Field<Lin::Vector<dim>>* velocityField = dynamic_cast<Field<Lin::Vector<dim>>*>(fieldPtr.get());
@@ -104,7 +145,8 @@ Field<Lin::Vector<dim>>* NodeList::velocity() const {
 }
 
 template <int dim>
-Field<Lin::Vector<dim>>* NodeList::position() const {
+Field<Lin::Vector<dim>>* 
+NodeList::position() const {
     for (const auto& fieldPtr : _fields) {
         if (fieldPtr->hasName() && fieldPtr->getName() == Name("position")) {
             Field<Lin::Vector<dim>>* positionField = dynamic_cast<Field<Lin::Vector<dim>>*>(fieldPtr.get());
@@ -116,5 +158,8 @@ Field<Lin::Vector<dim>>* NodeList::position() const {
     return nullptr;
 }
 
+template void NodeList::updatePositions<1>(const std::vector<std::array<double, 1>>&);
+template void NodeList::updatePositions<2>(const std::vector<std::array<double, 2>>&);
+template void NodeList::updatePositions<3>(const std::vector<std::array<double, 3>>&);
 
 #endif

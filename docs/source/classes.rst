@@ -6,59 +6,50 @@ and integrators) to be abstracted and predictable.
 Physics Classes
 --------------------
 The primary class that you'll interact with in Yggdrasil is the ``Physics`` class. This class contains the prescription
-for the state vector and all of the necessary logic for computing derivatives of the state vector.
-Yggdrasil's integrators expect assigned (derived) physics classes to override the physics base class methods for 
-``PrestepInitialize``, ``EvaluateDerivatives``, and ``FinalizeStep``. 
+for the State vector and all of the necessary logic for computing derivatives of the State vector. The general concept
+for how physics classes work in Yggdrasil is that the ``NodeList`` holds immutable quantities that are valid for the beginning
+of an integration step, while the State vector (usually a subset copy of some of the Fields on the ``NodeList``) may update
+throughout a step. 
+Yggdrasil's integrators expect assigned (derived) physics classes to override the physics base class method ``EvaluateDerivatives``
+at least, and some may also override ``PrestepInitialize`` and ``FinalizeStep`` as well. 
 
-Let's use ``constantGravity.cc`` in the ``src/Physics`` directory as an example of a derived class that implements these methods.
+Let's use ``constanForce.cc`` in the ``src/Physics`` directory as an example of a derived class that overrides only the derivatives.
 
-.. literalinclude:: ../../src/Physics/constantGravity.cc
+.. literalinclude:: constantForce.cc
    :language: c++
    :linenos:
    :lines: 4-27
    :lineno-start: 4
 
-In the constructor for ``ConstantGravity``, we pass in the ``NodeList`` pointer, a ``PhysicalConstants`` object, and a ``Vector`` that
+In the constructor for ``ConstantForce``, we pass in the ``NodeList`` pointer, a ``PhysicalConstants`` object, and a ``Vector`` that
 prescribes the direction and magnitude of the acceleration. Then we enroll the ``acceleration``, ``velocity``, and ``position`` Vector 
 Fields using the type templated EnrollFields method from the Physics base class. 
 This ensures that these fields exist on the NodeList, and if they don't, this 
 method will create them. 
 
-Next we enroll the ``position`` and ``velocity`` Fields to the ``State``.
-In the case of 
-the constant gravity package, the only derivatives are the position derivative and velocity derivative, and as a standard, we keep
-antiderivatives on the ``State`` object (to be preserved as copies) while derivatives remain on the ``NodeList`` object 
-(to be altered in series by successive physics packages). For that reason, we do not assign ``acceleration`` to the ``State`` 
-object for this physics class.
-You can think of ``State`` Fields as the independent variables that are being solved for at the next time step, and their derivatives 
-are dependent variables that change within a step.
+Next we enroll the ``acceleration`` vector to the Nodelist and the ``velocity`` Field to the ``State``. Since ``ConstantForce`` doesn't
+"own" ``velocity`` (Kinematics does), we enroll this with the ``ACCUMULATE`` policy so that the integrator will add the derivatives of ``velocity`` 
+from this physics class to the ``velocity`` derivatives from Kinematics.
 
-.. literalinclude:: ../../src/Physics/constantGravity.cc
+
+.. literalinclude:: constantForce.cc
    :language: c++
    :linenos:
-   :lines: 29-34
-   :lineno-start: 29
-
-The PrestepInitialize method is used to initialize the ``State`` object at the beginning of a time step. In this case, ``ConstantGravity``
-is simply updating the ``State`` to the current values of the ``NodeList``.
-
-.. literalinclude:: ../../src/Physics/constantGravity.cc
-   :language: c++
-   :linenos:
-   :lines: 36-63
-   :lineno-start: 36
+   :lines: 29-60
+   :lineno-start: 28
 
 ``EvaluateDerivatives`` is used to compute the derivatives of the ``State`` object at each node. In this case, we are computing the 
 change in velocity and position due to a constant acceleration, so we have a pair of ODEs:
 
 .. math::
     \begin{aligned}
-    \dot{x} &= v(t) + a \Delta t\\
-    \dot{v} &= a\\
+    \dot{x}(t) &= v(t)\\
+    \dot{v}(t) &= a\\
     \end{aligned}
 
 The integrator invokes this method with intial and derivatives ``State`` vectors and a time step, and the physics class stores the value of those
-derivatives back to the ``deriv`` ``State`` object.
+derivatives back to the ``deriv`` ``State`` object. Since this class uses only the ``ACCUMULATE`` policy for the ``velocity`` Field, we add the 
+constant acceleration to the ``dvdt`` State vector, and the ``Kinematics`` class will add the ``velocity`` derivatives to the ``dxdt`` State vector.
 
 .. note::
     The integrator will call this method multiple times per time step if the particular integrator in question is of high temporal order. 
@@ -68,28 +59,31 @@ derivatives back to the ``deriv`` ``State`` object.
 
 The final bit of code in ``EvaluateDerivatives`` merely calculates the minimum timestep based on a velocity condition.
 
-.. literalinclude:: ../../src/Physics/constantGravity.cc
-   :language: c++
-   :linenos:
-   :lines: 65-104
-   :lineno-start: 65
+Generally, the base class method for ``FinalizeStep`` should suffice for most physics
+packages as the base class takes care of copying the final State after an integration step back to the ``NodeList``
+on the derived physics class.  
 
-``FinalizeStep`` is meant to tie up any further calculations that should happen at the end of a time step. In this case, we merely push
-the values of the ``finalState`` passed from the integrator to the physics ``State`` object and the corresponding Fields in the ``NodeList``
-using the ``Field.copyValues`` method.
+.. note::
+   If you don't want to recapitulate what is already in the base class ``FinalizeStep`` method, but you'd still like to
+   tie up some loose ends at the end of an integration step (*e.g.* you may want to set floor limits on certain
+   quantities), you can do so by overriding the ``FinalChecks()`` method. 
+   By dafault, this method doesn't do anything, but is always called after ``FinalizeStep``.
 
 Integrator Classes
 ------------------
-Nihoggr's integrators follow a basic pattern of initializing the state of the physics objects at each step, applying boundary conditions,
-evaluating derivatives, advancing the state of each physics object from those derivatives, and then finalizing each physics object's state.
+Nihoggr's integrators follow a basic pattern of initializing the state of the physics objects at each step, 
+evaluating derivatives, advancing the state of each physics object from those derivatives, applying boundary conditions, 
+and then finalizing each physics object's state.
 An example of this pattern for simple forward Euler integration is shown below:
 
 .. literalinclude:: ../../src/Integrators/integrator.cc
    :language: c++
-   :lines: 6-66
+   :lines: 6-70
 
 .. note::
-   While this class is a foward Euler integrator, it is also the base class for all integrators in Yggdrasil.
+   While this class is a foward Euler integrator, it is also the base class for all integrators in Yggdrasil, and as such,
+   its ``Step()`` method is rarely overridden by derived classes. Instead, the most common override will be to the ``Integrate()``
+   method.
 
 Equations of State
 ------------------

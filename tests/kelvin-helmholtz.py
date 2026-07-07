@@ -1,17 +1,33 @@
+import os
+import numpy as np
 from yggdrasil import *
 from Animation import *
-
+from Mesh import Grid2d
+from Physics import GridHydroKT2d,GridHydroHLLC2d,GridHydroHLLE2d
+from EOS import IdealGasEOS
+from Boundaries import PeriodicGridBoundary2d
+from Utilities import SiloDump
+from IO import RestartWriter
 
 if __name__ == "__main__":
-    commandLine = CommandLineArguments(animate = True,
-                                        siloDump = False,
+    commandLine = CommandLineArguments(animate = False,
+                                        siloDump = True,
+                                        dumpCycle= 50,
                                         cycles = 3000,
-                                        nx = 100,
+                                        nx = 200,
                                         ny = 100,
                                         dx = 0.01,
                                         dy = 0.01,
                                         dtmin = 0.1e-7,
-                                        intVerbose = False)
+                                        intVerbose = False,
+                                        restartCycle = 250,
+                                        rootName = "kelvin-helmholtz",
+                                        vizDir = "KH/viz",
+                                        restartDir = "KH/restart",
+                                        restoreCycle = None)
+
+    os.makedirs(vizDir, exist_ok=True)
+    os.makedirs(restartDir, exist_ok=True)
 
     myGrid = Grid2d(nx,ny,dx,dy)
     print("grid size:",myGrid.size())
@@ -24,11 +40,12 @@ if __name__ == "__main__":
     eos = IdealGasEOS(1.4,constants)
     print(eos,"gamma =",eos.gamma)
 
-    hydro = GridHydroHLLC2d(myNodeList,constants,eos,myGrid) 
+    hydro = GridHydroKT2d(myNodeList,constants,eos,myGrid) 
+    #hydro = GridHydroHLLE2d(myNodeList,constants,eos,myGrid) 
     print("numNodes =",myNodeList.numNodes)
     print("field names =",myNodeList.fieldNames)
 
-    box = PeriodicGridBoundaries2d(grid=myGrid)
+    box = PeriodicGridBoundary2d(grid=myGrid)
     hydro.addBoundary(box)
 
     integrator = RungeKutta4Integrator2d([hydro],dtmin=dtmin,verbose=intVerbose)
@@ -48,31 +65,40 @@ if __name__ == "__main__":
             x = pos.x
             y = pos.y
 
+            y0 = j * dy
+
             if j < ny // 4:
                 rho = 1.0
-                vx = -3.0
+                vx = -0.5
             elif j < 3 * ny // 4:
                 rho = 2.0
-                vx = 3.0
+                vx = 0.5
             else:
                 rho = 1.0
-                vx = -3.0
+                vx = -0.5
 
-            # Sinusoidal perturbation (centered in y)
-            a = 0.01 * np.sin(4 * np.pi * i / nx) * np.exp(-((j - ny // 2) / (0.1 * ny))**2)
+            vy = 0.1 * np.sin(4 * np.pi * x)
 
-            velocity.setValue(idx, Vector2d(vx, a))
+            velocity.setValue(idx, Vector2d(vx, vy))
             density.setValue(idx, rho)
             energy.setValue(idx, p0 / ((gamma - 1.0) * rho))
+
+    restoreIfAvailable(myNodeList, integrator, restartDir, rootName, restoreCycle)
 
     periodicWork = []
 
     if siloDump:
-        meshWriter = SiloDump(baseName="HLL",
+        meshWriter = SiloDump(baseName=os.path.join(vizDir, rootName),
                                 nodeList=myNodeList,
                                 fieldNames=["density","specificInternalEnergy","pressure","velocity"],
-                                dumpCycle=50)
+                                dumpCycle=dumpCycle)
         periodicWork += [meshWriter]
+
+    restartWriter = RestartWriter(myNodeList, integrator)
+    def dropRestart(cycle, time, dt):
+        restartWriter.write(restartFileName(restartDir, rootName, cycle))
+    dropRestart.cycle = restartCycle
+    periodicWork += [dropRestart]
 
     controller = Controller(integrator=integrator,periodicWork=periodicWork,statStep=1)
 

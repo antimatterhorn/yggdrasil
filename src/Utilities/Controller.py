@@ -1,3 +1,6 @@
+# Copyright (C) 2026  Cody Raskin
+
+import json
 from Integrators import *
 
 class Controller:
@@ -9,6 +12,31 @@ class Controller:
         self.time = 0
         self.dt = 0
         self.tstop = tstop
+
+    def checkpointPeriodicWork(self, fileName):
+        """Serialize any periodicWork item's own auxiliary state (e.g. running
+        accumulators) to a JSON side file. RestartWriter/RestartReader only
+        cover NodeList fields and integrator cycle/time/dt -- anything a
+        periodicWork callable tracks itself lives outside that C++ state graph
+        and must opt in here via a checkpointState() method."""
+        state = {}
+        for i, work in enumerate(self.periodicWork):
+            if hasattr(work, "checkpointState"):
+                state[str(i)] = work.checkpointState()
+        with open(fileName, "w") as f:
+            json.dump(state, f)
+
+    def restorePeriodicWork(self, fileName):
+        """Counterpart to checkpointPeriodicWork: restores auxiliary state to
+        any periodicWork item that defines restoreState(data), matching by
+        position in the periodicWork list. Assumes periodicWork is passed in
+        the same order it was at checkpoint time."""
+        with open(fileName, "r") as f:
+            state = json.load(f)
+        for i, work in enumerate(self.periodicWork):
+            key = str(i)
+            if key in state and hasattr(work, "restoreState"):
+                work.restoreState(state[key])
     def Step(self,nsteps=1):
         for i in range(nsteps):
             self.integrator.Step()
@@ -23,6 +51,8 @@ class Controller:
                 for work in self.periodicWork:
                     if cycle % work.cycle == 0:
                         work(cycle,time,dt)
+            # for package in self.integrator.getPackages():
+            #     package.UpdateState()
             self.time = self.integrator.Time()
             self.cycle = self.integrator.Cycle()
             self.dt = self.integrator.dt

@@ -1,3 +1,4 @@
+// Copyright (C) 2026  Cody Raskin
 
 #ifndef PHYSICALCONSTANTS_HH
 #define PHYSICALCONSTANTS_HH
@@ -53,7 +54,6 @@ public:
         mUnitTsec(unitTsec),
         mUnitTeK(unitTeK),
         mUnitCcou(unitCcou) {
-            std::cout << "constants constructed" << std::endl;
             GGravity = GMKS / (mUnitLm * mUnitLm * mUnitLm / (mUnitMkg * mUnitTsec * mUnitTsec));
     }
 

@@ -1,4 +1,6 @@
 from yggdrasil import *
+from Mesh import Grid2d
+from Boundaries import DirichletGridBoundary2d
 
 commandLine = CommandLineArguments(nx = 5,
                                    ny = 8,
@@ -14,7 +16,7 @@ origin = Vector2d(ox,oy)
 myGrid = Grid2d(nx,ny,dx,dy)
 myGrid.setOrigin(origin)
 
-dgb = DirichletGridBoundaries2d(grid=myGrid)
+dgb = DirichletGridBoundary2d(grid=myGrid)
 dgb.addDomain()
 
 print("indices:")

@@ -1,5 +1,6 @@
 from yggdrasil import *
-from Animation import *
+from Animation import AnimateScatter
+from Physics import ConstantForce2d,Kinetics2d
 
 if __name__ == "__main__":
     constants = MKS()
@@ -8,22 +9,22 @@ if __name__ == "__main__":
     # Node_created
     gravVec = Vector2d(0, -9.8)
 
-    constantGravity = ConstantGravity2d(myNodeList, constants, gravVec)
-    kinetics = Kinetics2d(myNodeList,constants)
-    packages = [constantGravity,kinetics]
+    constantForce   = ConstantForce2d(myNodeList, constants, gravVec)
+    kinetics        = Kinetics2d(myNodeList,constants)
+    packages        = [constantForce,kinetics]
     # Packages_created
-    integrator = RungeKutta4Integrator2d(packages=packages, dtmin=0.01, verbose=False)
+    integrator  = RungeKutta4Integrator2d(packages=packages, dtmin=0.01, verbose=False)
     print(integrator)
     # Integrator_created
-    rad     = myNodeList.getFieldDouble("radius")
-    mass    = myNodeList.getFieldDouble("mass")
-    vel     = myNodeList.getFieldVector2d("velocity")
-    pos     = myNodeList.getFieldVector2d("position")
+    rad     = myNodeList.radius
+    mass    = myNodeList.mass
+    vel     = myNodeList.velocity
+    pos     = myNodeList.position
     
-    mass.setValue(0, 1)
-    rad.setValue(0, 0.01)
-    vel.setValue(0, Vector2d(5,5))
-    pos.setValue(0, Vector2d(0,0))
+    mass[0] = 1
+    rad[0] = 0.01
+    vel[0] = Vector2d(5,5)
+    pos[0] = Vector2d(0,0)
     # Initial_conditions_set
     controller = Controller(integrator=integrator, periodicWork=[], statStep=1)
 

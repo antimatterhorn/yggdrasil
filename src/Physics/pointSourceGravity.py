@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 from PYB11Generator import *
 from physics import *
 
@@ -10,6 +12,12 @@ class PointSourceGravity(Physics):
                pointSourceVelocity="Lin::Vector<%(dim)s>&",
                pointSourceMass="double"):
         return
+
+    pointSourceLocation = PYB11property("Lin::Vector<%(dim)s>",
+                                        getter="getPointSourceLocation",
+                                        setter="setPointSourceLocation",
+                                        doc="The current location of the point mass.")
+
     # def pyinit1(self,
     #            nodeList="NodeList*",
     #            constants="PhysicalConstants&",

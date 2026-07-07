@@ -1,3 +1,5 @@
+// Copyright (C) 2026  Cody Raskin
+
 #include "physics.hh"
 #include <iostream>
 
@@ -25,20 +27,8 @@ public:
     ~ImplicitPhysics() {}
 
     virtual void
-    PreStepInitialize() override {
-        State<dim> state = this->state;
-        NodeList* nodeList = this->nodeList;
-
-        ScalarField* sy = state.template getField<double>("y");
-        ScalarField* y  = nodeList->template getField<double>("y");
-
-        sy->copyValues(y);
-    }
-
-    virtual void
     EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {
-        NodeList* nodeList = this->nodeList;
-        int numNodes = nodeList->size();
+        int numNodes = this->nodeList->size();
 
         const double evalTime = time + dt;
 
@@ -49,18 +39,5 @@ public:
             const double yi = (*y)[i];
             dydt->setValue(i, yi + evalTime * evalTime);
         }
-    }
-
-    virtual void
-    FinalizeStep(const State<dim>* finalState) override {
-        State<dim> state = this->state;
-        NodeList* nodeList = this->nodeList;
-
-        ScalarField* sy = state.template getField<double>("y");
-        ScalarField* fy = finalState->template getField<double>("y");
-        ScalarField* y  = nodeList->template getField<double>("y");
-
-        sy->copyValues(fy);
-        y->copyValues(fy);
     }
 };

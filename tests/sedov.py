@@ -1,6 +1,10 @@
 from yggdrasil import *
 import matplotlib.pyplot as plt
 from Animation import *
+from Physics import GridHydroHLLE2d,GridHydroKT2d
+from Mesh import Grid2d
+from EOS import IdealGasEOS
+from Boundaries import ReflectingGridBoundary2d
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
@@ -24,11 +28,12 @@ if __name__ == "__main__":
     eos = IdealGasEOS(1.4,constants)
     print(eos,"gamma =",eos.gamma)
 
-    hydro = GridHydroHLLE2d(myNodeList,constants,eos,myGrid) 
+    #hydro = GridHydroHLLE2d(myNodeList,constants,eos,myGrid) 
+    hydro = GridHydroKT2d(myNodeList,constants,eos,myGrid) 
     print("numNodes =",myNodeList.numNodes)
     print("field names =",myNodeList.fieldNames)
 
-    box = ReflectingGridBoundaries2d(grid=myGrid)
+    box = ReflectingGridBoundary2d(grid=myGrid)
     hydro.addBoundary(box)
 
     integrator = RungeKutta4Integrator2d([hydro],dtmin=dtmin,verbose=False)
@@ -77,7 +82,7 @@ if __name__ == "__main__":
                                                 stepper=controller.Step,
                                                 title=title,
                                                 fieldName="density")
-        AnimateGrid2d(bounds,update_method,extremis=[0,4],frames=cycles,cmap="plasma")
+        AnimateGrid2d(bounds,update_method,extremis=[0,4],frames=cycles,cmap=rbbl)
     else:
         controller.Step(cycles)
 

@@ -1,5 +1,6 @@
 from yggdrasil import *
 from Animation import *
+from Physics import ConstantForce2d,Kinetics2d
 
 if __name__ == "__main__":
     animate = True
@@ -11,9 +12,9 @@ if __name__ == "__main__":
 
     gravVec = Vector2d(0, 0)
 
-    constantGravity = ConstantGravity2d(myNodeList, constants, gravVec)
+    constantForce = ConstantForce2d(myNodeList, constants, gravVec)
     kinetics = Kinetics2d(myNodeList,constants)
-    packages = [constantGravity,kinetics]
+    packages = [constantForce,kinetics]
 
     integrator = RungeKutta2Integrator2d(packages=packages, dtmin=0.01,verbose=False)
     print(integrator)
@@ -22,7 +23,7 @@ if __name__ == "__main__":
     rad = myNodeList.getFieldDouble("radius")
     mass = myNodeList.getFieldDouble("mass")
     for i in range(numNodes):
-        rad.setValue(i,2)
+        rad.setValue(i,0.5)
         mass.setValue(i,0.2)
 
     print("numNodes =", myNodeList.numNodes)

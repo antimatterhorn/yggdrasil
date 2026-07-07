@@ -1,3 +1,5 @@
+// Copyright (C) 2026  Cody Raskin
+
 #pragma once
 #include "hydro.hh"
 #include "../Mesh/grid.hh"
@@ -46,15 +48,17 @@ public:
 
     virtual ~GridHydroBase() {}
 
-    virtual void ZeroTimeInitialize() override {
+    virtual void 
+    ZeroTimeInitialize() override {
         EOSLookup();
+        State<dim> state = this->state;
+        NodeList* nodeList = this->nodeList;
+        this->UpdateState();
+        this->InitializeBoundaries();
     }
 
-    virtual void PreStepInitialize() override {
-        EOSLookup();
-    }
-
-    virtual void EvaluateDerivatives(const State<dim>* initialState,
+    virtual void 
+    EvaluateDerivatives(const State<dim>* initialState,
                                      State<dim>& deriv,
                                      const double time,
                                      const double dt) override {
@@ -129,7 +133,7 @@ public:
 
             drhodt->setValue(i, net_rho_flux);
             Vector dvi = (net_mom_flux - vi * net_rho_flux) / rhoi;
-            double dui = (net_E_flux - vi.dot(net_mom_flux) - 0.5 * vi.mag2() * net_rho_flux) / rhoi;
+            double dui = (net_E_flux - vi.dot(net_mom_flux) + 0.5 * vi.mag2() * net_rho_flux - ui * net_rho_flux) / rhoi;
 
             dvdt->setValue(i, dvi);
             dudt->setValue(i, dui);
@@ -140,35 +144,51 @@ public:
         dtmin = local_dtmin;
     }
 
-    virtual double EstimateTimestep() const override {
+    virtual double 
+    EstimateTimestep() const override {
         return dtmin;
     }
 
-    virtual void FinalizeStep(const State<dim>* finalState) override {
-        NodeList* nodeList = this->nodeList;
-
+    virtual void 
+    FinalizeStep(const State<dim>* finalState) override {
         auto* fdensity  = finalState->template getField<double>("density");
         auto* fvelocity = finalState->template getField<Vector>("velocity");
         auto* fu        = finalState->template getField<double>("specificInternalEnergy");
 
-        auto* density  = nodeList->getField<double>("density");
-        auto* velocity = nodeList->getField<Vector>("velocity");
-        auto* u        = nodeList->getField<double>("specificInternalEnergy");
+        auto* density  = this->nodeList->template getField<double>("density");
+        auto* velocity = this->nodeList->template getField<Vector>("velocity");
+        auto* u        = this->nodeList->template getField<double>("specificInternalEnergy");
 
-        density->copyValues(fdensity);
-        velocity->copyValues(fvelocity);
-        u->copyValues(fu);
+        const double rho_floor = 1e-12;
+        const double v_max = 1e3;
+        const double u_max = 1e4;
 
         #pragma omp parallel for
-        for (int i = 0; i < nodeList->size(); ++i) {
-            density->setValue(i, std::max(density->getValue(i), 1e-12));
-            u->setValue(i, std::max(u->getValue(i), 1e-12));
-        }
+        for (int i = 0; i < this->nodeList->size(); ++i) {
+            double rhoi = std::max(fdensity->getValue(i), rho_floor);
+            Vector vi = fvelocity->getValue(i);
+            double ui = std::max(fu->getValue(i), rho_floor);
 
+            // Clamp velocity if rho is near floor
+            if (rhoi <= 1.1 * rho_floor)
+                vi = Vector::zero();
+            else if (vi.magnitude() > v_max)
+                vi = vi.normal() * v_max;
+
+            // Clamp energy if absurd
+            if (ui > u_max)
+                ui = u_max;
+
+            density->setValue(i, rhoi);
+            velocity->setValue(i, vi);
+            u->setValue(i, ui);
+        }
+        
         EOSLookup();
     }
 
-    virtual void EOSLookup() {
+    virtual void 
+    EOSLookup() {
         NodeList* nodeList = this->nodeList;
         auto* rho = nodeList->getField<double>("density");
         auto* u = nodeList->getField<double>("specificInternalEnergy");
@@ -178,17 +198,26 @@ public:
         this->eos->setSoundSpeed(cs, rho, u);
     }
 
-    virtual double getCell(int i, int j, const std::string& fieldName = "pressure") const {
+    virtual double 
+    getCell(int i, int j, const std::string& fieldName = "pressure") const {
         int idx = grid->index(i, j, 0);
         ScalarField* field = this->nodeList->template getField<double>(fieldName);
         return field->getValue(idx);
     }
 
+    virtual double 
+    getCellComponent(int i, int j, int component, const std::string& fieldName) const {
+        int idx = grid->index(i, j, 0);
+        auto* field = this->nodeList->template getField<Vector>(fieldName);
+        return field->getValue(idx)[component];
+    }
+
     // To be implemented by derived class
-    virtual HLLFlux<dim> computeFlux(int iL, int iR, int axis,
-                                     const Field<double>& rho,
-                                     const Field<Vector>& v,
-                                     const Field<double>& u,
-                                     const Field<double>& p,
-                                     const Field<double>& cs) const = 0;
+    virtual HLLFlux<dim> 
+    computeFlux(int iL, int iR, int axis,
+                const Field<double>& rho,
+                const Field<Vector>& v,
+                const Field<double>& u,
+                const Field<double>& p,
+                const Field<double>& cs) const = 0;
 };

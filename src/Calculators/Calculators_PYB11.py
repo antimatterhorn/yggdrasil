@@ -1,5 +1,10 @@
+# Copyright (C) 2026  Cody Raskin
+
 from PYB11Generator import *
-PYB11includes = ['"timeDilation.cc"','"cosmology.cc"','"stringArt.cc"']
+PYB11includes = ['"timeDilation.cc"',
+                 '"cosmology.cc"',
+                 '"stringArt.cc"',
+                 '"mandelbrot.cc"','<pybind11/complex.h>', '<pybind11/stl.h>']
 
 class TimeDilation:
     def pyinit(self,
@@ -36,4 +41,13 @@ class StringArt:
     def PinList(self):
         return
     def TotalLength(self):
+        return
+    
+class Mandelbrot:
+    def pyinit(self,
+               nodeList="NodeList*",
+               grid="Mesh::Grid<2>*",
+               maxIter=("int", 200)):
+        return
+    def compute(self):
         return

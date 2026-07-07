@@ -1,6 +1,9 @@
 from yggdrasil import *
 from Animation import *
-from math import sin,cos,sqrt
+from math import sqrt
+from Physics import WaveEquation2d
+from Boundaries import OutflowGridBoundary2d
+from Mesh import Grid2d
 
 class oscillate:
     def __init__(self,nodeList,grid,width,height,workCycle=1):
@@ -62,7 +65,7 @@ if __name__ == "__main__":
 
     packages = [waveEqn]
 
-    pm = PeriodicGridBoundaries2d(grid=grid)
+    pm = OutflowGridBoundary2d(grid=grid,derivative="xi")
     waveEqn.addBoundary(pm)
 
     integrator = RungeKutta4Integrator2d(packages=packages,dtmin=0.01)
@@ -76,7 +79,7 @@ if __name__ == "__main__":
     periodicWork = [osc]
 
     controller = Controller(integrator=integrator,
-                            statStep=1,
+                            statStep=50,
                             periodicWork=periodicWork)
 
     if(animate):
@@ -87,6 +90,6 @@ if __name__ == "__main__":
                                                 stepper=controller.Step,
                                                 title=title,
                                                 fieldName="phi")
-        AnimateGrid2d(bounds,update_method,extremis=[-1,1],frames=cycles,cmap="plasma")
+        AnimateGrid2d(bounds,update_method,extremis=[-0.1,0.1],frames=cycles,cmap=rbbl)
     else:
         controller.Step(cycles)

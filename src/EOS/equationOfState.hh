@@ -1,3 +1,5 @@
+// Copyright (C) 2026  Cody Raskin
+
 #ifndef EQUATIONOFSTATE_HH
 #define EQUATIONOFSTATE_HH
 

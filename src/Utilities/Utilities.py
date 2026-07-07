@@ -1,6 +1,11 @@
-from yggdrasil import SiloMeshWriter2d
+# Copyright (C) 2026  Cody Raskin
+
+from IO import SiloMeshWriter1d, SiloMeshWriter2d, SiloMeshWriter3d, RestartReader
 import wave
 import numpy as np
+import os
+import re
+import glob
 
 class TextMicrophone:
     def __init__(self, nodeList, grid,i,j,filename,workCycle=1):
@@ -68,7 +73,6 @@ class Microphone:
             f.seek(40)
             f.write(int.to_bytes(file_size - 44, 4, 'little'))  # Update Subchunk2Size
 
-
 class Speaker:
     def __init__(self, filename):
         self.filename = filename
@@ -120,8 +124,56 @@ class DampedHarmonicOscillator:
         return self.amplitude*np.sin(2*np.pi*self.frequency*time)*np.exp(self.damping*time)
 
 class SiloDump:
+    _writerClasses = {1: SiloMeshWriter1d, 2: SiloMeshWriter2d, 3: SiloMeshWriter3d}
+
     def __init__(self,baseName,nodeList,fieldNames,dumpCycle=10):
-        self.meshWriter = SiloMeshWriter2d(baseName=baseName,nodeList=nodeList,fieldNames=fieldNames)
+        dim = nodeList.inferDim()
+        if dim not in self._writerClasses:
+            raise ValueError("SiloDump: couldn't infer a spatial dimension from nodeList "
+                              "(no Vector1/2/3 field like 'position' found) -- can't write a point mesh")
+        self.meshWriter = self._writerClasses[dim](baseName=baseName,nodeList=nodeList,fieldNames=fieldNames)
         self.cycle = dumpCycle
     def __call__(self,cycle,time,dt):
         self.meshWriter.write("-cycle=%03d.silo"%(cycle))
+
+def restartFileName(restartDir, rootName, cycle):
+    """The "<rootName>-restart-cycle<N>.ygr" checkpoint path RestartWriter
+    should write to (and RestartReader should read from) for a given cycle."""
+    return os.path.join(restartDir, "%s-restart-cycle%d.ygr" % (rootName, cycle))
+
+def findLatestRestart(restartDir, rootName):
+    """Returns the highest-cycle "<rootName>-restart-cycle<N>.ygr" checkpoint
+    in restartDir, or None if no matching checkpoint exists."""
+    matcher = re.compile(re.escape(rootName) + r"-restart-cycle(\d+)\.ygr$")
+    best, bestCycle = None, -1
+    for path in glob.glob(os.path.join(restartDir, "%s-restart-cycle*.ygr" % rootName)):
+        m = matcher.search(os.path.basename(path))
+        if m and int(m.group(1)) > bestCycle:
+            best, bestCycle = path, int(m.group(1))
+    return best
+
+def restoreIfAvailable(nodeList, integrator, restartDir, rootName, restoreCycle=None):
+    """Restores nodeList/integrator from a checkpoint under restartDir using
+    the "<rootName>-restart-cycle<N>.ygr" naming convention, if one is
+    available. If restoreCycle is given, restores that exact cycle (printing
+    a warning and doing nothing if it doesn't exist); otherwise picks up the
+    highest-cycle checkpoint found, if any. RestartReader isn't templated on
+    dim, so this works regardless of the problem's dimensionality.
+
+    Returns the path restored from, or None if nothing was restored.
+    """
+    if restoreCycle is not None:
+        restoreFrom = restartFileName(restartDir, rootName, int(restoreCycle))
+        if not os.path.exists(restoreFrom):
+            print("--restoreCycle=%s requested but %s does not exist" %
+                  (restoreCycle, restoreFrom))
+            restoreFrom = None
+    else:
+        restoreFrom = findLatestRestart(restartDir, rootName)
+
+    if restoreFrom is not None:
+        RestartReader(nodeList, integrator).read(restoreFrom)
+        print("Restored from %s at cycle %d, time %g" %
+              (restoreFrom, integrator.Cycle(), integrator.Time()))
+
+    return restoreFrom

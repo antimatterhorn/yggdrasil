@@ -1,4 +1,5 @@
 from yggdrasil import *
+from Calculators import TimeDilation
 
 travelTime = 2 # years
 distance   = 4  # light-years

@@ -1,6 +1,7 @@
 from yggdrasil import *
 from Animation import *
-
+from Physics import NBodyGravity2d, Kinematics2d
+from RandomNodeGenerator import RandomNodeGenerator2d
 
 class dumpState:
     def __init__(self,nodeList,workCycle=1,G=1):
@@ -15,7 +16,6 @@ class dumpState:
 
 
 if __name__ == "__main__":
-    from RandomNodeGenerator import RandomNodeGenerator2d
     bounds = [[-1,-1],[1,1]]
     numNodes = 3
     Generator = RandomNodeGenerator2d(numNodes=numNodes,bounds=bounds)
@@ -28,16 +28,18 @@ if __name__ == "__main__":
                                   1.0) 
     loc = Vector2d(0, 0)
 
+    kinematics = Kinematics2d(nodeList=myNodeList, constants=constants)
     nBodyGrav = NBodyGravity2d(nodeList=myNodeList,
                                constants=constants,
                                plummerLength=0.01)
-    packages = [nBodyGrav]
+    packages = [kinematics, nBodyGrav]
 
     positions   = myNodeList.getFieldVector2d("position")
     mass        = myNodeList.getFieldDouble("mass")
     for i in range(numNodes):
         mass.setValue(i,1.0)
-        positions.setValue(i,Generator.positions[i])
+        positions.setValue(i,Vector2d(Generator.positions[i][0],Generator.positions[i][1]))
+        print(Generator.positions[i][0],Generator.positions[i][1])
 
     integrator = RungeKutta4Integrator2d(packages=packages,
                                          dtmin=0.5e1,verbose=False)
@@ -49,5 +51,6 @@ if __name__ == "__main__":
     controller = Controller(integrator=integrator,periodicWork=[],statStep=1,tstop=1e3)
 
     bounds = (-1,1,-1,1)
+
 
     AnimateScatter(bounds, stepper=controller, positions=positions, frames=100, interval=50)

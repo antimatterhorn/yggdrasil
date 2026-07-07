@@ -2,6 +2,7 @@ from yggdrasil import *
 import numpy as np
 import random
 from math import sin,cos
+from Physics import PointSourceGravity2d, Kinematics2d
 
 class minPeri:
     def __init__(self,nodeList,workCycle=1,G=1):
@@ -11,8 +12,8 @@ class minPeri:
         self.energy = []
         self.G = G
     def __call__(self,cycle,time,dt):
-        v = self.nodeList.getFieldVector2d("velocity")
-        x = self.nodeList.getFieldVector2d("position")
+        v = self.nodeList.velocity
+        x = self.nodeList.position
         for i in range(self.nodeList.numNodes):
             self.minP = min(self.minP,x[i].magnitude)
         print(self.minP)
@@ -25,7 +26,7 @@ class dumpState:
         self.G = G
     def __call__(self,cycle,time,dt):
         for i in range(self.nodeList.numNodes):
-            self.dump.append((self.nodeList.getFieldVector2d("position")[i].x,self.nodeList.getFieldVector2d("position")[i].y))
+            self.dump.append((self.nodeList.position[i].x,self.nodeList.position[i].y))
 
 
 if __name__ == "__main__":
@@ -44,6 +45,7 @@ if __name__ == "__main__":
     mmLoc = Vector2d(60000,-500000)
     mmVel = Vector2d(0,0.1)
 
+    kinematics = Kinematics2d(nodeList=myNodeList, constants=constants)
     sourceGrav = PointSourceGravity2d(nodeList=myNodeList,
                                       constants=constants,
                                       pointSourceLocation=cmLoc,
@@ -54,7 +56,7 @@ if __name__ == "__main__":
                                       pointSourceLocation=mmLoc,
                                       pointSourceMass=mmass,
                                       pointSourceVelocity = mmVel)
-    packages = [movingGrav,sourceGrav]
+    packages = [kinematics, movingGrav, sourceGrav]
     integrator = RungeKutta4Integrator2d(packages=packages,
                                          dtmin=1e-3,verbose=False)
 
@@ -67,8 +69,8 @@ if __name__ == "__main__":
     torbit = 2 * np.pi * np.sqrt(a**3 / (constants.G * cmass))
     print(torbit)
 
-    pos = myNodeList.getFieldVector2d("position")
-    velocity = myNodeList.getFieldVector2d("velocity")
+    pos = myNodeList.position
+    velocity = myNodeList.velocity
 
     for i in range(nComets):
         r = float(random.randint(8000,120000))

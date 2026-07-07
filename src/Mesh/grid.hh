@@ -1,5 +1,6 @@
-#ifndef GRID_HH
-#define GRID_HH
+// Copyright (C) 2026  Cody Raskin
+
+#pragma once
 
 #include <vector>
 #include <string>
@@ -14,6 +15,7 @@ namespace Mesh {
         std::vector<std::shared_ptr<FieldBase>> _extraFields;
         std::vector<int> lm,rm,tm,bm,fm,km;
     public:
+        using Vector = Lin::Vector<dim>;
         int nx; // Number of grid cells in x-direction
         int ny; // Number of grid cells in y-direction
         int nz; // Number of grid cells in z-direction
@@ -22,7 +24,7 @@ namespace Mesh {
         double dy; // Grid spacing in y-direction
         double dz; // Grid spacing in z-direction
 
-        Field<Lin::Vector<dim>> gridPositions;
+        Field<Vector> gridPositions;
 
         Grid(int num_cells_x, double spacing_x);
         Grid(int num_cells_x, int num_cells_y, double spacing_x, double spacing_y);
@@ -92,10 +94,19 @@ namespace Mesh {
 
         template <typename T>
         Field<T>* getField(const std::string& name);
+
+        template <typename T>
+        T laplacian(int idx, Field<T>* field) const;
+
+        template <typename T, typename F>
+        T laplacian(int idx, F&& valueAt) const;
+
+        Vector gradient(int idx, Field<double>* field) const;
+        
+        template <typename F>
+        Vector gradient(int idx, F&& valueAt) const;
     };
 }
 
 
 #include "grid.cc"
-
-#endif // GRID_HH

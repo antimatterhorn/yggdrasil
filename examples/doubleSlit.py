@@ -1,6 +1,9 @@
 from yggdrasil import *
 from Animation import *
 from math import sin,cos
+from Mesh import Grid2d
+from Physics import WaveEquation2d
+from Boundaries import OutflowGridBoundary2d, DirichletGridBoundary2d
 
 class oscillate:
     def __init__(self,nodeList,grid,width,height,workCycle=1):
@@ -9,7 +12,7 @@ class oscillate:
         self.grid = grid
         self.width = width
         self.height = height
-        self.phi = myNodeList.getFieldDouble("phi")
+        self.phi = nodeList.phi
     def __call__(self,cycle,time,dt):
         a = 5*(cos(time))
         i = 2
@@ -22,6 +25,7 @@ from Utilities import SiloDump
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
+                                       dumpCycle=50,
                                        save = None, # doubleSlit.gif
                                        cycles = 800,
                                        nx = 100,
@@ -44,8 +48,8 @@ if __name__ == "__main__":
 
     packages = [waveEqn]
 
-    pm = OutflowGridBoundaries2d(grid=grid)
-    box = DirichletGridBoundaries2d(grid=grid)
+    pm = OutflowGridBoundary2d(grid=grid)
+    box = DirichletGridBoundary2d(grid=grid)
 
     x = nx//3
     dx = 2
@@ -69,7 +73,7 @@ if __name__ == "__main__":
     osc = oscillate(nodeList=myNodeList,grid=grid,width=nx,height=ny,workCycle=1)
     periodicWork = [osc]
     if (not animate):
-        vtk = SiloDump("testMesh",myNodeList,fieldNames=["phi","xi"],dumpCycle=50)
+        vtk = SiloDump("doubleSlit",myNodeList,fieldNames=["phi","xi","maxphi","waveEnergyDensity"],dumpCycle=dumpCycle)
         periodicWork.append(vtk)
 
     controller = Controller(integrator=integrator,
@@ -83,7 +87,7 @@ if __name__ == "__main__":
         update_method = AnimationUpdateMethod2d(call=waveEqn.getCell2d,
                                                 stepper=controller.Step,
                                                 title=title,
-                                                fieldName="phisq") # change to 'phi' to view full wave
+                                                fieldName="waveEnergyDensity") # change to 'phi' to view full wave
         AnimateGrid2d(bounds,update_method,extremis=[0,0.03],frames=cycles,cmap='plasma',save_as=save)
     else:
         controller.Step(cycles)

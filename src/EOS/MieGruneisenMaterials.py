@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 def MieGruneisenMaterial(name: str):
     name = name.lower()
     if name == "granite":

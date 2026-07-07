@@ -1,3 +1,5 @@
+// Copyright (C) 2026  Cody Raskin
+
 #include "equationOfState.hh"
 #include <cmath>
 #include <string>

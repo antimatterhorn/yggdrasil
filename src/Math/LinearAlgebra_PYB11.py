@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 from PYB11Generator import *
 PYB11namespaces = ["Lin"]
 PYB11includes = ['"vectorMath.hh"','"tensorMath.hh"']

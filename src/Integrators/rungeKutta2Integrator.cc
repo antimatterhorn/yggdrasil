@@ -1,3 +1,5 @@
+// Copyright (C) 2026  Cody Raskin
+
 #include "integrator.hh"
 
 template <int dim>
@@ -5,54 +7,47 @@ class RungeKutta2Integrator : public Integrator<dim> {
 protected:
 
 public:
-    RungeKutta2Integrator(std::vector<Physics<dim>*> packages, double dtmin, bool verbose = false) : 
+    RungeKutta2Integrator(std::vector<Physics<dim>*> packages, double dtmin, bool verbose = false) :
         Integrator<dim>(packages,dtmin,verbose) {}
 
     ~RungeKutta2Integrator() {}
 
-    virtual void
-    Step() override {
-        std::vector<Physics<dim>*> packages = this->packages;
-        
-        if (this->cycle == 0)
-            for (Physics<dim>* physics : packages)
-                physics->ZeroTimeInitialize();
-
+    virtual State<dim>
+    Integrate(Physics<dim>* physics,
+              const std::vector<Physics<dim>*>& accumulators) override {
         double dt = this->dt;
         double time = this->time;
 
-        for (Physics<dim>* physics : packages)
-        {
-            physics->PreStepInitialize();
-            physics->ApplyBoundaries();
+        const State<dim>* state = physics->getState();
+        State<dim> interim = state->deepCopy();
+        State<dim> k1(state->size());
+        State<dim> k2(state->size());
 
-            State<dim>* state  = physics->getState();
-            State<dim> interim = state->deepCopy();
-            State<dim> k1(state->size());
-            State<dim> k2(state->size());
+        k1.ghost(state);
+        k2.ghost(state);
 
-            k1.ghost(state);
-            k2.ghost(state);
+        auto evalWithAccum = [&](const State<dim>* s, State<dim>& k, double t, double subDt) {
+            physics->EvaluateDerivatives(s, k, t, subDt);
+            for (auto* acc : accumulators) {
+                State<dim> accK(state->size());
+                accK.ghost(acc->getState());
+                acc->EvaluateDerivatives(s, accK, t, subDt);
+                k.accumulateFrom(accK, acc->accumulateFieldNames());
+            }
+        };
 
-            physics->EvaluateDerivatives(state,k1,time,0);
+        evalWithAccum(state, k1, time, 0);
 
-            interim +=k1*dt; 
+        interim += k1 * dt;
 
-            physics->EvaluateDerivatives(&interim,k2,time,dt);
+        evalWithAccum(&interim, k2, time, dt);
 
-            State<dim> newState = state->deepCopy();
+        State<dim> newState = state->deepCopy();
 
-            k1 += k2;
-            k1 *= 0.5*dt;
-            newState += k1;
+        k1 += k2;
+        k1 *= 0.5 * dt;
+        newState += k1;
 
-            physics->ApplyBoundaries();
-            physics->FinalizeStep(&newState);
-        }
-
-        this->time += this->dt;
-        this->cycle += 1;
-
-        this->VoteDt();
+        return newState;
     }
 };

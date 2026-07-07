@@ -1,3 +1,5 @@
+// Copyright (C) 2026  Cody Raskin
+
 #ifndef NODELIST_HH
 #define NODELIST_HH
 
@@ -36,6 +38,17 @@ public:
     template <typename T>
     Field<T>* getField(const std::string& name) const;
 
+    template <typename T>
+    Field<T>* getFieldOrThrow(const std::string& name) const;
+
+    inline FieldBase* 
+    getFieldByIndex(int index) const {
+        if (index < 0 || index >= _fields.size()) {
+            return nullptr; // Return nullptr if index is out of range
+        }
+        return _fields[index].get(); // Return the raw pointer to the field at index
+    }
+
     Field<double>* mass() const;
 
     template <int dim>
@@ -49,6 +62,30 @@ public:
     std::vector<std::string> fieldNames() const;
     Field<int>& nodes();
     unsigned int size() const;
+
+    // Best-effort spatial dimensionality, inferred from the first
+    // Vector1/Vector2/Vector3-typed field found (position, velocity, ...).
+    // Returns 0 if none is found, e.g. a purely cell-centered NodeList with
+    // no vector fields -- callers that need dim should treat 0 as "unknown"
+    // rather than guessing.
+    int inferDim() const;
+
+    template <int dim>
+    void updatePositions(const std::vector<std::array<double, dim>>& py_positions) {
+        Field<Lin::Vector<dim>>& posField = *this->position<dim>();
+
+        if (py_positions.size() != posField.size()) {
+            throw std::runtime_error("updatePosition: size mismatch between input and field");
+        }
+
+        for (size_t i = 0; i < py_positions.size(); ++i) {
+            Lin::Vector<dim> v;
+            for (int d = 0; d < dim; ++d) {
+                v[d] = py_positions[i][d];
+            }
+            posField.setValue(i, v);
+        }
+    }
 };
 
 #include "nodeList.cc" // Include the template implementation

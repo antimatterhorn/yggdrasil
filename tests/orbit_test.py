@@ -1,5 +1,9 @@
 from yggdrasil import *
-from math import sqrt
+import numpy as np
+from math import atan2,cos,sqrt
+import matplotlib.pyplot as plt
+from Physics import PointSourceGravity2d, Kinematics2d
+
 class dumpState:
     def __init__(self,nodeList,workCycle=1,G=1):
         self.nodeList = nodeList
@@ -25,14 +29,15 @@ if __name__ == "__main__":
                                   ) 
     loc = Vector2d(0, 0)
 
+    kinematics = Kinematics2d(nodeList=myNodeList, constants=constants)
     sourceGrav = PointSourceGravity2d(nodeList=myNodeList,
                                       constants=constants,
                                       pointSourceLocation=loc,
                                       pointSourceMass=1,
                                       pointSourceVelocity = Vector2d(0,0))
-    packages = [sourceGrav]
+    packages = [kinematics, sourceGrav]
     integrator = RungeKutta4Integrator2d(packages=packages,
-                                         dtmin=1e-3)
+                                         dtmin=1e-1)
   
     pos = myNodeList.getFieldVector2d("position")[0]
     pos.x = -2.0
@@ -44,11 +49,10 @@ if __name__ == "__main__":
     velocity = myNodeList.getFieldVector2d("velocity")
     velocity[0].y = v0
 
-    dump = dumpState(myNodeList,workCycle=2000,G=constants.G)
+    dump = dumpState(myNodeList,workCycle=200,G=constants.G)
     periodicWork = [dump]
 
-    import numpy as np
-    from math import atan2,cos
+
 
     r0 = 2.0
     t0 = atan2(0,-2)
@@ -61,12 +65,9 @@ if __name__ == "__main__":
     controller = Controller(integrator=integrator,periodicWork=periodicWork,statStep=10000,tstop=norbits*torbit)
 
     print("G =",constants.G)
-    controller.Step(30000000)
+    controller.Step(90000)
     #now plot the orbit
     
-    import matplotlib.pyplot as plt
-
-
     x_values, y_values = zip(*dump.dump)
 
     plt.plot(x_values, y_values, 'o')  

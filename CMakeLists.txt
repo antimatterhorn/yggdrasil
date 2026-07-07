@@ -7,6 +7,19 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
+# Sanitizer build: cmake -DASAN=ON ..
+# Reports the exact file/line/call-stack for out-of-bounds, use-after-free,
+# null-deref, and undefined behavior instead of a bare segfault.
+option(ASAN "Enable AddressSanitizer + UBSan" OFF)
+if(ASAN)
+    message(STATUS "AddressSanitizer + UBSan enabled")
+    set(SANITIZER_FLAGS "-fsanitize=address,undefined -fno-omit-frame-pointer -g")
+    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   ${SANITIZER_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SANITIZER_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS}    ${SANITIZER_FLAGS}")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${SANITIZER_FLAGS}")
+endif()
+
 message("CXX Compiler ID: ${CMAKE_CXX_COMPILER_ID}")
 
 # Find and enable OpenMP
@@ -57,6 +70,7 @@ add_subdirectory(src/Integrators)
 add_subdirectory(src/Boundaries)
 add_subdirectory(src/Mesh)
 add_subdirectory(src/EOS)
+add_subdirectory(src/Materials)
 add_subdirectory(src/State)
 add_subdirectory(src/Trees)
 add_subdirectory(src/Utilities)

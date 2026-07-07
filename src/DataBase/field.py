@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 from PYB11Generator import *
 
 # PYB11includes = ['"../Mesh/element.hh"']
@@ -18,6 +20,8 @@ class Field(FieldBase):
        
     def pyinit(self,fieldName="std::string"):
         return
+    # def pyinit2(self,fieldName="std::string",numElements="unsigned"):
+    #     return
     def addValue(self,field="FieldType"):
         return
     
@@ -30,21 +34,18 @@ class Field(FieldBase):
 
     @PYB11cppname("operator[]")
     @PYB11returnpolicy("reference_internal")
-    @PYB11implementation('[](Field<FieldType>& self, int i) { const int n = self.size(); if (i >= n) throw py::index_error(); return &self[(i %% n + n) %% n]; }')
+    @PYB11implementation('[](Field<FieldType>& self, int i) { const int n = self.size(); if (i >= n || i <= -n) throw py::index_error(); return &self[(i %% n + n) %% n]; }')
     def __getitem__(self):
         return
 
-    # @PYB11cppname("setValue")
-    # @PYB11implementation("[](Field<FieldType>& self, int i, const %(Value)s v) { const int n = self.size(); if (i >= n) throw py::index_error(); self[(i %% n + n) %% n] = v; }")
-    # def __setitem__(self):
-    #     "Set a value"
-
-    # @PYB11implementation("[](const FieldType& self) { return py::make_iterator(self.begin(), self.end()); }, py::keep_alive<0,1>()")
-    # def __iter__(self):
-    #     "Python iteration through a Field."
+    @PYB11cppname("operator[]")
+    @PYB11implementation("[](Field<FieldType>& self, int i, FieldType val) { const int n = self.size(); if (i >= n || i <= -n) throw py::index_error(); self[(i %% n + n) %% n] = val; }")
+    def __setitem__(self):
+        "Assign a value to a field element"
+        return
 
     @PYB11returnpolicy("reference_internal")
-    @PYB11implementation("[](Field<FieldType>& self, int i) { const int n = self.size(); if (i >= n) throw py::index_error(); return &self[(i %% n + n) %% n]; }")
+    @PYB11implementation("[](Field<FieldType>& self, int i) { const int n = self.size(); if (i >= n || i <= -n) throw py::index_error(); return &self[(i %% n + n) %% n]; }")
     def __call__(self):
         "Index into a Field"
         return
@@ -72,6 +73,11 @@ FieldofFloat = PYB11TemplateClass(Field,
                               cppname = "Field<float>",
                               pyname = "FieldofFloat",
                               docext = " (float).")
+FieldofComplex = PYB11TemplateClass(Field,
+                              template_parameters = ("std::complex<double>"),
+                              cppname = "Field<std::complex<double>>",
+                              pyname = "FieldofComplex",
+                              docext = " (std::complex<double>).")
 FieldofString = PYB11TemplateClass(Field,
                               template_parameters = ("std::string"),
                               cppname = "Field<std::string>",

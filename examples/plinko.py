@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
 import random
+from Physics import ConstantForce2d, Kinetics2d
+from Boundaries import SphereCollider2d, BoxCollider2d
 
 def AnimateScatter(bounds, stepper, positions, colliders, frames=100, interval=50):
     """
@@ -52,9 +54,9 @@ if __name__ == "__main__":
     myNodeList = NodeList(numNodes)
     gravVec = Vector2d(0, g)
 
-    constantGravity = ConstantGravity2d(myNodeList, constants, gravVec)
+    constantForce = ConstantForce2d(myNodeList, constants, gravVec)
     kinetics = Kinetics2d(myNodeList,constants)
-    packages = [constantGravity,kinetics]
+    packages = [constantForce,kinetics]
 
     colliders = []
     cbounds = []
@@ -83,19 +85,19 @@ if __name__ == "__main__":
     print(integrator)
 
 
-    rad = myNodeList.getFieldDouble("radius")
-    mass = myNodeList.getFieldDouble("mass")
+    rad = myNodeList.radius
+    mass = myNodeList.mass
     for i in range(numNodes):
-        rad.setValue(i, 0.2)
-        mass.setValue(i,0.2)
+        rad[i] = 0.2
+        mass[i] = 0.2
 
     print("numNodes =", myNodeList.numNodes)
     print("field names =", myNodeList.fieldNames)
 
-    pos = myNodeList.getFieldVector2d("position")
+    pos = myNodeList.position
 
     for i in range(numNodes):
-        pos.setValue(i, Vector2d(random.uniform(-9, 9), 10))
+        pos[i] = Vector2d(random.uniform(-9, 9), 10)
 
     controller = Controller(integrator=integrator, periodicWork=[], statStep=1)
 

@@ -1,8 +1,11 @@
 from yggdrasil import *
+from Calculators import Cosmology
 
-z       = 10
-omega_m = 0.3
-lam     = 0.7
-h0      = 70
+commandLine = CommandLineArguments(
+    z       = 10,
+    omega_m = 0.3,
+    lam     = 0.7,
+    h0      = 70)
+
 
 cosmo = Cosmology(z=z,omega_m=omega_m,lam=lam,h0=h0)

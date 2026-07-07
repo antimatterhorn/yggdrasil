@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
@@ -81,31 +83,70 @@ def AnimateGrid2d(bounds, update_method, threeColors=False, frames=100, interval
 # Example usage:
 # AnimateGrid2d((10, 10), update_method, save_as='animation.mp4')
 
-def AnimateScatter(bounds, stepper, positions, frames=100, interval=50, save_as=None):
+def AnimateScatter(bounds, stepper, positions, size=20, frames=100, interval=50, save_as=None,
+                   get_color_field=None, cmap='plasma', color_limits=None, background=None,
+                   extra_points=None, extra_colors='white', extra_size=60):
     """
-    Custom implementation of animate scatter just for this test.
-    """
-    fig, ax = plt.subplots()
+    Animate a scatter plot of points, optionally colored by a field value.
 
+    Parameters:
+    - bounds: (xmin, xmax, ymin, ymax)
+    - stepper: object with Step() method
+    - positions: object with .size() and indexable Vector-like values (.x, .y)
+    - frames: number of animation frames
+    - interval: milliseconds between frames
+    - save_as: filename to save animation
+    - get_color_field: callable i -> float value, used to color each point
+    - cmap: matplotlib colormap name
+    - color_limits: tuple (vmin, vmax) for color normalization
+    - background: optional color string or RGB tuple (sets axes and figure background)
+    - extra_points: optional callable () -> list of (x, y) pairs, drawn each frame as a
+      second scatter overlay (e.g. a central body plus a moon)
+    - extra_colors: color or list of colors for extra_points, in the same order
+    - extra_size: marker size for extra_points
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from matplotlib.animation import FuncAnimation
+    from matplotlib.colors import Normalize
+
+    fig, ax = plt.subplots()
     ax.set_xlim(bounds[0], bounds[1])
     ax.set_ylim(bounds[2], bounds[3])
 
-    scat = ax.scatter([], [], label='Nodes')
+    if background:
+        fig.patch.set_facecolor(background)
+        ax.set_facecolor(background)
 
-    ax.legend()
+    scat = ax.scatter([], [], s=size)
+    extra_scat = ax.scatter([], [], s=extra_size) if extra_points else None
+    norm = Normalize(*color_limits) if color_limits else None
 
     def init():
-        scat.set_offsets(np.empty((0, 2)))  # Initialize with empty 2D array
+        scat.set_offsets(np.empty((0, 2)))
+        if extra_scat is not None:
+            extra_scat.set_offsets(np.empty((0, 2)))
+            return scat, extra_scat
         return scat,
 
     def update(frame):
-        stepper.Step()  # Execute one step of the simulation
+        stepper.Step()
 
         points = [positions[i] for i in range(positions.size())]
-        x = [p.x for p in points]
-        y = [p.y for p in points]
+        xy = np.array([[p.x, p.y] for p in points])
+        scat.set_offsets(xy)
 
-        scat.set_offsets(np.c_[x, y])
+        if get_color_field:
+            color_values = np.array([get_color_field(i) for i in range(positions.size())])
+            scat.set_array(color_values)
+            scat.set_cmap(cmap)
+            if color_limits:
+                scat.set_clim(*color_limits)
+
+        if extra_scat is not None:
+            extra_scat.set_offsets(np.array(extra_points()))
+            extra_scat.set_color(extra_colors)
+            return scat, extra_scat
 
         return scat,
 
@@ -116,6 +157,7 @@ def AnimateScatter(bounds, stepper, positions, frames=100, interval=50, save_as=
         print(f'Animation saved as {save_as}')
     else:
         plt.show()
+
 
 
 class AnimationUpdateMethod2d:
@@ -145,3 +187,9 @@ class MakeTitle:
     def __call__(self):
         member_value = getattr(self.obj, self.var)
         return f"%s: %03.3e" % (self.name,member_value)
+    
+from matplotlib.colors import LinearSegmentedColormap
+RBBLcolors = [(1,0,0), (0, 0, 0), (0,0,1)]  # Red -> Black -> Blue
+rbbl = LinearSegmentedColormap.from_list('rbbl', RBBLcolors, N=256)
+BRWcolors = [ (0, 0, 0), (1,0,0),(1,1,1)]  # Red -> Black -> Blue
+brw = LinearSegmentedColormap.from_list('brw', BRWcolors, N=256)

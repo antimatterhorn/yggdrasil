@@ -1,104 +1,80 @@
-#include "physics.hh"
+// Copyright (C) 2026  Cody Raskin
+
+#include "kinematics.hh"
 #include <iostream>
 
 template <int dim>
-class Kinetics : public Physics<dim> {
+class Kinetics : public Kinematics<dim> {
 protected:
-    double dtmin;
-    double timeVisited;
+    double dtmin = 1e30;
 public:
     using Vector = Lin::Vector<dim>;
     using VectorField = Field<Vector>;
     using ScalarField = Field<double>;
 
     Kinetics(NodeList* nodeList, PhysicalConstants& constants) :
-        Physics<dim>(nodeList,constants) {
+        Kinematics<dim>(nodeList,constants) {
 
-        int numNodes = nodeList->size();
         this->template EnrollFields<double>({"mass", "radius"});
-        this->template EnrollFields<Vector>({"acceleration", "velocity", "position"});
-        this->template EnrollStateFields<Vector>({"position"});
 
-        // kinetics will operate solely on the spatial derivative. velocities merely change direction
-        // i.e. there is no acceleration term for this physics package so no dvdt
+        // Kinematics base provides EvaluateDerivatives (dxdt = v).
+        // Force packages ACCUMULATE dvdt on top of that.
+        // Collision response happens post-integration in FinalChecks.
     }
 
     ~Kinetics() {}
 
+    // Collision detection and response run after FinalizeStep has written the
+    // new positions/velocities to the NodeList, so we work on NodeList directly.
     virtual void
-    PreStepInitialize() override {
-        State<dim> state = this->state;
+    FinalChecks() override {
         NodeList* nodeList = this->nodeList;
-        state.updateFields(nodeList);
-    }
+        int numNodes = nodeList->size();
 
-    virtual void
-    EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {
-        if (time != timeVisited) {
-            NodeList* nodeList = this->nodeList;
-            PhysicalConstants constants = this->constants;
-            int numNodes = nodeList->size();
+        ScalarField* mass     = nodeList->template getField<double>("mass");
+        ScalarField* radius   = nodeList->template getField<double>("radius");
+        VectorField* position = nodeList->template getField<Vector>("position");
+        VectorField* velocity = nodeList->template getField<Vector>("velocity");
 
-            ScalarField* mass           = nodeList->getField<double>("mass");
-            ScalarField* radius         = nodeList->getField<double>("radius");
-            VectorField* position       = initialState->template getField<Vector>("position");
-            VectorField* velocity       = nodeList->getField<Vector>("velocity");
+        double local_dtmin = 1e30;
 
-            //VectorField* dxdt           = deriv.template getField<Vector>("position");
-            double local_dtmin = 1e30;
-
-            #pragma omp parallel for reduction(min:local_dtmin)
-            for (int i = 0; i < numNodes - 1; ++i) {
-                dtmin = 1e30;
-                for (int j = i + 1; j < numNodes; ++j) {
-                    Vector ri = position->getValue(i);
-                    Vector rj = position->getValue(j);
-                    double si = radius->getValue(i);
-                    double sj = radius->getValue(j);
-                    Vector vi = velocity->getValue(i);
-                    Vector vj = velocity->getValue(j);
-
-                    Vector vij = vi-vj;
-                    Vector rij = ri-rj;
-
-                    if (rij.magnitude() < (si+sj) && vij*rij<0) { //collision
-                        double mi = mass->getValue(i);
-                        double mj = mass->getValue(j);
-
-                        Vector vip = vi - 2*mj/(mi+mj)*(vij*rij/rij.mag2())*rij;
-                        Vector vjp = vj + 2*mi/(mi+mj)*(vij*rij/rij.mag2())*rij;
-
-                        velocity->setValue(i,vip);
-                        velocity->setValue(j,vjp);
-                        // dxdt->setValue(i,vip);
-                        // dxdt->setValue(j,vjp);
-
-                        continue;  // skip this i (1 collision only please!)
-                    }
-                }
-                Vector vi = velocity->getValue(i);
+        for (int i = 0; i < numNodes - 1; ++i) {
+            for (int j = i + 1; j < numNodes; ++j) {
+                Vector ri = position->getValue(i);
+                Vector rj = position->getValue(j);
                 double si = radius->getValue(i);
-                local_dtmin = std::min(local_dtmin,0.25*si/vi.magnitude());
+                double sj = radius->getValue(j);
+                Vector vi = velocity->getValue(i);
+                Vector vj = velocity->getValue(j);
+
+                Vector vij = vi - vj;
+                Vector rij = ri - rj;
+
+                if (rij.magnitude() < (si + sj) && vij * rij < 0) {
+                    double mi = mass->getValue(i);
+                    double mj = mass->getValue(j);
+
+                    Vector vip = vi - 2*mj/(mi+mj) * (vij*rij/rij.mag2()) * rij;
+                    Vector vjp = vj + 2*mi/(mi+mj) * (vij*rij/rij.mag2()) * rij;
+
+                    velocity->setValue(i, vip);
+                    velocity->setValue(j, vjp);
+                }
             }
-            dtmin = local_dtmin;
+
+            Vector vi = velocity->getValue(i);
+            double si = radius->getValue(i);
+            if (vi.magnitude() > 0.0)
+                local_dtmin = std::min(local_dtmin, 0.25*si/vi.magnitude());
         }
-        
-        
-        timeVisited = time;
-        this->lastDt = dt;
+
+        dtmin = local_dtmin;
     }
 
     virtual double
     EstimateTimestep() const override {
-        double timestepCoefficient = 0.25; // Adjust as needed
-        double timestep = timestepCoefficient * sqrt(dtmin);
-
-        return timestep;
-    }
-
-    virtual void
-    FinalizeStep(const State<dim>* finalState) override {
-
+        double timestepCoefficient = 0.25;
+        return timestepCoefficient * sqrt(dtmin);
     }
 
     virtual std::string name() const override { return "kinetics"; }

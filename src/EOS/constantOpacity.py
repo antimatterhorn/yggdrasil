@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 from PYB11Generator import *
 from opacityModel import *
 from OpacAbstractMethods import *

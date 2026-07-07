@@ -1,12 +1,14 @@
 
 ```mermaid
 classDiagram
-    Physics <|-- PointSourceGravity
-    Physics <|-- ConstantGravity
-    Physics <|-- NBodyGravity
+    Kinematics <|-- PointSourceGravity
+    Kinematics <|-- ConstantForce
+    Kinematics <|-- NBodyGravity
+    Physics <|-- PhaseCoupling
     Physics <|-- WaveEquation
     Physics <|-- Hydro
-    Physics <|-- Kinetics
+    Physics <|-- Kinematics
+    Kinematics <|-- Kinetics
     Physics : +NodeList* nodeList
     Physics : +PhysicalConstants& constants
     Physics : VerifyFields(NodeList* nodeList)
@@ -14,12 +16,15 @@ classDiagram
     Physics : PrestepInitialize()
     Physics : EvaluateDerivatives(State* initialState, State<dim>& deriv, double time, double dt)
     Physics : FinalizeStep(State* finalState)
+    Physics : FinalChecks()
+    Physics : EnrollFields[typename T](string[] fields)
+    Physics : EnrollStateFields[typename T](string[] fields)
     class PointSourceGravity{
         +Vector pointSourceLocation
         +Vector pointSourceVelocity
         +double pointSourceMass
     }
-    class ConstantGravity{
+    class ConstantForce{
         +Vector gravity
     }
     class NBodyGravity{
@@ -42,12 +47,22 @@ classDiagram
         +double A
         +double D
     }
-    Hydro <| -- GridHydroHLL
-    class GridHydroHLL{
+    Hydro <| -- GridHydro
+    class GridHydro{
         +Grid* grid
+    }
+    GridHydro <| -- GridHydroHLLE
+    class GridHydroHLLE{
+    }
+    GridHydro <| -- GridHydroHLLC
+    class GridHydroHLLC{
     }
     Hydro <| -- EulerHydro
     class EulerHydro{
         +Grid* grid
+    }
+    class PhaseCoupling{
+        +double couplingConstant
+        [+double searchRadius]*
     }
 ```

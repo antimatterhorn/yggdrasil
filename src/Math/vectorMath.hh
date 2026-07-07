@@ -1,3 +1,5 @@
+// Copyright (C) 2026  Cody Raskin
+
 #ifndef VECTORMATH_HH
 #define VECTORMATH_HH
 
@@ -6,6 +8,7 @@
 #include <array>
 #include <cmath>
 #include <algorithm>
+#include <type_traits>
 
 namespace Lin {
 
@@ -18,6 +21,11 @@ public:
     Vector(std::initializer_list<double> init);
     Vector(std::array<double, dim> init);
     Vector(std::vector<double> init);
+
+    template <typename... Args,
+            typename = std::enable_if_t<sizeof...(Args) == dim &&
+                                        std::conjunction_v<std::is_convertible<Args, double>...>>>
+    Vector(Args... args) : values{static_cast<double>(args)...} {}
 
     Vector<dim> add(const Vector<dim>& other) const;
     void fill(const double other);
@@ -60,6 +68,7 @@ public:
     double mag2() const;
     double magnitude() const;
     Vector<dim> normal() const;
+    Vector<dim> unit() const { return normal();};
 
     static Vector<dim> one();
     static Vector<dim> zero();

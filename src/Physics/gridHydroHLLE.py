@@ -1,3 +1,5 @@
+# Copyright (C) 2026  Cody Raskin
+
 from PYB11Generator import *
 from hydro import *
 
@@ -11,6 +13,9 @@ class GridHydroHLLE(Hydro):
         return
     @PYB11cppname("getCell")
     def getCell2d(self,i="int",j="int",fieldName="std::string"):
+        return
+    @PYB11cppname("getCellComponent")
+    def getCellComponent2d(self,i="int",j="int",component="int",fieldName="std::string"):
         return
 
 
