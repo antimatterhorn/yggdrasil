@@ -80,8 +80,10 @@ if __name__ == "__main__":
                                         restartCycle = 500,
                                         restoreCycle = None,
                                         vizCycle = 500)
-    os.makedirs(restartDir+"-nBodies=%d"%nBodies, exist_ok=True)
-    os.makedirs(vizDir+"-nBodies=%d"%nBodies, exist_ok=True)
+    restartDir = restartDir+"-nBodies=%d"%nBodies
+    vizDir = vizDir+"-nBodies=%d"%nBodies
+    os.makedirs(restartDir, exist_ok=True)
+    os.makedirs(vizDir, exist_ok=True)
 
     constants = PhysicalConstants(58232e+3,     # saturn radius in m
                                   5.683e+26,    # saturn mass in kg
