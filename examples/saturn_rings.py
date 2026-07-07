@@ -2,7 +2,6 @@ import numpy as np
 import os
 import random
 from yggdrasil import *
-from Animation import *
 from math import sin,cos,atan2
 from Physics import PointSourceGravity2d, Kinematics2d
 from IO import RestartWriter
@@ -71,7 +70,8 @@ MOON_COLORS = {
 
 
 if __name__ == "__main__":
-    commandLine = CommandLineArguments(nBodies = 16000,
+    commandLine = CommandLineArguments(animate=True,
+                                        nBodies = 16000,
                                         cmass = 1.0,
                                         cycles = 1200000,
                                         rootName = "saturn-rings",
@@ -184,11 +184,15 @@ if __name__ == "__main__":
 
     print(myNodeList.numNodes)
 
-    controller = Controller(integrator=integrator,periodicWork=periodicWork,statStep=10000)
+    controller = Controller(integrator=integrator,periodicWork=periodicWork,statStep=100)
 
-    bounds = (-12, 12, -12, 12)
-    AnimateScatter(bounds, stepper=controller, positions=pos, frames=10, interval=50, size=2,
-                  extra_points=lambda: [(cmLoc.x, cmLoc.y)] +
-                                       [(moonGravs[name].pointSourceLocation.x, moonGravs[name].pointSourceLocation.y)
-                                        for name in SATURN_MOONS],
-                  extra_colors=['orange'] + [MOON_COLORS[name] for name in SATURN_MOONS], extra_size=80)
+    if animate:
+        from Animation import *
+        bounds = (-12, 12, -12, 12)
+        AnimateScatter(bounds, stepper=controller, positions=pos, frames=10, interval=50, size=2,
+                    extra_points=lambda: [(cmLoc.x, cmLoc.y)] +
+                                        [(moonGravs[name].pointSourceLocation.x, moonGravs[name].pointSourceLocation.y)
+                                            for name in SATURN_MOONS],
+                    extra_colors=['orange'] + [MOON_COLORS[name] for name in SATURN_MOONS], extra_size=80)
+    else:
+        controller.Step(cycles)
