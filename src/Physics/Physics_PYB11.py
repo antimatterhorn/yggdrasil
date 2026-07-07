@@ -26,6 +26,7 @@ PYB11includes = ['"physics.hh"',
                 '"complexWaveEquation.cc"',
                 '"magField.cc"',
                 '"cncPathPhysics.cc"',
+                '"stellarEvolution.cc"',
                 ]
 
 from physics import *
@@ -51,3 +52,4 @@ from reactionDiffusion import *
 from complexWaveEquation import *
 from magField import *
 from cncPathPhysics import *
+from stellarEvolution import *

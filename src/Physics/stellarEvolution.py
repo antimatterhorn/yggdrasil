@@ -8,7 +8,9 @@ class StellarEvolution(Physics):
                nodeList="NodeList*",
                constants="PhysicalConstants&",
                eos="EquationOfState*",
+               opac="OpacityModel*",
                totalMass="double",
                radius="double",
-               centralTemperature="double"):
+               centralTemperature="double",
+               gamma="double"):
         return

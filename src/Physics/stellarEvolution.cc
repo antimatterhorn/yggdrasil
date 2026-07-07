@@ -1,6 +1,10 @@
+// Copyright (C) 2026  Cody Raskin
+
 #include "physics.hh"
 #include "../EOS/equationOfState.hh"
+#include "../EOS/opacityModel.hh"
 #include "../Utilities/printTable.hh"
+#include <iostream>
 #include <cmath>
 #include <vector>
 #include <algorithm>
@@ -8,6 +12,7 @@
 class StellarEvolution : public Physics<1> {
 private:
     double dm;
+    double dtmin;
     int numZones;
 public:
     using Vector       = Lin::Vector<1>;
@@ -15,26 +20,20 @@ public:
     using ScalarField  = Field<double>;
 
     EquationOfState* eos;
-    double totalMass, centralTemperature, radius;
+    OpacityModel* opac;
+    double totalMass, centralTemperature, radius, gamma;
 
-    StellarEvolution(NodeList* nodeList, PhysicalConstants& constants, EquationOfState* eos, 
-        double totalMass, double radius, double centralTemperature)
-        : Physics<1>(nodeList, constants), numZones(nodeList->size()), eos(eos),
-        totalMass(totalMass), radius(radius), centralTemperature(centralTemperature) {
+    StellarEvolution(NodeList* nodeList, PhysicalConstants& constants, EquationOfState* eos, OpacityModel* opac,
+        double totalMass, double radius, double centralTemperature, double gamma)
+        : Physics<1>(nodeList, constants), eos(eos), opac(opac), totalMass(totalMass),
+        centralTemperature(centralTemperature), radius(radius), gamma(gamma),
+        numZones(nodeList->size()), dtmin(1e30) {
 
-        for (const std::string& name : 
-            {"pressure", "density", "mass", "radius", "specificInternalEnergy", "luminosity", "temperature"}) {
-            if (nodeList->getField<double>(name) == nullptr)
-                nodeList->insertField<double>(name);
-        }
-        
-        for (const std::string& name : 
-            {"specificInternalEnergy", "temperature", "luminosity"}) {
-            ScalarField* field = nodeList->getField<double>(name);
-            this->state.template addField<double>(field);
-        }
+        this->template EnrollFields<double>(
+            {"pressure", "density", "mass", "radius", "specificInternalEnergy", "luminosity", "temperature"});
+        this->template EnrollStateFields<double>({"specificInternalEnergy"});
 
-        dm = totalMass/numZones;
+        dm = totalMass / numZones;
 
         BuildHydrostaticModel();
     }
@@ -44,17 +43,15 @@ public:
                              const double time,
                              const double dt) override {
         ScalarField* u     = initialState->template getField<double>("specificInternalEnergy");
-        ScalarField* rho   = initialState->template getField<double>("density");
         ScalarField* dUdt  = deriv.template getField<double>("specificInternalEnergy");
 
         NodeList* nodeList = this->nodeList;
-        PhysicalConstants& constants = this->constants;
-        
-        ScalarField T("temperature", u->size()); // local storage of temperature for computing derivatives
-        ScalarField* m = nodeList->getField<double>("mass");
+        ScalarField* rho   = nodeList->template getField<double>("density");
+        ScalarField* m     = nodeList->template getField<double>("mass");
 
+        ScalarField T("temperature", u->size()); // local storage of temperature for computing derivatives
         eos->setTemperature(&T, rho, u);
-        
+
         // Compute ε_nuc(T)
         std::vector<double> eps(u->size());
         for (int i = 0; i < u->size(); ++i)
@@ -66,19 +63,24 @@ public:
             L[i] = L[i-1] + eps[i-1] * dm;
 
         // Compute dL/dm and du/dt
+        double local_dtmin = 1e30;
         for (int i = 1; i < u->size() - 1; ++i) {
             double dLdm = (L[i+1] - L[i-1]) / (m->getValue(i+1) - m->getValue(i-1));
             double du_dt = eps[i] - dLdm;
             dUdt->setValue(i, du_dt);
+
+            if (std::abs(du_dt) > 1e-30)
+                local_dtmin = std::min(local_dtmin, std::abs(u->getValue(i) / du_dt));
         }
 
         dUdt->setValue(0, 0.0);
         dUdt->setValue(u->size() - 1, 0.0);
+
+        dtmin = local_dtmin;
     }
 
     void FinalizeStep(const State<1>* finalState) override {
         NodeList* nodeList = this->nodeList;
-        PhysicalConstants& constants = this->constants;
 
         ScalarField* fu = finalState->template getField<double>("specificInternalEnergy");
         ScalarField* u  = nodeList->getField<double>("specificInternalEnergy");
@@ -97,6 +99,7 @@ public:
         eos->setPressure(P, rho, u);
 
         ComputeHydrostaticEquilibrium();  // Optional: maintain strict equilibrium
+        ComputeLuminosity();
     }
 
     void ComputeHydrostaticEquilibrium() {
@@ -114,7 +117,7 @@ public:
         for (int i = nz - 2; i >= 0; --i) {
             double r_next = r->getValue(i+1);
             double dPdm = -constants.G() * m->getValue(i+1) / (4 * M_PI * std::pow(r_next, 4));
-            double Pi = (*P)[i + 1] - dPdm *dm;
+            double Pi = (*P)[i + 1] - dPdm * dm;
             P->setValue(i, Pi);
         }
     }
@@ -125,15 +128,14 @@ public:
 
     void ComputeLuminosity() {
         NodeList* nodeList = this->nodeList;
-        PhysicalConstants& constants = this->constants;
-        
+
         ScalarField* L = nodeList->getField<double>("luminosity");
         ScalarField* T = nodeList->getField<double>("temperature");
 
         (*L)[0] = 0.0;
         for (int i = 1; i < numZones; ++i) {
             double eps = epsilonNuc((*T)[i - 1]);
-            (*L)[i] = (*L)[i - 1] + eps *dm;
+            (*L)[i] = (*L)[i - 1] + eps * dm;
         }
     }
 
@@ -152,18 +154,17 @@ public:
         double rho_c0 = 1e4, rho_c1 = 2e4;
         double M0 = 0.0, M1 = 0.0;
 
-        std::vector<double> best_rho, best_T, best_u, best_P, best_m, best_r;
+        std::vector<double> best_rho, best_T, best_u, best_P, best_m, best_r, best_L;
 
         for (int outer = 0; outer < maxIter; ++outer) {
             double rho_c = (outer == 0 ? rho_c0 : rho_c1);
 
             // Init arrays
-            std::vector<double> rho(nz), T(nz), u(nz), P(nz), m(nz), r(nz);
+            std::vector<double> rho(nz), T(nz), u(nz), P(nz), m(nz), r(nz), L(nz, 0.0);
             r[0] = 1e-5;
             m[0] = 0.0;
             rho[0] = rho_c;
             T[0] = centralTemperature;
-            double gamma = eos->getGamma();
             eos->setInternalEnergyFromTemperature(&u[0], &rho[0], &T[0]);
             eos->setPressure(&P[0], &rho[0], &u[0]);
 
@@ -178,8 +179,22 @@ public:
                 double dP_dr = -constants.G() * m[i-1] * rho[i-1] / (r[i-1] * r[i-1]);
                 P[i] = P[i-1] + dP_dr * dr;
 
-                //T[i] = T[i-1]/P[i-1]*dP_dr*dr*(gamma-1)/gamma + T[i-1];
-                T[i] = T[0]; // change this
+                // Energy generation integrated outward to this shell: dL/dr = 4 pi r^2 rho eps_nuc
+                L[i] = L[i-1] + epsilonNuc(T[i-1]) * dm_dr * dr;
+
+                // Radiative diffusion gradient: dT/dr = -L / (4 pi r^2 X), X = 4 a c T^3 / (3 kappa rho)
+                double Xcond;
+                opac->setConductivity(&Xcond, &rho[i-1], &T[i-1]);
+                double dT_dr_rad = -L[i] / (4 * M_PI * r[i-1] * r[i-1] * Xcond);
+
+                // Adiabatic gradient: dT/dr = (gamma-1)/gamma * (T/P) * dP/dr
+                double dT_dr_ad = (gamma - 1.0) / gamma * (T[i-1] / P[i-1]) * dP_dr;
+
+                // Schwarzschild criterion: convection sets in wherever the radiative
+                // gradient needed to carry L would be steeper than the adiabatic one.
+                double dT_dr = (std::abs(dT_dr_rad) > std::abs(dT_dr_ad)) ? dT_dr_ad : dT_dr_rad;
+
+                T[i] = std::max(T[i-1] + dT_dr * dr, 1.0);
                 eos->setInternalEnergyFromTemperature(&u[i], &rho[i-1], &T[i]);
 
                 // Solve for rho_i such that P(rho_i, T[i]) = P[i]
@@ -216,6 +231,7 @@ public:
                 best_P = P;
                 best_m = m;
                 best_r = r;
+                best_L = L;
                 break;
             }
 
@@ -243,6 +259,7 @@ public:
         ScalarField* fT   = nodeList->getField<double>("temperature");
         ScalarField* fr   = nodeList->getField<double>("radius");
         ScalarField* fm   = nodeList->getField<double>("mass");
+        ScalarField* fL   = nodeList->getField<double>("luminosity");
         for (int i = 0; i < nz; ++i) {
             frho->setValue(i, best_rho[i]);
             fT->setValue(i, best_T[i]);
@@ -250,12 +267,18 @@ public:
             fP->setValue(i, best_P[i]);
             fm->setValue(i, best_m[i]);
             fr->setValue(i, best_r[i]);
+            fL->setValue(i, best_L[i]);
         }
 
-
-
-        printTable(frho->size(), *fr, *frho, *fm, *fu, *fP, *fT);
+        printTable(frho->size(), fr, frho, fm, fu, fP, fT, fL);
     }
+
+    double EstimateTimestep() const override {
+        double timestepCoefficient = 0.1; // fraction of the local thermal (u / du/dt) timescale
+        return timestepCoefficient * dtmin;
+    }
+
+    std::string name() const override { return "StellarEvolution"; }
+    std::string description() const override {
+        return "1D radial stellar structure and evolution with toy pp-chain nuclear burning"; }
 };
-
-

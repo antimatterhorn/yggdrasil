@@ -35,6 +35,7 @@ A mix of lightweight unit-style checks for core data structures (mesh, tree, int
 | [sedov.py](sedov.py) | Sedov–Taylor point-blast test: a Gaussian energy deposition in a uniform-density grid, evolved with `GridHydroKT2d` under reflecting boundaries and plotted along the mid-line |
 | [silo_test.py](silo_test.py) | Minimal `SiloMeshWriter2d` smoke test writing a `WaveEquation2d` field to a `.silo` file (contains a pre-existing `nodeList`/`myNodeList` naming bug) |
 | [sod.py](sod.py) | Classic Sod shock-tube test: a density/energy step evolved with `GridHydroKT2d` under reflecting boundaries, animated and plotted along the mid-line |
+| [stellarEvolution_test.py](stellarEvolution_test.py) | Builds a toy Sun-sized/massed 1D hydrostatic model with `StellarEvolution` and `IdealGasEOS`, evolves it under toy pp-chain burning, checks mass convergence/monotonicity/finiteness/luminosity invariants (PASS/FAIL), and plots the radial density/pressure/temperature/luminosity profile plus surface luminosity vs. time |
 | [treeGravityTest.py](treeGravityTest.py) | Barnes–Hut `TreeGravity2d` simulation of 20 randomly placed/velocity-seeded bodies, animated as a scatter plot |
 | [tree_test.py](tree_test.py) | Builds a `KDTree3d` over a `Grid3d`'s node positions and looks up nearest neighbors of a central point |
 | [voronoi_test.py](voronoi_test.py) | Builds a `VoronoiMesh2d` from a selectable 2D node generator, computes cell areas, and generates the dual `FEMesh` |
