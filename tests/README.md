@@ -1,6 +1,6 @@
 # Tests
 
-A mix of lightweight unit-style checks for core data structures (mesh, tree, integrator, database) and full physics-package acceptance tests that set up a simulation, run it, and inspect or visualize the result. Most scripts are standalone and runnable directly with `python <script>.py`; some depend on data fixtures in this directory (`CantinaBand.wav` is a short audio clip fed through the wave-equation speaker/microphone tests; `puzzle.nc` is a NetCDF data file not currently read by any script here).
+A mix of lightweight unit-style checks for core data structures (mesh, tree, integrator, database) and full physics-package acceptance tests that set up a simulation, run it, and inspect or visualize the result. Most scripts are standalone and runnable directly with `python <script>.py`; some depend on data fixtures in this directory (`CantinaBand.wav` is a short audio clip fed through the wave-equation speaker/microphone tests).
 
 ## Contents
 
@@ -42,8 +42,3 @@ A mix of lightweight unit-style checks for core data structures (mesh, tree, int
 | [vtk_test.py](vtk_test.py) | Minimal `VTKMeshWriter2d` smoke test writing a `WaveEquation2d` field to a `.vtk` file |
 | [waveBox.py](waveBox.py) | `WaveEquation2d` inside a `DirichletGridBoundary2d`-defined box-with-slit maze, driven by a `HarmonicOscillator` source and animated |
 | [yggdrasil.py](yggdrasil.py) | Shared bootstrap module that adds the build directories to `sys.path` and re-exports the core C++/Python bindings (`DataBase`, `State`, `Integrators`, `Controller`, `IO`, etc.) imported via `from yggdrasil import *` at the top of most other test scripts |
-
-### Data files
-
-- `CantinaBand.wav` — audio fixture used by `mic_test.py` as a `Speaker` source signal.
-- `puzzle.nc` — NetCDF data file; not currently referenced by any script in this directory.

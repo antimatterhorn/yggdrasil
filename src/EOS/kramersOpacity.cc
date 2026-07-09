@@ -6,8 +6,7 @@
 // Composite Rosseland-mean opacity: Kramers bound-free/free-free absorption
 // (kappa ~ rho * T^-3.5) plus a constant electron-scattering floor. Standard
 // textbook approximation (e.g. Kippenhahn & Weigert, "Stellar Structure and
-// Evolution", ch. 17) -- coefficients are tunable rather than derived from
-// composition, since this codebase doesn't track X/Y/Z anywhere.
+// Evolution", ch. 17).
 class KramersOpacity : public OpacityModel {
     double kappa0;   // Kramers coefficient
     double kappaES;  // electron-scattering opacity floor

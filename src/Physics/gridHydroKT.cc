@@ -88,10 +88,10 @@ public:
         double dx = this->grid->spacing(axis);
 
         // Cell-centered values
-        double rho0L= rho.getValue(iL), rho0R = rho.getValue(iR);
-        Vector v0L  = v.getValue(iL), v0R = v.getValue(iR);
-        double u0L  = u.getValue(iL), u0R = u.getValue(iR);
-        double p0L  = p.getValue(iL), p0R = p.getValue(iR);
+        double rho0L    = rho.getValue(iL), rho0R   = rho.getValue(iR);
+        Vector v0L      = v.getValue(iL), v0R       = v.getValue(iR);
+        double u0L      = u.getValue(iL), u0R       = u.getValue(iR);
+        double p0L      = p.getValue(iL), p0R       = p.getValue(iR);
 
         // Slopes
         double drhoL    = slopeLimitedValue(rho, iL, axis);
