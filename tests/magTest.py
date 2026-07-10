@@ -2,7 +2,7 @@ from yggdrasil import *
 import numpy as np
 from math import cos
 import random
-from Physics import MagField3d
+from Physics import MagField3d, ConstantForce3d
 from Animation import AnimateScatter
 
 class oscillate:
@@ -11,7 +11,7 @@ class oscillate:
         self.freq = freq
         self.cycle = 1
     def __call__(self,cycle,time,dt):
-        a = 1.0*(cos(self.freq*time))
+        a = 2.0*(cos(self.freq*time))
         self.magField.SetB(Vector3d(0, 0, a))
         print(a)
 
@@ -34,24 +34,25 @@ class Projected2DView:
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
                                        numNodes = 1,
-                                       b = 1.0)
+                                       b = 1.0,
+                                       g = -10.0,)
 
 
     constants  = CGS()
     myNodeList = NodeList(numNodes)
     bVec       = Vector3d(0, 0, b)
+    gVec       = Vector3d(0, g, 0)
 
-    mag = MagField3d(myNodeList, constants, bVec)
+    mag  = MagField3d(myNodeList, constants, bVec)
     packages = [mag]
+    grav = ConstantForce3d(myNodeList, constants, gVec)
+    packages += [grav]
 
-    osc = oscillate(mag, freq=0.5)
+    # for a constant force in a magnetic field, the drift velocity is
+    # vd = FxB/qB^2 so (g/qB^2,0,0) -> trochoidal drift in x-direction
 
     integrator = RungeKutta2Integrator3d(packages=packages, dtmin=1e-5,verbose=False)
     print(integrator)
-
-    mass = myNodeList.mass
-    for i in range(numNodes):
-        mass[i] = 0.2
 
     print("numNodes =", myNodeList.numNodes)
     print("field names =", myNodeList.fieldNames)
@@ -59,11 +60,12 @@ if __name__ == "__main__":
     myNodeList.position[0]  = Vector3d(1, 0, 0)
     myNodeList.velocity[0]  = Vector3d(0, -5, 0)
     myNodeList.charge[0]    = 1.0
+    myNodeList.mass[0]      = 0.2
 
     pos = myNodeList.position
     projected_positions = Projected2DView(pos, axes=(0, 1))  # XY plane
 
-    controller = Controller(integrator=integrator, periodicWork=[osc], statStep=1)
+    controller = Controller(integrator=integrator, periodicWork=[], statStep=1)
 
     bounds = (-10, 10, -10, 10)
     AnimateScatter(bounds, stepper=controller, positions=projected_positions, frames=100, interval=50)
