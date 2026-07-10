@@ -35,7 +35,7 @@ if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
                                        numNodes = 1,
                                        b = 1.0,
-                                       g = -10.0,)
+                                       g = -2.0,)
 
 
     constants  = CGS()
