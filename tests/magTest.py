@@ -49,7 +49,7 @@ if __name__ == "__main__":
     packages += [grav]
 
     # for a constant force in a magnetic field, the drift velocity is
-    # vd = FxB/qB^2 so (g/qB^2,0,0) -> trochoidal drift in x-direction
+    # vd = FxB/qB^2 so (g/qB,0,0) -> trochoidal drift in x-direction
 
     integrator = RungeKutta2Integrator3d(packages=packages, dtmin=1e-5,verbose=False)
     print(integrator)
