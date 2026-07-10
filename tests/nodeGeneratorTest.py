@@ -1,6 +1,9 @@
+
+
 import numpy as np
 import matplotlib.pyplot as plt
 from yggdrasil import *
+from typing import Any,Callable
 
 commandLine = CommandLineArguments(method = "Fibonacci",
                                    n = 500)
@@ -8,18 +11,34 @@ commandLine = CommandLineArguments(method = "Fibonacci",
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
 
-if method == "RPR":
+def RPRFunc(n):
     from RPRPSNodeGenerator import RecursivePrimitiveRefinementSurface3d
-    points = RecursivePrimitiveRefinementSurface3d(n).positions
-elif method == "PS":
+    return RecursivePrimitiveRefinementSurface3d(n)
+
+def PSFunc(n):
     from RPRPSNodeGenerator import ParameterizedSpiralSurface3d
-    points = ParameterizedSpiralSurface3d(n).positions
-elif method == "Fibonacci":
+    return ParameterizedSpiralSurface3d(n)
+
+def FibonacciFunc(n):
     from FibonacciNodeGenerator import FibonacciSurface3d
-    points = FibonacciSurface3d(n).positions
-elif method == "SEAGen":
+    return FibonacciSurface3d(n)
+
+def SEAGenFunc(n):
     from SEANodeGenerator import SEAGenSurface3d
-    points = SEAGenSurface3d(n).positions
+    return SEAGenSurface3d(n)
+
+Func = Callable[[int], Any]
+
+getPoints: dict[str,Func] ={
+    "RPR": RPRFunc,
+    "PS": PSFunc,
+    "Fibonacci": FibonacciFunc,
+    "SEAGen": SEAGenFunc
+}
+
+points = getPoints[method](n).positions
+
+
 
 from scipy.spatial import distance_matrix
 
