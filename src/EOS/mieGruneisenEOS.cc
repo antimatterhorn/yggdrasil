@@ -21,48 +21,50 @@ public:
 
     virtual ~MieGruneisenEOS() override {}
 
-    virtual void 
+    virtual void
     setPressure(Field<double>* pressure, Field<double>* density, Field<double>* internalEnergy) const override {
         for (int i = 0; i < density->size(); ++i) {
             double rho = density->getValue(i);
             double e   = internalEnergy->getValue(i);
             double eta = (rho / rho0) - 1.0;
 
-            double denom = 1.0 - S * eta;
-            double Pref = (rho0 * C0 * C0 * eta * (1.0 + 0.5 * (1.0 - S) * eta)) / (denom * denom);
+            double denom = 1.0 - (S - 1.0) * eta;
+            double Pref = (rho0 * C0 * C0 * eta * (1.0 + (1.0 - 0.5 * Gamma0) * eta)) / (denom * denom);
 
             double P = Pref + Gamma0 * rho * e;
             pressure->setValue(i, P);
         }
     }
 
-    virtual void 
+    virtual void
     setInternalEnergy(Field<double>* internalEnergy, Field<double>* density, Field<double>* pressure) const override {
         for (int i = 0; i < density->size(); ++i) {
             double rho = density->getValue(i);
             double P   = pressure->getValue(i);
             double eta = (rho / rho0) - 1.0;
 
-            double denom = 1.0 - S * eta;
-            double Pref = (rho0 * C0 * C0 * eta * (1.0 + 0.5 * (1.0 - S) * eta)) / (denom * denom);
+            double denom = 1.0 - (S - 1.0) * eta;
+            double Pref = (rho0 * C0 * C0 * eta * (1.0 + (1.0 - 0.5 * Gamma0) * eta)) / (denom * denom);
 
             double e = (P - Pref) / (Gamma0 * rho);
             internalEnergy->setValue(i, e);
         }
     }
 
-    virtual void 
+    virtual void
     setSoundSpeed(Field<double>* soundSpeed, Field<double>* density, Field<double>* internalEnergy) const override {
         for (int i = 0; i < density->size(); ++i) {
             double rho = density->getValue(i);
             double e   = internalEnergy->getValue(i);
             double eta = (rho / rho0) - 1.0;
 
-            double denom = 1.0 - S * eta;
-            double Pref = (rho0 * C0 * C0 * eta * (1.0 + 0.5 * (1.0 - S) * eta)) / (denom * denom);
-            double dPref_drho = (C0 * C0 / rho0) * (1 + eta) * (1 + 0.5 * (1 - S) * eta) / (denom * denom * denom);
+            double denom = 1.0 - (S - 1.0) * eta;
+            double Pref = (rho0 * C0 * C0 * eta * (1.0 + (1.0 - 0.5 * Gamma0) * eta)) / (denom * denom);
+            double dPref_drho = (C0 * C0) * (1.0 + (1.0 + S - Gamma0) * eta) / (denom * denom * denom);
 
-            double cs2 = dPref_drho + Gamma0 * e;
+            // Frozen sound speed: cs^2 = dP/drho|_e + (P/rho^2)*dP/de|_rho, with P = Pref + Gamma0*rho*e.
+            double P = Pref + Gamma0 * rho * e;
+            double cs2 = dPref_drho + Gamma0 * e + Gamma0 * P / rho;
             soundSpeed->setValue(i, std::sqrt(std::max(cs2, 0.0)));
         }
     }
@@ -78,34 +80,37 @@ public:
     }
 
     // Scalar pointer-based methods
-    virtual void 
+    virtual void
     setPressure(double* pressure, double* density, double* internalEnergy) const override {
         const double rho = *density;
         const double e   = *internalEnergy;
         const double eta = (rho / rho0) - 1.0;
-        const double denom = 1.0 - S * eta;
-        const double Pref = (rho0 * C0 * C0 * eta * (1.0 + 0.5 * (1.0 - S) * eta)) / (denom * denom);
+        const double denom = 1.0 - (S - 1.0) * eta;
+        const double Pref = (rho0 * C0 * C0 * eta * (1.0 + (1.0 - 0.5 * Gamma0) * eta)) / (denom * denom);
         *pressure = Pref + Gamma0 * rho * e;
     }
 
-    virtual void 
+    virtual void
     setInternalEnergy(double* internalEnergy, double* density, double* pressure) const override {
         const double rho = *density;
         const double P   = *pressure;
         const double eta = (rho / rho0) - 1.0;
-        const double denom = 1.0 - S * eta;
-        const double Pref = (rho0 * C0 * C0 * eta * (1.0 + 0.5 * (1.0 - S) * eta)) / (denom * denom);
+        const double denom = 1.0 - (S - 1.0) * eta;
+        const double Pref = (rho0 * C0 * C0 * eta * (1.0 + (1.0 - 0.5 * Gamma0) * eta)) / (denom * denom);
         *internalEnergy = (P - Pref) / (Gamma0 * rho);
     }
 
-    virtual void 
+    virtual void
     setSoundSpeed(double* soundSpeed, double* density, double* internalEnergy) const override {
         const double rho = *density;
         const double e   = *internalEnergy;
         const double eta = (rho / rho0) - 1.0;
-        const double denom = 1.0 - S * eta;
-        const double dPref_drho = (C0 * C0 / rho0) * (1 + eta) * (1 + 0.5 * (1 - S) * eta) / (denom * denom * denom);
-        const double cs2 = dPref_drho + Gamma0 * e;
+        const double denom = 1.0 - (S - 1.0) * eta;
+        const double Pref = (rho0 * C0 * C0 * eta * (1.0 + (1.0 - 0.5 * Gamma0) * eta)) / (denom * denom);
+        const double dPref_drho = (C0 * C0) * (1.0 + (1.0 + S - Gamma0) * eta) / (denom * denom * denom);
+
+        const double P = Pref + Gamma0 * rho * e;
+        const double cs2 = dPref_drho + Gamma0 * e + Gamma0 * P / rho;
         *soundSpeed = std::sqrt(std::max(cs2, 0.0));
     }
 

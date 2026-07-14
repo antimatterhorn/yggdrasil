@@ -16,14 +16,14 @@ def HelmholtzFunc(constants):
     return HelmholtzEOS("genHelm.dat", constants)
 
 def MieGruneisenFunc(constants):
-    params = MieGruneisenMaterial("granite")  # still in CGS
+    params = MieGruneisenMaterial("iron")  # still in CGS
     return MieGruneisenEOS(constants=constants, **params)
 
 def PolytropicFunc(constants):
     return PolytropicEOS(1.0, 1.4, constants)
 
 def TillotsonFunc(constants):
-    params = TillotsonMaterial("granite")  # still in CGS
+    params = TillotsonMaterial("iron")  # still in CGS
     return TillotsonEOS(constants=constants, **params)
 
 def IsothermalFunc(constants):
