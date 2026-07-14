@@ -5,7 +5,7 @@
 # yggdrasil
 
 Yggdrasil is a generic physics simulation framework. It is designed to be used as a base for varied physics simulation methods (FVM,FEM,etc)
-while keeping helper methods likes equations of state and integrators generic enough to be portable to a wide variety of 
+while keeping helper methods like equations of state and integrators generic enough to be portable to a wide variety of 
 methods choices. Yggdrasil's major classes and methods are written in C++ and wrapped in Python using pybind11 to enable them to be imported
 as python modules inside a runscript. Python holds and passes the pointers to most objects inside the code, while the integration step is
 always handled by compiled C++ code.
