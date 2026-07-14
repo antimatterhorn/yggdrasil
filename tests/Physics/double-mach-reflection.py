@@ -145,7 +145,8 @@ if __name__ == "__main__":
             baseName   = "DMR",
             nodeList   = myNodeList,
             fieldNames = ["density", "specificInternalEnergy", "pressure", "velocity"],
-            dumpCycle  = dumpCycle)
+            dumpCycle  = dumpCycle,
+            grid       = myGrid)
         periodicWork += [meshWriter]
 
     controller = Controller(integrator=integrator, periodicWork=periodicWork, statStep=10)

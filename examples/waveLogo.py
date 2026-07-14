@@ -155,7 +155,7 @@ if __name__ == "__main__":
     osc = SpkOscillator(nodeList=myNodeList,grid=grid,width=nx,height=ny,locations=locations,workCycle=1,speaker=spk)
     periodicWork = [osc]
     if(dump):
-        silo = SiloDump("testMesh",myNodeList,fieldNames=["phi","xi"],dumpCycle=50)
+        silo = SiloDump("testMesh",myNodeList,fieldNames=["phi","xi"],dumpCycle=50,grid=grid)
         periodicWork.append(silo)
 
     controller = Controller(integrator=integrator,

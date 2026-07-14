@@ -73,7 +73,7 @@ if __name__ == "__main__":
     osc = oscillate(nodeList=myNodeList,grid=grid,width=nx,height=ny,workCycle=1)
     periodicWork = [osc]
     if (not animate):
-        vtk = SiloDump("doubleSlit",myNodeList,fieldNames=["phi","xi","maxphi","waveEnergyDensity"],dumpCycle=dumpCycle)
+        vtk = SiloDump("doubleSlit",myNodeList,fieldNames=["phi","xi","maxphi","waveEnergyDensity"],dumpCycle=dumpCycle,grid=grid)
         periodicWork.append(vtk)
 
     controller = Controller(integrator=integrator,

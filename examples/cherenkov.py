@@ -71,7 +71,7 @@ if __name__ == "__main__":
     # IO for periodic work
     # ------------------------------------------------
     osc = oscillate(nodeList=myNodeList,grid=grid,cs=cs,width=nx,height=ny,workCycle=1)
-    vtk = SiloDump("testMesh",myNodeList,fieldNames=["phi","xi"],dumpCycle=100)
+    vtk = SiloDump("testMesh",myNodeList,fieldNames=["phi","xi"],dumpCycle=100,grid=grid)
     if (animate):
         periodicWork = [osc]
     else:

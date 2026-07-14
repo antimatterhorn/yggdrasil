@@ -26,8 +26,8 @@ class oscillate:
                         self.phi.setValue(idx,a-0.5*a*r)
 
 class vtkdump:
-    def __init__(self,baseName,nodeList,fieldNames,dumpCycle=10):
-        self.meshWriter = SiloMeshWriter2d(baseName="waveBox",nodeList=myNodeList,fieldNames=["phi","xi"])
+    def __init__(self,baseName,nodeList,grid,fieldNames,dumpCycle=10):
+        self.meshWriter = SiloMeshWriter2d(baseName="waveBox",nodeList=nodeList,fieldNames=["phi","xi"],grid=grid)
         self.cycle = dumpCycle
     def __call__(self,cycle,time,dt):
         self.meshWriter.write("-cycle=%03d.silo"%(cycle))

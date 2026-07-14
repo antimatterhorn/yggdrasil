@@ -60,7 +60,8 @@ if __name__ == "__main__":
         meshWriter = SiloDump(baseName="cond",
                                 nodeList=myNodeList,
                                 fieldNames=["density","specificInternalEnergy","temperature","conductivity"],
-                                dumpCycle=10)
+                                dumpCycle=10,
+                                grid=myGrid)
         periodicWork += [meshWriter]
 
     controller = Controller(integrator=integrator,periodicWork=periodicWork,statStep=50)

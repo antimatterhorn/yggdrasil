@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
     osc = oscillate(nodeList=myNodeList,grid=grid,width=nx,height=ny,workCycle=1)
     periodicWork = [osc]
-    vtk = SiloDump("testMesh",myNodeList,fieldNames=["phi","depth","maxphi"],dumpCycle=100)
+    vtk = SiloDump("testMesh",myNodeList,fieldNames=["phi","depth","maxphi"],dumpCycle=100,grid=grid)
     periodicWork.append(vtk)
 
     controller = Controller(integrator=integrator,

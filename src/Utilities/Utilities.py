@@ -124,14 +124,23 @@ class DampedHarmonicOscillator:
         return self.amplitude*np.sin(2*np.pi*self.frequency*time)*np.exp(self.damping*time)
 
 class SiloDump:
+    """Periodic-work wrapper around SiloMeshWriter[1,2,3]d.
+
+    If `grid` is given (the Mesh::Grid the nodeList's fields live on), the
+    writer emits a real Silo quadmesh with zone-centered fields, so VisIt
+    shows actual grid cells. Without it, falls back to a point mesh (e.g.
+    for particle data with no matching Grid)."""
     _writerClasses = {1: SiloMeshWriter1d, 2: SiloMeshWriter2d, 3: SiloMeshWriter3d}
 
-    def __init__(self,baseName,nodeList,fieldNames,dumpCycle=10):
+    def __init__(self,baseName,nodeList,fieldNames,dumpCycle=10,grid=None):
         dim = nodeList.inferDim()
         if dim not in self._writerClasses:
             raise ValueError("SiloDump: couldn't infer a spatial dimension from nodeList "
                               "(no Vector1/2/3 field like 'position' found) -- can't write a point mesh")
-        self.meshWriter = self._writerClasses[dim](baseName=baseName,nodeList=nodeList,fieldNames=fieldNames)
+        if grid is None:
+            self.meshWriter = self._writerClasses[dim](baseName=baseName,nodeList=nodeList,fieldNames=fieldNames)
+        else:
+            self.meshWriter = self._writerClasses[dim](baseName=baseName,nodeList=nodeList,fieldNames=fieldNames,grid=grid)
         self.cycle = dumpCycle
     def __call__(self,cycle,time,dt):
         self.meshWriter.write("-cycle=%03d.silo"%(cycle))

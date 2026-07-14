@@ -108,7 +108,8 @@ if __name__ == "__main__":
         meshWriter = SiloDump(baseName=os.path.join(vizDir, rootName),
                                 nodeList=myNodeList,
                                 fieldNames=["density","specificInternalEnergy","pressure","velocity"],
-                                dumpCycle=dumpCycle)
+                                dumpCycle=dumpCycle,
+                                grid=myGrid)
         periodicWork += [meshWriter]
 
     restartWriter = RestartWriter(myNodeList, integrator)

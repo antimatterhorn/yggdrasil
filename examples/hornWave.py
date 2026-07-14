@@ -112,7 +112,7 @@ if __name__ == "__main__":
     periodicWork = [osc]
     if not animate:
         dump = SiloDump("hornWave", myNodeList,
-                        fieldNames=["phi", "xi"], dumpCycle=50)
+                        fieldNames=["phi", "xi"], dumpCycle=50, grid=grid)
         periodicWork.append(dump)
 
     controller = Controller(integrator=integrator,

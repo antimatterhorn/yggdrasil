@@ -8,6 +8,14 @@ class SiloMeshWriter:
                baseName="std::string&",
                nodeList="NodeList&",
                fieldNames="std::vector<std::string>&"):
+        "Writes the NodeList as a point mesh (use for particle data, or any NodeList without a matching Grid)."
+        return
+    def pyinit2(self,
+               baseName="std::string&",
+               nodeList="NodeList&",
+               fieldNames="std::vector<std::string>&",
+               grid="Mesh::Grid<%(dim)s>*"):
+        "Writes the NodeList as zone-centered data on a real quadmesh built from the Grid (nodeList.size() must equal grid.size())."
         return
     def write(self,fileName="std::string&"):
         return

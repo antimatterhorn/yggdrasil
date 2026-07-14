@@ -88,7 +88,7 @@ if __name__ == "__main__":
     periodicWork = [osc]
     #periodicWork = []
     if(dump):
-        silo = SiloDump("testMesh",myNodeList,fieldNames=["phi","xi"],dumpCycle=50)
+        silo = SiloDump("testMesh",myNodeList,fieldNames=["phi","xi"],dumpCycle=50,grid=grid)
         periodicWork.append(silo)
 
     controller = Controller(integrator=integrator,
