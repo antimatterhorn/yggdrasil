@@ -1,5 +1,12 @@
+import os
 import sys
-buildir = "../build/src/"
+
+# Resolve relative to this file's real location (not the caller's cwd) so that
+# importing "yggdrasil" works identically whether a test script lives directly
+# in tests/ or in one of its subdirectories (Machinery/, Physics/), including
+# via the yggdrasil.py symlinks placed in those subdirectories.
+_testsDir = os.path.dirname(os.path.realpath(__file__))
+buildir = os.path.join(_testsDir, "..", "build", "src") + "/"
 
 for dir in ["Math",
             "DataBase",
