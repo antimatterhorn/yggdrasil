@@ -5,6 +5,38 @@ from yggdrasil import *
 from EOS import *
 from MieGruneisenMaterials import *
 from TillotsonMaterials import *
+from typing import Any, Callable
+
+EOSFunc = Callable[[Any], Any]
+
+def IdealGasFunc(constants):
+    return IdealGasEOS(1.4, constants)
+
+def HelmholtzFunc(constants):
+    return HelmholtzEOS("genHelm.dat", constants)
+
+def MieGruneisenFunc(constants):
+    params = MieGruneisenMaterial("granite")  # still in CGS
+    return MieGruneisenEOS(constants=constants, **params)
+
+def PolytropicFunc(constants):
+    return PolytropicEOS(1.0, 1.4, constants)
+
+def TillotsonFunc(constants):
+    params = TillotsonMaterial("granite")  # still in CGS
+    return TillotsonEOS(constants=constants, **params)
+
+def IsothermalFunc(constants):
+    return IsothermalEOS(5.0, constants)
+
+getEOS: dict[str, EOSFunc] = {
+    "IdealGasEOS": IdealGasFunc,
+    "HelmholtzEOS": HelmholtzFunc,
+    "MieGruneisenEOS": MieGruneisenFunc,
+    "PolytropicEOS": PolytropicFunc,
+    "TillotsonEOS": TillotsonFunc,
+    "IsothermalEOS": IsothermalFunc,
+}
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(nrho = 50,
@@ -15,12 +47,7 @@ if __name__ == "__main__":
                                        maxT   = 1e8,
                                        eos = "IdealGasEOS")
 
-    assert eos in ["IdealGasEOS",
-                   "HelmholtzEOS",
-                   "MieGruneisenEOS",
-                   "PolytropicEOS",
-                   "TillotsonEOS",
-                   "IsothermalEOS"]
+    assert eos in getEOS, "unknown eos '%s', must be one of %s" % (eos, sorted(getEOS.keys()))
 
     constants = CGS()
     minu = constants.kB * minT / (0.6 * constants.protonMass)
@@ -33,22 +60,7 @@ if __name__ == "__main__":
     # Flattened input for NodeList and Fields
     N = nrho * nu
 
-    if eos == "IdealGasEOS":
-        eos = IdealGasEOS(1.4, constants)
-    elif eos == "HelmholtzEOS":
-        eos = HelmholtzEOS("genHelm.dat",constants)
-    elif eos == "MieGruneisenEOS":
-        params = MieGruneisenMaterial("granite")  # still in CGS
-        eos  = MieGruneisenEOS(constants=constants, **params) # granite params
-    elif eos == "PolytropicEOS":
-        eos = PolytropicEOS(1.0, 1.4, constants)
-    elif eos == "TillotsonEOS":
-        params = TillotsonMaterial("granite")  # still in CGS
-        eos = TillotsonEOS(constants=constants, **params)
-    elif eos == "IsothermalEOS":
-        eos   = IsothermalEOS(5.0,constants)
-    else:
-        raise ValueError("EOS not implemented")
+    eos = getEOS[eos](constants)
 
     print(eos)
     print(type(eos))

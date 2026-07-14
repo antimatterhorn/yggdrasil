@@ -2,63 +2,86 @@ from yggdrasil import *
 import matplotlib.pyplot as plt
 from Mesh import *
 from numpy import sqrt
+from typing import Any, Callable
+
+Func = Callable[[int], Any]
+
+def RandomFunc(n):
+    from RandomNodeGenerator import RandomNodeGenerator2d
+    return RandomNodeGenerator2d(n)
+
+def FibonacciFunc(n):
+    from FibonacciNodeGenerator import FibonacciDisk2d
+    return FibonacciDisk2d(n)
+
+def GlassFunc(n):
+    from GlassNodeGenerator import GlassNodeGenerator2d
+    return GlassNodeGenerator2d(n)
+
+def ConstantDThetaFunc(n):
+    from ConstantDThetaGenerator import ConstantDThetaDisk2d
+    return ConstantDThetaDisk2d(n)
+
+def PoissonDiskFunc(n):
+    from PoissonNodeGenerator import PoissonDisk2d
+    return PoissonDisk2d(n)
+
+def PoissonFunc(n):
+    from PoissonNodeGenerator import PoissonNodeGenerator2d
+    return PoissonNodeGenerator2d(n)
+
+def CVTFunc(n):
+    from CVTNodeGenerator import CVTNodeGenerator2d
+    return CVTNodeGenerator2d(n)
+
+def HCPFunc(n):
+    from HCPNodeGenerator import HCPNodeGenerator2d
+    m = int(sqrt(n))
+    return HCPNodeGenerator2d(m, m)
+
+def CVTDiskFunc(n):
+    from CVTNodeGenerator import CVTDiskGenerator2d
+    return CVTDiskGenerator2d(n)
+
+def GlassDiskFunc(n):
+    from GlassNodeGenerator import GlassDisk2d
+    return GlassDisk2d(n)
+
+def LatticeFunc(n):
+    from LatticeNodeGenerator import Lattice2d
+    m = int(sqrt(n))
+    return Lattice2d(m, m)
+
+def TanhFunc(n):
+    from TanhNodeGenerator import TanhNodeGenerator2d
+    m = int(sqrt(n))
+    return TanhNodeGenerator2d(m, m)
+
+getPoints: dict[str, Func] = {
+    "random": RandomFunc,
+    "fibonacci": FibonacciFunc,
+    "glass": GlassFunc,
+    "constantDTheta": ConstantDThetaFunc,
+    "poissonDisk": PoissonDiskFunc,
+    "poisson": PoissonFunc,
+    "cvt": CVTFunc,
+    "hcp": HCPFunc,
+    "cvtDisk": CVTDiskFunc,
+    "glassDisk": GlassDiskFunc,
+    "lattice": LatticeFunc,
+    "tanh": TanhFunc,
+}
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(numNodes = 100,
                                        bmin = [-4,-4],
                                        bmax = [4,4],
                                        method = "fibonacci")
-    
-    assert method in ["random", "fibonacci", "glass", 
-                        "constantDTheta", "poisson", 
-                        "glassDisk", "poissonDisk", "lattice",
-                        "cvt", "cvtDisk","hcp", "tanh"]
 
+    assert method in getPoints, "unknown method '%s', must be one of %s" % (method, sorted(getPoints.keys()))
 
-    if method == "random":
-        from RandomNodeGenerator import RandomNodeGenerator2d
-        posF = RandomNodeGenerator2d(numNodes).positions
-    elif method == "fibonacci":
-        from FibonacciNodeGenerator import FibonacciDisk2d
-        posF = FibonacciDisk2d(numNodes).positions
-    elif method == "glass":
-        from GlassNodeGenerator import GlassNodeGenerator2d
-        posF = GlassNodeGenerator2d(numNodes).positions
-        numNodes = len(posF) 
-    elif method == "constantDTheta":
-        from ConstantDThetaGenerator import ConstantDThetaDisk2d
-        posF = ConstantDThetaDisk2d(numNodes).positions
-        numNodes = len(posF) # needs to be fixed because constantDTheta may overfill
-    elif method == "poissonDisk":
-        from PoissonNodeGenerator import PoissonDisk2d
-        posF = PoissonDisk2d(numNodes).positions
-        numNodes = len(posF) 
-    elif method == "poisson":
-        from PoissonNodeGenerator import PoissonNodeGenerator2d
-        posF = PoissonNodeGenerator2d(numNodes).positions
-        numNodes = len(posF) 
-    elif method == "cvt":
-        from CVTNodeGenerator import CVTNodeGenerator2d
-        posF = CVTNodeGenerator2d(numNodes).positions
-        numNodes = len(posF)
-    elif method == "hcp":
-        from HCPNodeGenerator import HCPNodeGenerator2d
-        posF = HCPNodeGenerator2d(int(sqrt(numNodes)),int(sqrt(numNodes))).positions
-        numNodes = len(posF) 
-    elif method == "cvtDisk":
-        from CVTNodeGenerator import CVTDiskGenerator2d
-        posF = CVTDiskGenerator2d(numNodes).positions
-        numNodes = len(posF) 
-    elif method == "glassDisk":
-        from GlassNodeGenerator import GlassDisk2d
-        posF = GlassDisk2d(numNodes).positions
-        numNodes = len(posF)
-    elif method == "lattice":
-        from LatticeNodeGenerator import Lattice2d
-        posF = Lattice2d(int(sqrt(numNodes)),int(sqrt(numNodes))).positions
-    elif method == "tanh":
-        from TanhNodeGenerator import TanhNodeGenerator2d
-        posF = TanhNodeGenerator2d(int(sqrt(numNodes)),int(sqrt(numNodes))).positions
+    posF = getPoints[method](numNodes).positions
+    numNodes = len(posF)  # generators aren't guaranteed to return exactly the requested count
 
     myNodeList = NodeList(numNodes)
     myNodeList.insertFieldVector2d("position")

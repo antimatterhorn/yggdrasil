@@ -16,11 +16,10 @@ private:
     std::vector<double> logUGrid;
 
     EOSTable PTable;
-    EOSTable UTable;
     EOSTable CsTable;
 
-    const PhysicalConstants constants;
-    const std::string& tableFile;
+    PhysicalConstants& constants;
+    std::string tableFile;
 
     void 
     loadTable(const std::string& filename) {
@@ -53,7 +52,6 @@ private:
         const size_t nU   = logUGrid.size();
 
         std::vector<std::vector<double>> PTableData(nRho, std::vector<double>(nU));
-        std::vector<std::vector<double>> UTableData(nRho, std::vector<double>(nU));
         std::vector<std::vector<double>> CsTableData(nRho, std::vector<double>(nU));
 
         // Build lookup maps from value to index for fast lookup
@@ -71,18 +69,16 @@ private:
             size_t j = itU->second;
 
             PTableData[i][j]  = P;
-            UTableData[i][j]  = std::pow(10.0, logU);  // store u in linear space
             CsTableData[i][j] = cs;
         }
 
         // Assign to EOSTable members
         PTable  = EOSTable(std::move(PTableData), logRhoGrid, logUGrid);
-        UTable  = EOSTable(std::move(UTableData), logRhoGrid, logUGrid);
         CsTable = EOSTable(std::move(CsTableData), logRhoGrid, logUGrid);
     }
 
-    void 
-    computeHelmholtzApprox(double rho, double u, double& P, double& cs) {
+    void
+    computeHelmholtzApprox(double rho, double u, double& P, double& cs) const {
         const double kB = constants.kB();            // erg/K
         const double mH = constants.protonMass();    // g
         const double mu = 0.6;                       // mean molecular weight
@@ -100,10 +96,10 @@ private:
         // Degenerate electron pressure estimate (non-relativistic)
         const double coeff = std::pow(3.0 * pi * pi, 2.0 / 3.0);
         constexpr double mu_e = 2.0;
-        double K = (coeff*std::pow(hb,2)) / (5.0 * me ) * std::pow(1.0/(mu_e*mH),5.0/3.0);
+        double K = (coeff*std::pow(hb,2)) / (5.0 * me);
         double n_e = rho / (mu_e * mH);  // # electrons / cm^3
         double EF = (std::pow(3.0 * pi * pi * n_e, 2.0 / 3.0) * hb * hb) / (2.0 * me);
-        
+
         // Suppress P_deg if not degenerate
         double P_deg = K * std::pow(n_e, 5.0 / 3.0);
 
@@ -114,6 +110,32 @@ private:
         P = P_ion + suppression* P_deg;
         double gamma_eff = 5.0 / 3.0;
         cs = std::sqrt(gamma_eff * P / rho);
+    }
+
+    // Numerically inverts computeHelmholtzApprox for u at fixed rho: no table is built
+    // over (rho, P) since P(rho, u) has no closed-form inverse once the degeneracy
+    // suppression term is included.
+    double
+    invertPressureForU(double rho, double Ptarget) const {
+        double uLo = std::pow(10.0, logUGrid.front());
+        double uHi = std::pow(10.0, logUGrid.back());
+
+        double PLo, PHi, csDummy;
+        computeHelmholtzApprox(rho, uLo, PLo, csDummy);
+        computeHelmholtzApprox(rho, uHi, PHi, csDummy);
+
+        if (Ptarget <= PLo) return uLo;
+        if (Ptarget >= PHi) return uHi;
+
+        // Bisect in log(u) space for the u that reproduces Ptarget.
+        for (int iter = 0; iter < 60; ++iter) {
+            double uMid = std::sqrt(uLo * uHi);
+            double PMid;
+            computeHelmholtzApprox(rho, uMid, PMid, csDummy);
+            if (PMid < Ptarget) uLo = uMid;
+            else                uHi = uMid;
+        }
+        return std::sqrt(uLo * uHi);
     }
 
 public:
@@ -141,12 +163,12 @@ public:
             pressure->setValue(i, P);
         }
     }
-    virtual void 
+    virtual void
     setInternalEnergy(Field<double>* internalEnergy, Field<double>* density, Field<double>* pressure) const override {
         for (int i = 0; i < internalEnergy->size(); ++i) {
-            double logRho = std::log10(density->getValue(i));
-            double logP   = std::log10(pressure->getValue(i));
-            double U      = UTable.interpolate(logRho, logP);
+            double rho = density->getValue(i);
+            double P   = pressure->getValue(i);
+            double U   = invertPressureForU(rho, P);
             internalEnergy->setValue(i, U);
         }
     }
@@ -193,11 +215,9 @@ public:
         *pressure     = PTable.interpolate(logRho, logU);
     }
 
-    virtual void 
+    virtual void
     setInternalEnergy(double* internalEnergy, double* density, double* pressure) const override {
-        double logRho = std::log10(*density);
-        double logP   = std::log10(*pressure);  // approximate inverse
-        *internalEnergy = UTable.interpolate(logRho, logP);
+        *internalEnergy = invertPressureForU(*density, *pressure);
     }
 
     virtual void 
@@ -238,12 +258,10 @@ public:
         logUGrid   = Lin::linspace(-2, 16, 300);  // log10(u) from 1e-2 to 1e16
 
         std::vector<std::vector<double>> PTableData;
-        std::vector<std::vector<double>> UTableData;
         std::vector<std::vector<double>> CsTableData;
 
         // Resize tables
         PTableData.resize(logRhoGrid.size(), std::vector<double>(logUGrid.size()));
-        UTableData = PTableData;
         CsTableData = PTableData;
 
         for (size_t i = 0; i < logRhoGrid.size(); ++i) {
@@ -255,7 +273,6 @@ public:
                 computeHelmholtzApprox(rho, u, P, cs);
 
                 PTableData[i][j]  = P;
-                UTableData[i][j]  = u;
                 CsTableData[i][j] = cs;
             }
         }
@@ -275,7 +292,6 @@ public:
         std::fclose(fp);
 
         PTable  = EOSTable(std::move(PTableData), logRhoGrid, logUGrid);
-        UTable  = EOSTable(std::move(UTableData), logRhoGrid, logUGrid);
         CsTable = EOSTable(std::move(CsTableData), logRhoGrid, logUGrid);
     }
 
