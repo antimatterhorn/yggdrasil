@@ -7,5 +7,6 @@ tests = {
     "hllcsod",
     "orbit",
     "reactionDiffusion",
-    "kelvin-helmholtz"
+    "kelvin-helmholtz",
+    "treeGravity"
 }

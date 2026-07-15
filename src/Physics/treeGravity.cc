@@ -9,15 +9,17 @@ class TreeGravity : public Physics<dim> {
 protected:
     double dtmin;
     double plummerLength;
+    double theta;
 
 public:
     using Vector = Lin::Vector<dim>;
     using VectorField = Field<Vector>;
     using ScalarField = Field<double>;
 
-    TreeGravity(NodeList* nodeList, PhysicalConstants& constants, double plummerLength) :
+    TreeGravity(NodeList* nodeList, PhysicalConstants& constants, double plummerLength, double theta = 0.5) :
         Physics<dim>(nodeList, constants),
-        plummerLength(plummerLength) {
+        plummerLength(plummerLength),
+        theta(theta) {
 
         this->template EnrollFields<Vector>({"acceleration"});
         // ACCUMULATE: contributes dvdt but does not own or finalize velocity.
@@ -44,7 +46,6 @@ public:
         tree.build();
 
         double local_dtmin = 1e30;
-        double theta = 0.5;
         double eps2  = plummerLength;
 
         #pragma omp parallel for reduction(min:local_dtmin)

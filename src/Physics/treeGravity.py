@@ -8,7 +8,8 @@ class TreeGravity(Physics):
     def pyinit(self,
                nodeList="NodeList*",
                constants="PhysicalConstants&",
-               plummerLength="double"):
+               plummerLength="double",
+               theta=("double", 0.5)):
         return
 
 TreeGravity1d = PYB11TemplateClass(TreeGravity,
