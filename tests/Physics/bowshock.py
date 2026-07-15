@@ -20,7 +20,8 @@ if __name__ == "__main__":
                                         dtmin = 0.1e-7,
                                         intVerbose = False,
                                         restartCycle = 250,
-                                        rootName = "kelvin-helmholtz",
+                                        dumpCycle= 50,
+                                        rootName = "bowshock",
                                         vizDir = "viz",
                                         restartDir = "restart",
                                         restoreCycle = None)
@@ -91,12 +92,18 @@ if __name__ == "__main__":
     periodicWork = []
 
     if siloDump:
-        meshWriter = SiloDump(baseName="HLL",
+        meshWriter = SiloDump(baseName=os.path.join(vizDir, rootName),
                                 nodeList=myNodeList,
                                 fieldNames=["density","specificInternalEnergy","pressure","velocity"],
-                                dumpCycle=50,
+                                dumpCycle=dumpCycle,
                                 grid=myGrid)
         periodicWork += [meshWriter]
+
+    restartWriter = RestartWriter(myNodeList, integrator)
+    def dropRestart(cycle, time, dt):
+        restartWriter.write(restartFileName(restartDir, rootName, cycle))
+    dropRestart.cycle = restartCycle
+    periodicWork += [dropRestart]
 
     controller = Controller(integrator=integrator,periodicWork=periodicWork,statStep=20)
 

@@ -22,10 +22,11 @@ if __name__ == "__main__":
                                         intVerbose = False,
                                         restartCycle = 250,
                                         rootName = "kelvin-helmholtz",
-                                        vizDir = "KH/viz",
-                                        restartDir = "KH/restart",
+                                        vizDir = "viz",
+                                        restartDir = "restart",
                                         restoreCycle = None)
-
+    vizDir = rootName + "/" + vizDir
+    restartDir = rootName + "/" + restartDir
     os.makedirs(vizDir, exist_ok=True)
     os.makedirs(restartDir, exist_ok=True)
 
