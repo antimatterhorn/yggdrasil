@@ -49,18 +49,30 @@ private:
             }
         }
 
-        // ── interior Neumann (zero-gradient) obstacle BC ───────────────────
-        // Each obstacle cell is set to the average of its exterior (non-obstacle)
-        // neighbors, giving ∂φ/∂n = 0 at the obstacle surface — the rigid-wall
-        // condition for the scalar wave equation.
+        // ── interior obstacle BC ────────────────────────────────────────────
+        // Scalars (e.g. phi/xi for the wave equation, or density/specificInternalEnergy
+        // for hydro): each obstacle cell is set to the average of its exterior
+        // (non-obstacle) neighbors, giving ∂φ/∂n = 0 at the obstacle surface —
+        // the rigid-wall condition.
+        //
+        // Vectors (e.g. velocity for hydro): held at zero instead of averaged.
+        // Averaging would just reproduce whatever the surrounding flow is doing
+        // (in a uniform freestream, "average of neighbors" == freestream), which
+        // makes the obstacle invisible to the flow. Pinning velocity to zero
+        // gives a stationary rigid body that the surrounding fluid must actually
+        // flow around.
         if (!initialized) return;
         #pragma omp parallel for
         for (int i = 0; i < (int)obstacleIds.size(); ++i) {
-            const auto& nbrs = obstacleNeighbors[i];
-            if (nbrs.empty()) continue;
-            T sum{};
-            for (int n : nbrs) sum = sum + field->getValue(n);
-            field->setValue(obstacleIds[i], sum * (1.0 / nbrs.size()));
+            if constexpr (std::is_same_v<T, Vector>) {
+                field->setValue(obstacleIds[i], Vector());
+            } else {
+                const auto& nbrs = obstacleNeighbors[i];
+                if (nbrs.empty()) continue;
+                T sum{};
+                for (int n : nbrs) sum = sum + field->getValue(n);
+                field->setValue(obstacleIds[i], sum * (1.0 / nbrs.size()));
+            }
         }
     }
 

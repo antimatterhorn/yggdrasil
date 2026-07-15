@@ -4,6 +4,7 @@
 #include "hydro.hh"
 #include "../Mesh/grid.hh"
 #include <iostream>
+#include <unordered_set>
 
 // Forward declaration for return type of computeFlux
 template<int dim>
@@ -39,22 +40,38 @@ public:
         state->template addField<double>(rho);
         state->template addField<double>(u);
 
-        for (int i = 0; i < grid->size(); ++i)
-            if (!grid->onBoundary(i)) insideIds.push_back(i);
-
         for (int i = 0; i < dim; ++i)
             dxmin = std::min(dxmin, grid->spacing(i));
     }
 
     virtual ~GridHydroBase() {}
 
-    virtual void 
+    virtual void
     ZeroTimeInitialize() override {
         EOSLookup();
         State<dim> state = this->state;
         NodeList* nodeList = this->nodeList;
         this->UpdateState();
+        // InitializeBoundaries must run first so that any ReflectingGridBoundary
+        // obstacles have their IDs deduped and their neighbor lists built before
+        // we query getObstacleIds() below.
         this->InitializeBoundaries();
+
+        // Collect interior obstacle cells from all registered boundaries and
+        // exclude them from the flux update loop, mirroring WaveEquation's
+        // obstacle handling — otherwise a "solid" cell would still have fluxes
+        // computed into/out of it as if it were ordinary fluid. Excluded cells
+        // are left for the owning boundary's own Apply (e.g. ReflectingGridBoundary's
+        // interior Neumann fill) to keep finite each step.
+        std::unordered_set<int> obstacleSet;
+        for (auto* bc : this->boundaries)
+            for (int id : bc->getObstacleIds())
+                obstacleSet.insert(id);
+
+        insideIds.clear();
+        for (int i = 0; i < grid->size(); ++i)
+            if (!grid->onBoundary(i) && obstacleSet.count(i) == 0)
+                insideIds.push_back(i);
     }
 
     virtual void 
