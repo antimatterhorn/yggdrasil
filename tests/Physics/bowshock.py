@@ -1,3 +1,4 @@
+import os
 from yggdrasil import *
 from Animation import *
 from Mesh import Grid2d
@@ -6,6 +7,7 @@ from EOS import IdealGasEOS
 from Boundaries import PeriodicGridBoundary2d
 from Utilities import SiloDump
 from math import log
+from IO import RestartWriter
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
@@ -16,7 +18,16 @@ if __name__ == "__main__":
                                         dx = 1,
                                         dy = 1,
                                         dtmin = 0.1e-7,
-                                        intVerbose = False)
+                                        intVerbose = False,
+                                        restartCycle = 250,
+                                        rootName = "kelvin-helmholtz",
+                                        vizDir = "viz",
+                                        restartDir = "restart",
+                                        restoreCycle = None)
+    vizDir = rootName + "/" + vizDir
+    restartDir = rootName + "/" + restartDir
+    os.makedirs(vizDir, exist_ok=True)
+    os.makedirs(restartDir, exist_ok=True)
 
     myGrid = Grid2d(nx,ny,dx,dy)
     print("grid size:",myGrid.size())
