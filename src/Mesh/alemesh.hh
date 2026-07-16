@@ -13,17 +13,6 @@
 #include "face.hh"
 
 namespace Mesh {
-    // Finite-volume mesh substrate for ALE hydro: PolyMesh's generic node/cell
-    // connectivity plus a Face list (normal, area, centroid, adjacent cells) and
-    // per-cell volumes, both recomputed from current node positions on demand
-    // via updateGeometry(). Cells are added as plain node-index polygons via
-    // the inherited PolyMesh::addCell -- no typed Element/basis-function
-    // machinery, since finite-volume flux divergence has no use for it.
-    //
-    // 2D only for now: face construction assumes a 2-node (edge) shared
-    // boundary between adjacent cells, matching Element's current 2D-only
-    // scope elsewhere in this module. A hydro solver that actually walks these
-    // faces, plus mesh-velocity/remap support, is separate follow-up work.
     template <int dim>
     class ALEMesh : public PolyMesh<dim> {
     private:

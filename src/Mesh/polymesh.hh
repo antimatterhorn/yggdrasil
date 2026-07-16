@@ -13,12 +13,6 @@
 #include "../DataBase/field.hh"
 
 namespace Mesh {
-    // Shared indexed-mesh substrate: node positions, generic cell connectivity
-    // (a cell is just a list of node indices -- no assumption about what the
-    // cell is used for), and the adjacency/boundary bookkeeping derived from
-    // that connectivity. FEMesh layers typed FEM Elements on top of this for
-    // stiffness-matrix assembly; ALEMesh layers Face objects on top of this for
-    // finite-volume flux divergence. Neither concern belongs here.
     template <int dim>
     class PolyMesh {
     private:
