@@ -84,12 +84,25 @@ ALEMesh<dim>::computeFaces() {
     const auto& cells = this->getConnectivityMap();
 
     faces.clear();
-    std::set<std::pair<size_t, size_t>> seen;
+    facesPerCell.assign(cells.size(), {});
+
+    auto addFace = [&](Face<dim>& f, size_t owner, size_t other) {
+        computeFaceGeometry(f);
+        size_t faceIdx = faces.size();
+        faces.push_back(f);
+        facesPerCell[owner].push_back(faceIdx);
+        if (other != Face<dim>::boundaryCell) facesPerCell[other].push_back(faceIdx);
+    };
+
+    // Interior faces: one per pair of adjacent cells. Track which node-pair
+    // edges these claim so the boundary-face pass below doesn't duplicate them.
+    std::set<std::pair<size_t, size_t>> seenCellPairs;
+    std::set<std::pair<size_t, size_t>> claimedEdges;
 
     for (size_t ci = 0; ci < adjacency.size(); ++ci) {
         for (size_t cj : adjacency[ci]) {
-            auto key = std::make_pair(std::min(ci, cj), std::max(ci, cj));
-            if (!seen.insert(key).second) continue;
+            auto cellKey = std::make_pair(std::min(ci, cj), std::max(ci, cj));
+            if (!seenCellPairs.insert(cellKey).second) continue;
 
             std::vector<size_t> shared;
             for (size_t a : cells[ci])
@@ -100,8 +113,34 @@ ALEMesh<dim>::computeFaces() {
             f.nodeIndices = shared;
             f.leftCell = ci;
             f.rightCell = cj;
-            computeFaceGeometry(f);
-            faces.push_back(f);
+            addFace(f, ci, cj);
+
+            if constexpr (dim == 2) {
+                if (shared.size() == 2)
+                    claimedEdges.insert(std::make_pair(std::min(shared[0], shared[1]), std::max(shared[0], shared[1])));
+            }
+        }
+    }
+
+    // Boundary faces: any cell edge not claimed by an interior face above.
+    // Normal points outward (computeFaceGeometry orients away from leftCell,
+    // and leftCell is always the real cell here).
+    if constexpr (dim == 2) {
+        for (size_t ci = 0; ci < cells.size(); ++ci) {
+            const auto& nodeIds = cells[ci];
+            size_t N = nodeIds.size();
+            for (size_t k = 0; k < N; ++k) {
+                size_t na = nodeIds[k];
+                size_t nb = nodeIds[(k + 1) % N];
+                auto edgeKey = std::make_pair(std::min(na, nb), std::max(na, nb));
+                if (claimedEdges.count(edgeKey)) continue;
+
+                Face<dim> f;
+                f.nodeIndices = {na, nb};
+                f.leftCell = ci;
+                f.rightCell = Face<dim>::boundaryCell;
+                addFace(f, ci, Face<dim>::boundaryCell);
+            }
         }
     }
 
@@ -125,6 +164,11 @@ ALEMesh<dim>::updateGeometry() {
 template <int dim>
 const std::vector<Face<dim>>& ALEMesh<dim>::getFaces() const {
     return faces;
+}
+
+template <int dim>
+const std::vector<size_t>& ALEMesh<dim>::getFacesForCell(size_t cellIndex) const {
+    return facesPerCell[cellIndex];
 }
 
 template <int dim>

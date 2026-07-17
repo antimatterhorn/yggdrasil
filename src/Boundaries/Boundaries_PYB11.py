@@ -11,7 +11,11 @@ PYB11includes = ['"boundary.hh"',
                  '"sphereCollider.cc"',
                  '"boxCollider.cc"',
                  '"constraint.hh"',
-                 '"motionConstraint.cc"']
+                 '"motionConstraint.cc"',
+                 '"aleMeshBoundary.hh"',
+                 '"reflectingALEMeshBoundary.cc"',
+                 '"dirichletALEMeshBoundary.cc"',
+                 '"outflowALEMeshBoundary.cc"']
 
 from boundary import *
 from collider import *
@@ -24,3 +28,6 @@ from sphereCollider import *
 from boxCollider import *
 from constraint import *
 from motionConstraint import *
+from reflectingALEMeshBoundary import *
+from dirichletALEMeshBoundary import *
+from outflowALEMeshBoundary import *

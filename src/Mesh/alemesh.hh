@@ -17,6 +17,7 @@ namespace Mesh {
     class ALEMesh : public PolyMesh<dim> {
     private:
         std::vector<Face<dim>> faces;
+        std::vector<std::vector<size_t>> facesPerCell;
         std::vector<double> cellVolumes;
 
         double computeCellArea(size_t cellIndex) const;
@@ -29,9 +30,10 @@ namespace Mesh {
 
         ALEMesh();
 
-        // Builds the face list from the current cell adjacency (interior
-        // faces only -- faces on the outer mesh boundary, where only one
-        // cell touches an edge, are not yet constructed; see class comment).
+        // Builds the face list from the current cell adjacency: one interior
+        // Face per pair of adjacent cells, plus one boundary Face (rightCell
+        // == Face<dim>::boundaryCell, normal pointing outward) for every cell
+        // edge not shared with another cell.
         void computeFaces();
 
         // Recomputes face normals/areas/centroids and cell volumes from the
@@ -40,6 +42,11 @@ namespace Mesh {
         void updateGeometry();
 
         const std::vector<Face<dim>>& getFaces() const;
+        // Indices into getFaces() of every face (interior or boundary)
+        // touching the given cell. Populated by computeFaces(); lets a hydro
+        // package parallelize its derivative loop over cells (each visiting
+        // only its own faces) without a scatter/race into shared accumulators.
+        const std::vector<size_t>& getFacesForCell(size_t cellIndex) const;
         double cellVolume(size_t cellIndex) const;
         Vector cellCentroid(size_t cellIndex) const;
 

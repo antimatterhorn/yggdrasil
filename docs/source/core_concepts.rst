@@ -150,15 +150,16 @@ Currently, only the thermal conduction physics package requires (and can make us
 
 Mesh/Grid Handling
 --------------------
-Yggdrasil supports two kinds of meshes: Eulerian grids and Element meshes. 
+Yggdrasil supports three kinds of meshes: Eulerian grids, unstructured meshes (element meshes and ALE meshes),
+and Voronoi meshes.
 
 Eulerian Grids
 ^^^^^^^^^^^^^^
-Eulerian grids are invoked with the dimensional ``Grid`` class with 
+Eulerian grids are invoked with the dimensional ``Grid`` class with
 ``myGrid=Grid2d(nx=[int],ny=[int],dx=[float],dy=[float])`` to create a 2D grid with nx cells in the x-direction
 and ny cells in the y-direction. The ``dx`` and ``dy`` parameters set the spatial dimensions of a single cell.
-Grids in Yggdrasil can be 1D, 2D, or 3D, and the constructor assigns positions to the cells of the grid 
-in ascending order in each spatial coordinate. 
+Grids in Yggdrasil can be 1D, 2D, or 3D, and the constructor assigns positions to the cells of the grid
+in ascending order in each spatial coordinate.
 
 .. note::
     Grids also have an optional ``setOrigin(Vector)`` method for moving the
@@ -167,15 +168,85 @@ in ascending order in each spatial coordinate.
     ``myGrid.setOrigin(Vector2d(2,2))`` which will adjust all of the spatial coordinates of your cells to make
     the center of the grid the (0,0) coordinate.
 
+Unstructured Meshes
+^^^^^^^^^^^^^^^^^^^^
+Yggdrasil's two unstructured mesh types, ``FEMesh`` (element meshes) and ``ALEMesh`` (ALE meshes), share a common
+base class, ``PolyMesh``, that you never construct directly. ``PolyMesh`` owns everything that's independent of
+what the cells are used for: node positions, generic cell connectivity (a cell is just a list of node indices),
+neighbor/adjacency computation, and boundary-node detection. ``FEMesh`` and ``ALEMesh`` each add their own,
+unrelated, second layer on top of that shared foundation: ``FEMesh`` adds typed finite-element ``Element``
+objects for stiffness-matrix physics, and ``ALEMesh`` adds ``Face`` objects for finite-volume-style physics.
+Both are constructed the same way from Python: add nodes, then add cells.
+
 Element Meshes
 ^^^^^^^^^^^^^^
-<wip>
+Element meshes (``FEMesh``) are Yggdrasil's mesh type for FEM physics packages like ``FEMLinearElasticity`` and
+``FEMThermalConduction``. You build one by adding nodes and then elements, where an element is a node-index list
+plus an ``ElementType`` (``Triangle`` or ``Quad`` -- 3D element types are not implemented yet):
+
+.. code-block:: python
+
+    mesh = FEMesh2d()
+    mesh.addNode(Vector2d(0, 0))
+    mesh.addNode(Vector2d(1, 0))
+    mesh.addNode(Vector2d(1, 1))
+    mesh.addNode(Vector2d(0, 1))
+    mesh.addElement(ElementType.Quad, [0, 1, 2, 3])
+
+For real geometry you'll usually import a mesh instead of hand-building it, via ``mesh.buildFromObj("part.obj",
+axes="(x,z)")`` (2D only), or by taking the dual of a ``VoronoiMesh`` -- see `Voronoi Meshes`_ below. Either way,
+the resulting ``FEMesh`` is what you pass to a FEM physics package's constructor:
+
+.. code-block:: python
+
+    elasticity = FEMLinearElasticity2d(myNodeList, constants, mesh, material, rho, alpha, beta)
+
+.. note::
+    ``writeVTK(filepath)`` exports the mesh (nodes, cell connectivity, and per-cell area) as a legacy VTK file
+    for viewing in ParaView.
+
+ALE Meshes
+^^^^^^^^^^
+ALE meshes (``ALEMesh``) are the mesh/geometry substrate for Yggdrasil's planned Arbitrary Lagrangian-Eulerian
+support. Cells are added as plain node-index polygons (no typed ``Element``, since finite-volume flux divergence
+has no use for basis functions or stiffness matrices):
+
+.. code-block:: python
+
+    mesh = ALEMesh2d()
+    mesh.addNode(Vector2d(0, 0))
+    mesh.addNode(Vector2d(1, 0))
+    mesh.addNode(Vector2d(1, 1))
+    mesh.addNode(Vector2d(0, 1))
+    mesh.addCell([0, 1, 2, 3])
+
+    mesh.computeFaces()          # builds the interior Face list from cell adjacency
+    mesh.getFaces()               # list of Face2d: .normal, .area, .centroid, .leftCell, .rightCell
+    mesh.cellVolume(0)            # per-cell area (2D) / volume (3D)
+
+After node positions change (e.g. a future ALE hydro package moving nodes via ``setNodePosition``), call
+``mesh.updateGeometry()`` to recompute face normals/areas/centroids and cell volumes from the new positions --
+this does not change which cells are adjacent to which, only their geometry. A ``Face``'s ``normal`` is oriented
+to point from ``leftCell`` toward ``rightCell``, so that summing ``normal * area`` (with a sign flip on whichever
+side a given cell is on) around any fully-interior cell is guaranteed to be zero, as required for a correct
+finite-volume flux divergence.
+
+.. note::
+    ``ALEMesh`` is 2D-only for now, and only builds *interior* faces -- faces on the outer mesh boundary (where
+    only one cell touches an edge) are not yet constructed. The hydro solver that actually walks these faces to
+    evolve a simulation does not exist yet either; today ``ALEMesh`` is mesh/geometry infrastructure only.
 
 Voronoi Meshes
 ^^^^^^^^^^^^^^^
-Currently, Yggdrasil can construct 2d Voronoi meshes from a ``Field<Vector<2>>`` or a ``FieldofVector2d`` if constructed 
-from within Python. Unique topology is not guaranteed.
-See the ``voronoi_diag.py`` example for a use-case. 
+Currently, Yggdrasil can construct 2d Voronoi meshes from a ``Field<Vector<2>>`` or a ``FieldofVector2d`` if constructed
+from within Python. Unique topology is not guaranteed. ``VoronoiMesh`` is a separate class from ``PolyMesh``/``FEMesh``/
+``ALEMesh`` -- it does not inherit from ``PolyMesh`` -- but it can produce an ``FEMesh`` from its tessellation via
+``vor.generateDualFEMesh()``, which triangulates around each shared Voronoi vertex.
+See the ``voronoi_diag.py`` example for a use-case.
+
+.. note::
+    Voronoi mesh construction (and ``generateDualFEMesh()``) is 2D-only; a 3D ``VoronoiMesh`` can be constructed
+    but throws at tessellation time.
 
 Boundary Conditions
 --------------------

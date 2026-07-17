@@ -22,24 +22,49 @@ if __name__ == "__main__":
 
     mesh.computeFaces()
     faces = mesh.getFaces()
-    print("total interior faces:", len(faces))
-    # 3x3 cells: 2*3 vertical interior edges + 2*3 horizontal interior edges = 12
-    assert len(faces) == 12, f"expected 12 interior faces, got {len(faces)}"
+    interior = [f for f in faces if not f.isBoundary]
+    boundary = [f for f in faces if f.isBoundary]
+    print("total faces:", len(faces), " interior:", len(interior), " boundary:", len(boundary))
+    # 3x3 cells: 2*3 vertical + 2*3 horizontal interior edges = 12; perimeter = 4*3 = 12 boundary edges.
+    assert len(interior) == 12, f"expected 12 interior faces, got {len(interior)}"
+    assert len(boundary) == 12, f"expected 12 boundary faces, got {len(boundary)}"
+
+    def facesAround(cell):
+        return [f for f in faces if f.leftCell == cell or f.rightCell == cell]
+
+    def divergenceSum(cell):
+        sx, sy = 0.0, 0.0
+        for f in facesAround(cell):
+            # Boundary faces always have the real cell as leftCell (outward
+            # normal already); interior faces need the leftCell/rightCell sign flip.
+            sign = 1.0 if f.leftCell == cell else -1.0
+            sx += sign * f.normal.x * f.area
+            sy += sign * f.normal.y * f.area
+        return sx, sy
 
     centerCell = cellId(1, 1)
-    touching = [f for f in faces if f.leftCell == centerCell or f.rightCell == centerCell]
+    touching = facesAround(centerCell)
     print("faces touching center cell:", len(touching))
     assert len(touching) == 4, f"expected 4 faces around the fully-interior center cell, got {len(touching)}"
 
     # Divergence-theorem sanity check: the outward-oriented normal*area
-    # around any closed cell should sum to ~zero.
-    sx, sy = 0.0, 0.0
-    for f in touching:
-        sign = 1.0 if f.leftCell == centerCell else -1.0
-        sx += sign * f.normal.x * f.area
-        sy += sign * f.normal.y * f.area
+    # around any closed cell should sum to ~zero -- for the center cell
+    # (all 4 faces interior) and for a corner cell (2 interior + 2 boundary
+    # faces), verifying the new boundary-face orientation is consistent with
+    # the existing interior-face convention.
+    sx, sy = divergenceSum(centerCell)
     print("sum of outward normal*area around center cell:", (sx, sy))
     assert abs(sx) < 1e-9 and abs(sy) < 1e-9, "face normals around a closed cell should sum to zero"
+
+    cornerCell = cellId(0, 0)
+    cornerFaces = facesAround(cornerCell)
+    print("faces touching corner cell (0,0):", len(cornerFaces),
+          " boundary:", sum(1 for f in cornerFaces if f.isBoundary))
+    assert len(cornerFaces) == 4
+    assert sum(1 for f in cornerFaces if f.isBoundary) == 2
+    cx, cy = divergenceSum(cornerCell)
+    print("sum of outward normal*area around corner cell:", (cx, cy))
+    assert abs(cx) < 1e-9 and abs(cy) < 1e-9, "corner cell's interior+boundary faces should also sum to zero"
 
     centerArea = mesh.cellVolume(centerCell)
     print("center cell area (expect 1.0):", centerArea)

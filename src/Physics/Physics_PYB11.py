@@ -27,6 +27,9 @@ PYB11includes = ['"physics.hh"',
                 '"magField.cc"',
                 '"cncPathPhysics.cc"',
                 '"stellarEvolution.cc"',
+                '"aleMeshHydroBase.hh"',
+                '"aleMeshHydroHLLC.cc"',
+                '"aleMeshHydroHLLE.cc"',
                 ]
 
 from physics import *
@@ -53,3 +56,5 @@ from complexWaveEquation import *
 from magField import *
 from cncPathPhysics import *
 from stellarEvolution import *
+from aleMeshHydroHLLC import *
+from aleMeshHydroHLLE import *

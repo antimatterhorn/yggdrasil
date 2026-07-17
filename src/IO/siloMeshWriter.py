@@ -17,6 +17,13 @@ class SiloMeshWriter:
                grid="Mesh::Grid<%(dim)s>*"):
         "Writes the NodeList as zone-centered data on a real quadmesh built from the Grid (nodeList.size() must equal grid.size())."
         return
+    def pyinit3(self,
+               baseName="std::string&",
+               nodeList="NodeList&",
+               fieldNames="std::vector<std::string>&",
+               aleMesh="Mesh::ALEMesh<%(dim)s>*"):
+        "Writes the NodeList as zone-centered data on a real unstructured (UCD) mesh built from the ALEMesh's node positions and cell connectivity -- arbitrary polygon zones, not just quads (nodeList.size() must equal the ALEMesh's cell count)."
+        return
     def write(self,fileName="std::string&"):
         return
 

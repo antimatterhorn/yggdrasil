@@ -13,6 +13,7 @@ class Face:
     centroid    = PYB11property("Lin::Vector<%(dim)s>", getter="getCentroid", doc="Face centroid.")
     leftCell    = PYB11property("size_t", getter="getLeftCell", doc="Index of the cell the normal points away from.")
     rightCell   = PYB11property("size_t", getter="getRightCell", doc="Index of the cell the normal points toward.")
+    isBoundary  = PYB11property("bool", getter="isBoundary", doc="True if this face has no cell on one side (an outer mesh boundary face).")
 
 Face2d = PYB11TemplateClass(Face,
                               template_parameters = ("2"),

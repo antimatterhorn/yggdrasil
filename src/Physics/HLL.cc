@@ -80,6 +80,60 @@ computeHLLEFlux(int iL, int iR, int axis,
     return result;
 }
 
+// Normal-vector, state-based form of the same two-wave HLL flux, for solvers
+// with no grid axis to key off of (ALEMeshHydroHLLE). Unlike HLLC's
+// star-region solve, HLL has a single averaged middle state, so there's no
+// analogue of the denomL/denomR sign bug that computeHLLCFluxFromStates had.
+template<int dim>
+HLLFlux<dim>
+computeHLLEFluxFromStates(
+    double rhoL, const Lin::Vector<dim>& vL, double uL, double pL, double cL,
+    double rhoR, const Lin::Vector<dim>& vR, double uR, double pR, double cR,
+    const Lin::Vector<dim>& n) {
+
+    using Vector = Lin::Vector<dim>;
+
+    Vector momL = rhoL * vL;
+    Vector momR = rhoR * vR;
+    double eL = uL + 0.5 * vL.mag2();
+    double eR = uR + 0.5 * vR.mag2();
+    double EL = rhoL * eL;
+    double ER = rhoR * eR;
+
+    double vnL = vL.dot(n);
+    double vnR = vR.dot(n);
+
+    double massFluxL = rhoL * vnL;
+    Vector momFluxL = momL * vnL + pL * n;
+    double energyFluxL = vnL * (EL + pL);
+
+    double massFluxR = rhoR * vnR;
+    Vector momFluxR = momR * vnR + pR * n;
+    double energyFluxR = vnR * (ER + pR);
+
+    double sL = std::min(vnL - cL, vnR - cR);
+    double sR = std::max(vnL + cL, vnR + cR);
+
+    HLLFlux<dim> result;
+
+    if (sL >= 0.0) {
+        result.mass = massFluxL;
+        result.momentum = momFluxL;
+        result.energy = energyFluxL;
+    } else if (sR <= 0.0) {
+        result.mass = massFluxR;
+        result.momentum = momFluxR;
+        result.energy = energyFluxR;
+    } else {
+        double sRSum = sR - sL;
+        result.mass     = (sR * massFluxL - sL * massFluxR + sR * sL * (rhoR - rhoL)) / sRSum;
+        result.momentum = (sR * momFluxL - sL * momFluxR + sR * sL * (momR - momL)) / sRSum;
+        result.energy   = (sR * energyFluxL - sL * energyFluxR + sR * sL * (ER - EL)) / sRSum;
+    }
+
+    return result;
+}
+
 //LEGACY UNLIMITED VERSION
 template<int dim>
 HLLFlux<dim>
@@ -196,12 +250,16 @@ computeHLLCFlux(int iL, int iR, int axis,
 }
 
 //LIMITED VERSION
+// Normal-vector form: the actual Riemann solve, independent of any grid axis.
+// Reused by GridHydroHLLC (via the axis-based overload below, which just
+// passes unitAxis<dim>(axis)) and by ALEMeshHydroHLLC (which has a genuine
+// face normal, not an axis, and calls this directly).
 template<int dim>
-HLLFlux<dim> 
+HLLFlux<dim>
 computeHLLCFluxFromStates(
     double rhoL, const Lin::Vector<dim>& vL, double uL, double pL, double cL,
     double rhoR, const Lin::Vector<dim>& vR, double uR, double pR, double cR,
-    int axis) {
+    const Lin::Vector<dim>& n) {
 
     using Vector = Lin::Vector<dim>;
 
@@ -211,8 +269,8 @@ computeHLLCFluxFromStates(
     double eR = uR + 0.5 * vR.mag2();
     double EL = rhoL * eL;
     double ER = rhoR * eR;
-    double vnL = vL[axis];
-    double vnR = vR[axis];
+    double vnL = vL.dot(n);
+    double vnR = vR.dot(n);
 
     // Estimate wave speeds
     double sL = std::min(vnL - cL, vnR - cR);
@@ -228,12 +286,12 @@ computeHLLCFluxFromStates(
 
     // Left flux
     double massFluxL = rhoL * vnL;
-    Vector momFluxL = vnL * momL; momFluxL[axis] += pL;
+    Vector momFluxL = vnL * momL + pL * n;
     double energyFluxL = vnL * (EL + pL);
 
     // Right flux
     double massFluxR = rhoR * vnR;
-    Vector momFluxR = vnR * momR; momFluxR[axis] += pR;
+    Vector momFluxR = vnR * momR + pR * n;
     double energyFluxR = vnR * (ER + pR);
 
     HLLFlux<dim> flux;
@@ -246,9 +304,13 @@ computeHLLCFluxFromStates(
         flux.momentum = momFluxR;
         flux.energy = energyFluxR;
     } else {
-        Vector n = unitAxis<dim>(axis);
-
-        double denomL = std::max(sL - sStar, tiny);
+        // sL <= sStar <= sR always (sStar is the contact speed, bounded by
+        // the two acoustic wave speeds), so sL - sStar is never positive and
+        // sR - sStar is never negative. Guard each against being too close
+        // to zero *without* flipping its sign -- std::max(sL - sStar, tiny)
+        // would discard the correct (negative) value and substitute +tiny
+        // every time, corrupting rhoSL whenever this branch is taken.
+        double denomL = std::min(sL - sStar, -tiny);
         double denomR = std::max(sR - sStar, tiny);
 
         double rhoSL = std::max(rhoL * (sL - vnL) / denomL, tiny);
@@ -275,4 +337,17 @@ computeHLLCFluxFromStates(
     }
 
     return flux;
+}
+
+// Axis-aligned form, kept for GridHydroHLLC: identical to the general form
+// above with n = unitAxis<dim>(axis).
+template<int dim>
+HLLFlux<dim>
+computeHLLCFluxFromStates(
+    double rhoL, const Lin::Vector<dim>& vL, double uL, double pL, double cL,
+    double rhoR, const Lin::Vector<dim>& vR, double uR, double pR, double cR,
+    int axis) {
+    return computeHLLCFluxFromStates<dim>(rhoL, vL, uL, pL, cL,
+                                          rhoR, vR, uR, pR, cR,
+                                          unitAxis<dim>(axis));
 }
