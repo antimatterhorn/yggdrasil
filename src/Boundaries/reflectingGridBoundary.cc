@@ -1,5 +1,6 @@
 // Copyright (C) 2026  Cody Raskin
 
+#pragma once
 #include <vector>
 #include <algorithm>
 #include <unordered_set>
