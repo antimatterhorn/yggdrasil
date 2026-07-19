@@ -16,17 +16,18 @@ public:
     using typename ALEMeshHydroBase<dim>::ScalarField;
 
     ALEMeshHydroHLLC(NodeList* nodeList, PhysicalConstants& constants,
-                      EquationOfState* eos, Mesh::ALEMesh<dim>* mesh)
-        : ALEMeshHydroBase<dim>(nodeList, constants, eos, mesh) {}
+                      EquationOfState* eos, Mesh::ALEMesh<dim>* mesh,
+                      NodeList* nodeVelocities = nullptr)
+        : ALEMeshHydroBase<dim>(nodeList, constants, eos, mesh, nodeVelocities) {}
 
     virtual std::string name() const override { return "ALEMeshHydroHLLC"; }
 
     virtual HLLFlux<dim>
     computeFlux(double rhoL, const Vector& vL, double uL, double pL, double csL,
                 double rhoR, const Vector& vR, double uR, double pR, double csR,
-                const Vector& normal) const override {
-        return computeHLLCFluxFromStates<dim>(rhoL, vL, uL, pL, csL,
-                                              rhoR, vR, uR, pR, csR,
-                                              normal);
+                const Vector& normal, double faceVelocity) const override {
+        return computeHLLCFluxFromStatesALE<dim>(rhoL, vL, uL, pL, csL,
+                                                  rhoR, vR, uR, pR, csR,
+                                                  normal, faceVelocity);
     }
 };

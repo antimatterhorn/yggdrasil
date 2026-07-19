@@ -9,7 +9,9 @@ class ALEMeshHydroHLLE(Hydro):
                nodeList="NodeList*",
                constants="PhysicalConstants&",
                eos="EquationOfState*",
-               mesh="Mesh::ALEMesh<%(dim)s>*"):
+               mesh="Mesh::ALEMesh<%(dim)s>*",
+               nodeVelocities=("NodeList*", "nullptr")):
+        "nodeVelocities: optional node-centered NodeList (one entry per mesh node) with a Vector 'velocity' field prescribing mesh motion. Omit (or pass None) for a static (Eulerian) mesh."
         return
 
 ALEMeshHydroHLLE2d = PYB11TemplateClass(ALEMeshHydroHLLE,
