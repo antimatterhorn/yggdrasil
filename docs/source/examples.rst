@@ -60,7 +60,7 @@ Simulates the Plinko game.
     :align: center
 
 reactionDiffusion.py
------------------
+--------------------
 Simulates the destruction of chemical mixtures in a rock-paper-scissors-like reaction setup, where A->B->C->A. In this case,
 A is blue, B is green, and C is red.
 
@@ -94,8 +94,6 @@ This particular example is the Voronoi mesh for a glass distribution generated b
 waveLogo.py
 -----------------
 Simulates acoustic waves inside a region with Dirichlet boundary conditions arranged in a unique fashion.
-
-.. image:: ../../examples/logo_test.png
 
 Simple Test Cases
 -----------------

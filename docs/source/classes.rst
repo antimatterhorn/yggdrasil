@@ -35,7 +35,7 @@ from this physics class to the ``velocity`` derivatives from Kinematics.
 .. literalinclude:: constantForce.cc
    :language: c++
    :linenos:
-   :lines: 29-60
+   :lines: 29-59
    :lineno-start: 28
 
 ``EvaluateDerivatives`` is used to compute the derivatives of the ``State`` object at each node. In this case, we are computing the 
