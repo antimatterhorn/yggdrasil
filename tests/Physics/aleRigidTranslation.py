@@ -15,18 +15,9 @@ import math
 # must stay exactly (to floating-point roundoff) unchanged for the entire
 # run, no matter how far the mesh visibly translates. This exercises the ALE
 # flux (S = w.n != 0 at every boundary face along the translation direction),
-# the FinalizeStep motion hook, and the extensive-quantity remap together --
-# and is exactly the kind of case where a subtle ALE-flux term/sign error
-# (see HLL.cc's derivation comments -- the naive "shift vn everywhere"
-# shortcut is wrong specifically for the energy term) would show up as
-# density/pressure drift rather than staying silent.
-#
+# the FinalizeStep motion hook, and the extensive-quantity remap together.
 # Dirichlet boundaries on all four sides, matching the uniform interior state
-# exactly, sidestep a separate, currently-unaddressed question (out of scope
-# for this pass): whether ReflectingALEMeshBoundary's ghostState needs to be
-# face-velocity-aware to correctly handle a wall that is itself moving.
-# Dirichlet's ghost state doesn't depend on face motion at all, so it still
-# genuinely exercises the ALE flux without depending on that answer.
+# exactly.
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(nx=10,
