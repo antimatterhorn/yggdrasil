@@ -60,7 +60,7 @@ def run():
         out.append(integrator.time)
         for i in range(numNodes):
             out.append(positions[i].y)
-        return out
+        return {"mode": "snapshot", "values": out}
 
 if __name__ == "__main__":
     print(run())

@@ -1,82 +1,63 @@
 import numpy as np
 from yggdrasil import *
 
+# Kelvin-Helmholtz shear instability. There is no simple closed-form solution,
+# but the defining behavior is that a seeded perturbation *grows*: the initially
+# flat, x-uniform density interfaces (density depends only on y at t=0) roll up,
+# so the spread of density along x at the interface rows climbs from zero to a
+# clear finite amplitude. This checks that growth (and that it stays bounded),
+# rather than snapshotting a particular late-time state.
+
+
+def _interface_spread(nodes, grid, nx, ny):
+    density = nodes.getFieldDouble("density")
+    spread = 0.0
+    for j in (ny // 4, 3 * ny // 4):                 # the two shear interfaces
+        row = [density[grid.index(i, j, 0)] for i in range(nx)]
+        spread += float(np.std(row))
+    return 0.5 * spread
+
 
 def run():
-    siloDump = False
-    nx = 100
-    ny = 50
-    dx = 0.02
-    dy = 0.02
-    dtmin = 1.0e-7
-    tstop = 0.3
-
-    myGrid = Grid2d(nx,ny,dx,dy)
-
-    myNodeList = NodeList(nx*ny)
-
+    nx, ny, dx, dy, tstop = 100, 50, 0.02, 0.02, 0.3
+    grid = Grid2d(nx, ny, dx, dy)
+    nodes = NodeList(nx * ny)
     constants = MKS()
-    eos = IdealGasEOS(1.4,constants)
+    eos = IdealGasEOS(1.4, constants)
+    hydro = GridHydroKT2d(nodes, constants, eos, grid)
+    hydro.addBoundary(PeriodicGridBoundary2d(grid=grid))
+    integrator = RungeKutta4Integrator2d([hydro], dtmin=1.0e-7, verbose=False)
 
-    hydro = GridHydroKT2d(myNodeList,constants,eos,myGrid)
-
-    box = PeriodicGridBoundary2d(grid=myGrid)
-    hydro.addBoundary(box)
-
-    integrator = RungeKutta4Integrator2d([hydro],dtmin=dtmin,verbose=False)
-
-    density  = myNodeList.getFieldDouble("density")
-    energy   = myNodeList.getFieldDouble("specificInternalEnergy")
-    velocity = myNodeList.getFieldVector2d("velocity")
-    position = myNodeList.getFieldVector2d("position")
-
-    p0 = 2.5
-    gamma = eos.gamma
-
+    density = nodes.getFieldDouble("density")
+    energy = nodes.getFieldDouble("specificInternalEnergy")
+    velocity = nodes.getFieldVector2d("velocity")
+    position = nodes.getFieldVector2d("position")
+    p0, gamma = 2.5, eos.gamma
     for j in range(ny):
         for i in range(nx):
-            idx = myGrid.index(i,j,0)
-            pos = position[idx]
-            x = pos.x
-
-            if j < ny // 4:
-                rho = 1.0
-                vx = -0.5
-            elif j < 3 * ny // 4:
-                rho = 2.0
-                vx = 0.5
+            idx = grid.index(i, j, 0)
+            x = position[idx].x
+            if j < ny // 4 or j >= 3 * ny // 4:
+                rho, vx = 1.0, -0.5
             else:
-                rho = 1.0
-                vx = -0.5
+                rho, vx = 2.0, 0.5
+            velocity[idx] = Vector2d(vx, 0.1 * np.sin(4 * np.pi * x))
+            density[idx] = rho
+            energy[idx] = p0 / ((gamma - 1.0) * rho)
 
-            vy = 0.1 * np.sin(4 * np.pi * x)
+    spread0 = _interface_spread(nodes, grid, nx, ny)     # ~0: interfaces flat
 
-            velocity.setValue(idx, Vector2d(vx, vy))
-            density.setValue(idx, rho)
-            energy.setValue(idx, p0 / ((gamma - 1.0) * rho))
+    Controller(integrator=integrator, periodicWork=[], statStep=100000, tstop=tstop).Step(1000000)
+    spread1 = _interface_spread(nodes, grid, nx, ny)
 
-    periodicWork = []
+    return {"mode": "analytic", "checks": [
+        ("interfaces start flat", bool(spread0 < 1e-9), f"initial x-spread={spread0:.2e}"),
+        ("instability grows (interface rolls up)", bool(spread1 > 0.05),
+         f"interface x-spread {spread0:.2e} -> {spread1:.3f}"),
+        ("stays bounded", bool(np.isfinite(spread1) and spread1 < 10.0),
+         f"final spread={spread1:.3f} finite"),
+    ]}
 
-    if siloDump:
-        meshWriter = SiloDump(baseName="KH",
-                                nodeList=myNodeList,
-                                fieldNames=["density","specificInternalEnergy","pressure","velocity"],
-                                dumpCycle=50)
-        periodicWork += [meshWriter]
-
-    controller = Controller(integrator=integrator,periodicWork=periodicWork,statStep=10000,tstop=tstop)
-
-    controller.Step(1000000)
-
-    # vertical lineout of density nearest x=0.5
-    i_lineout = int(round(0.5/dx - 0.5))
-
-    ys = []
-    ys.append(integrator.time)
-    for j in range(ny):
-        idx = myGrid.index(i_lineout, j, 0)
-        ys.append(density[idx])
-    return ys
 
 if __name__ == "__main__":
     print(run())

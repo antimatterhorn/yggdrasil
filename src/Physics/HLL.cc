@@ -246,22 +246,28 @@ computeHLLCFluxFromStates(
         flux.momentum = momFluxR;
         flux.energy = energyFluxR;
     } else {
+        // Toro's HLLC star states U*_K, with F*_K = F_K + s_K (U*_K - U_K). The
+        // star density factor rho_K (s_K - vn_K)/(s_K - sStar) is positive:
+        // numerator and denominator share a sign (both negative for K=L, both
+        // positive for K=R), so the s_K - sStar guard is magnitude-based to keep
+        // that sign.
         Vector n = unitAxis<dim>(axis);
 
-        double denomL = std::max(sL - sStar, tiny);
-        double denomR = std::max(sR - sStar, tiny);
+        double dsL = sL - sStar;
+        double dsR = sR - sStar;
+        if (std::abs(dsL) < tiny) dsL = (dsL >= 0.0) ? tiny : -tiny;
+        if (std::abs(dsR) < tiny) dsR = (dsR >= 0.0) ? tiny : -tiny;
 
-        double rhoSL = std::max(rhoL * (sL - vnL) / denomL, tiny);
-        double rhoSR = std::max(rhoR * (sR - vnR) / denomR, tiny);
+        double rhoSL = rhoL * (sL - vnL) / dsL;
+        double rhoSR = rhoR * (sR - vnR) / dsR;
 
-        Vector vL_star = vL - n * vnL;
-        Vector vR_star = vR - n * vnR;
+        // Normal velocity becomes sStar, tangential unchanged.
+        Vector momSL = rhoSL * (vL + n * (sStar - vnL));
+        Vector momSR = rhoSR * (vR + n * (sStar - vnR));
 
-        Vector momSL = momL + (sStar - vnL) * (rhoSL * vL_star);
-        Vector momSR = momR + (sStar - vnR) * (rhoSR * vR_star);
-
-        double ESL = EL + (sStar - vnL) * (rhoSL * (eL + 0.5 * (sStar - vnL)));
-        double ESR = ER + (sStar - vnR) * (rhoSR * (eR + 0.5 * (sStar - vnR)));
+        // Total energy density, Toro eq. 10.39 (eK = EK/rhoK).
+        double ESL = rhoSL * (eL + (sStar - vnL) * (sStar + pL / (rhoL * (sL - vnL))));
+        double ESR = rhoSR * (eR + (sStar - vnR) * (sStar + pR / (rhoR * (sR - vnR))));
 
         if (sStar >= 0.0) {
             flux.mass = massFluxL + sL * (rhoSL - rhoL);

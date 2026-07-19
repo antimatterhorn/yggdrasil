@@ -1,115 +1,51 @@
 from yggdrasil import *
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-import numpy as np
-import random
 
-def AnimateScatter(bounds, stepper, positions, colliders, frames=100, interval=50):
-    """
-    Custom implementation of animate scatter just for this test.
-    """
-    fig, ax = plt.subplots()
+# Projectile motion under constant gravity, verified against the closed-form
+# solution: x(t) = x0 + v0*t + 0.5*g*t^2. With a constant acceleration the ODE
+# is linear, so RK2 integrates it exactly (up to round-off) -- the numerical
+# trajectory must match the analytical parabola to machine precision. (The
+# collider-maze "plinko" version now lives in plinko.py.)
 
-    ax.set_xlim(bounds[0], bounds[1])
-    ax.set_ylim(bounds[2], bounds[3])
+G = -9.8
 
-    scat = ax.scatter([], [], label='Nodes')
-    col_scat = ax.scatter([], [], color='red', s=100, label='Colliders')  # Set size of colliders
-
-    ax.legend()
-
-    def init():
-        scat.set_offsets(np.empty((0, 2)))  # Initialize with empty 2D array
-        col_scat.set_offsets(np.array(colliders))  # Initialize colliders
-        return scat, col_scat
-
-    def update(frame):
-        stepper.Step()  # Execute one step of the simulation
-
-        points = [positions[i] for i in range(positions.size())]
-        x = [p.x for p in points]
-        y = [p.y for p in points]
-
-        scat.set_offsets(np.c_[x, y])
-
-        col_x = [c[0] for c in colliders]
-        col_y = [c[1] for c in colliders]
-        col_scat.set_offsets(np.c_[col_x, col_y])
-
-        return scat, col_scat
-
-    ani = FuncAnimation(fig, update, init_func=init, frames=frames, interval=interval, blit=True)
-
-    plt.show()
 
 def run():
-    animate = False
-    g = -9.8
-    numNodes = 20
-
+    numNodes = 5
     constants = MKS()
-    myNodeList = NodeList(numNodes)
-    gravVec = Vector2d(0, g)
+    nodes = NodeList(numNodes)
 
-    constantForce = ConstantForce2d(myNodeList, constants, gravVec)
-    kinetics = Kinetics2d(myNodeList,constants)
-    packages = [constantForce,kinetics]
+    gravVec = Vector2d(0, G)
+    constantForce = ConstantForce2d(nodes, constants, gravVec)
+    kinetics = Kinetics2d(nodes, constants)
+    integrator = RungeKutta2Integrator2d(packages=[constantForce, kinetics],
+                                         dtmin=0.01, verbose=False)
 
-    colliders = []
-    cbounds = []
-    spacing_x = 2  # Horizontal spacing between colliders
-    spacing_y = (6 - 2) / 5  # Vertical spacing between colliders to span from 2 to 8
-    rows = 8
-    collider_radius = 0.3
-
-    for i in range(rows):
-        num_colliders = 10 if i % 2 == 0 else 9
-        offset = 0 if i % 2 == 0 else spacing_x / 2  # Stagger every other row
-        for j in range(num_colliders):
-            x = (j - num_colliders // 2) * spacing_x + offset
-            y = 2 + i * spacing_y  # Start from y=2 and span to y=8
-            cbounds.append(SphereCollider2d(position=Vector2d(x, y), radius=collider_radius, elasticity=0.8))
-            colliders.append((x, y))
-
-    cbounds.append(BoxCollider2d(position1=Vector2d(-10, -3), position2=Vector2d(10.5,1), elasticity=0.5))
-    cbounds.append(BoxCollider2d(position1=Vector2d(-11, 0), position2=Vector2d(-9.5,10), elasticity=1))
-    cbounds.append(BoxCollider2d(position1=Vector2d(9.5, 0), position2=Vector2d(11,10), elasticity=1))
-
-    for bound in cbounds:
-        kinetics.addBoundary(bound)
-
-    integrator = RungeKutta2Integrator2d(packages=packages, dtmin=0.01,verbose=False)
-    # print(integrator)
-
-
-    rad = myNodeList.getFieldDouble("radius")
-    mass = myNodeList.getFieldDouble("mass")
+    mass = nodes.getFieldDouble("mass")
+    pos = nodes.getFieldVector2d("position")
+    vel = nodes.getFieldVector2d("velocity")
+    x0, v0 = [], []
     for i in range(numNodes):
-        rad[i] = 0.2
-        mass[i] = 0.2
+        mass[i] = 1.0
+        p = Vector2d(-4 + 2 * i, 0.0)
+        v = Vector2d(0.5 * i, 5.0 - i)          # varied launch velocities
+        pos[i] = p; vel[i] = v
+        x0.append(p); v0.append(v)
 
-    # print("numNodes =", myNodeList.numNodes)
-    # print("field names =", myNodeList.fieldNames)
+    Controller(integrator=integrator, periodicWork=[], statStep=100000).Step(120)
+    t = integrator.time
 
-    pos = myNodeList.getFieldVector2d("position")
-
+    err_pos = err_vel = 0.0
     for i in range(numNodes):
-        x = -9 + i*(18/numNodes)
-        pos[i] =  Vector2d(x, 10)
+        ex = x0[i].x + v0[i].x * t
+        ey = x0[i].y + v0[i].y * t + 0.5 * G * t * t
+        evy = v0[i].y + G * t
+        err_pos = max(err_pos, abs(pos[i].x - ex), abs(pos[i].y - ey))
+        err_vel = max(err_vel, abs(vel[i].x - v0[i].x), abs(vel[i].y - evy))
 
-    controller = Controller(integrator=integrator, periodicWork=[], statStep=200)
-
-    
-    if (not animate):
-        out = []
-        controller.Step(150)
-        out.append(integrator.time)
-        for i in range(numNodes):
-            out.append(pos[i].y)
-        return out
-    else:
-        bounds = (-10, 10, 0, 10)
-        AnimateScatter(bounds, stepper=controller, positions=pos, colliders=colliders, frames=100, interval=50)
+    return {"mode": "analytic", "checks": [
+        ("position vs x0+v0 t+1/2 g t^2", bool(err_pos < 1e-9), f"max err={err_pos:.2e} at t={t:.3f}"),
+        ("velocity vs v0+g t", bool(err_vel < 1e-9), f"max err={err_vel:.2e}"),
+    ]}
 
 
 if __name__ == "__main__":

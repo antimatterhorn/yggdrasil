@@ -97,10 +97,14 @@ public:
         if (vL.magnitude() > vmax) vL = vL.unit() * vmax;
         if (vR.magnitude() > vmax) vR = vR.unit() * vmax;
 
-        double pL = p.getValue(iL);
-        double pR = p.getValue(iR);
-        double cL = cs.getValue(iL);
-        double cR = cs.getValue(iR);
+        // Pressure and sound speed from the reconstructed (rho, u) via the EOS,
+        // so the interface state is thermodynamically consistent (the passed-in
+        // cell-centered p/cs do not match the reconstructed rho/u). p/cs unused.
+        double pL, pR, cL, cR;
+        this->eos->setPressure(&pL, &rhoL, &uL);
+        this->eos->setPressure(&pR, &rhoR, &uR);
+        this->eos->setSoundSpeed(&cL, &rhoL, &uL);
+        this->eos->setSoundSpeed(&cR, &rhoR, &uR);
 
         return computeHLLCFluxFromStates<dim>(rhoL, vL, uL, pL, cL,
                                               rhoR, vR, uR, pR, cR, axis);
