@@ -58,7 +58,8 @@ if __name__ == "__main__":
         title = MakeTitle(controller, "time", "time")
         update_method = AnimationUpdateMethod2d(call=hydro.getCell2d, stepper=controller.Step,
                                                 title=title, fieldName="density")
-        AnimateGrid2d((nx, ny), update_method, extremis=[0, 5], frames=cycles, cmap="plasma")
+        AnimateGrid2d((nx, ny), update_method, extremis=[0, 5], frames=cycles, cmap="plasma",
+                      lineout_axis='y', lineout_index=ny // 2)
     else:
         controller.Step(cycles)
         t = controller.time
