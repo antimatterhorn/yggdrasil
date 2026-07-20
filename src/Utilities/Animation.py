@@ -78,7 +78,9 @@ def AnimateGrid2d(bounds, update_method, threeColors=False, frames=100, interval
                 ax_top.imshow(rgb_grid, origin='lower', extent=[0, nx * scale, 0, ny * scale], cmap=cmap, interpolation='nearest')
             ax_bottom.plot(range(lineout_extent), lineout_values, color='blue')
             ax_bottom.set_xlim(0, lineout_extent)
-            ax_bottom.set_ylim(min(lineout_values) * 1.1, max(lineout_values) * 1.1)
+            lo, hi = min(lineout_values), max(lineout_values)
+            margin = 0.1 * (hi - lo) if hi > lo else 0.1 * abs(lo) if lo != 0 else 1.0
+            ax_bottom.set_ylim(lo - margin, hi + margin)
             ax_top.set_title(update_method.module_title())
 
     ani = FuncAnimation(fig, update, frames=frames, interval=interval)
