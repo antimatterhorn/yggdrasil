@@ -29,11 +29,16 @@ Integrator<dim>::findAccumulators(Physics<dim>* owner) {
 }
 
 template <int dim>
+void Integrator<dim>::Initialize() {
+    if (initialized) return;
+    for (Physics<dim>* physics : packages)
+        physics->ZeroTimeInitialize();
+    initialized = true;
+}
+
+template <int dim>
 void Integrator<dim>::Step() {
-    if (cycle == 0) {
-        for (Physics<dim>* physics : packages)
-            physics->ZeroTimeInitialize();
-    }
+    Initialize();
 
     // Snapshot all states before any FinalizeStep modifies the NodeList.
     for (Physics<dim>* physics : packages) {
@@ -113,4 +118,5 @@ void Integrator<dim>::restoreState(unsigned int cycle, double time, double dt) {
     this->cycle = cycle;
     this->time = time;
     this->dt = dt;
+    this->initialized = (cycle != 0);
 }

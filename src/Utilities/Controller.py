@@ -38,6 +38,11 @@ class Controller:
             if key in state and hasattr(work, "restoreState"):
                 work.restoreState(state[key])
     def Step(self,nsteps=1):
+        if self.integrator.Cycle() == 0:
+            self.integrator.Initialize()
+            if len(self.periodicWork) > 0:
+                for work in self.periodicWork:
+                    work(0, self.integrator.Time(), self.integrator.dt)
         for i in range(nsteps):
             self.integrator.Step()
             cycle = self.integrator.Cycle()
