@@ -12,20 +12,27 @@ from IO import RestartWriter
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = False,
                                         siloDump = True,
+                                        statStep = 10,
                                         dumpCycle= 50,
-                                        cycles = 3000,
-                                        nx = 200,
-                                        ny = 100,
-                                        dx = 0.01,
-                                        dy = 0.01,
+                                        tstop = 2.0,
+                                        res = 200,
                                         dtmin = 0.1e-7,
                                         intVerbose = False,
                                         restartCycle = 250,
                                         rootName = "kelvin-helmholtz",
-                                        vizDir = "KH/viz",
-                                        restartDir = "KH/restart",
+                                        vizDir = "viz",
+                                        restartDir = "restart",
                                         restoreCycle = None)
 
+    nx = res
+    ny = res // 2
+    
+    dx = dy = 1.0/res
+
+    dumpDir = rootName + "/" + "nx=%d_ny=%d" % (nx, ny)
+    
+    vizDir = dumpDir + "/" + vizDir
+    restartDir = dumpDir + "/" + restartDir
     os.makedirs(vizDir, exist_ok=True)
     os.makedirs(restartDir, exist_ok=True)
 
@@ -58,14 +65,14 @@ if __name__ == "__main__":
     p0 = 2.5
     gamma = eos.gamma
 
+    numSeeds = 2
+    Lx = nx * dx
+
     for j in range(ny):
         for i in range(nx):
             idx = myGrid.index(i, j, 0)
             pos = position[idx]
             x = pos.x
-            y = pos.y
-
-            y0 = j * dy
 
             if j < ny // 4:
                 rho = 1.0
@@ -77,7 +84,7 @@ if __name__ == "__main__":
                 rho = 1.0
                 vx = -0.5
 
-            vy = 0.1 * np.sin(4 * np.pi * x)
+            vy = 0.1 * np.sin(2 * np.pi * numSeeds * x / Lx)
 
             velocity.setValue(idx, Vector2d(vx, vy))
             density.setValue(idx, rho)
@@ -101,7 +108,7 @@ if __name__ == "__main__":
     dropRestart.cycle = restartCycle
     periodicWork += [dropRestart]
 
-    controller = Controller(integrator=integrator,periodicWork=periodicWork,statStep=1)
+    controller = Controller(integrator=integrator,periodicWork=periodicWork,statStep=statStep,tstop=tstop)
 
     if(animate):
         title = MakeTitle(controller,"time","time")
@@ -113,4 +120,4 @@ if __name__ == "__main__":
                                                 fieldName="density")
         AnimateGrid2d(bounds,update_method,extremis=[0,5],frames=cycles,cmap="plasma")
     else:
-        controller.Step(cycles)
+        controller.Step(9999999) # run until tstop

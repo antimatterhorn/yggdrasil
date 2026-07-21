@@ -118,5 +118,9 @@ void Integrator<dim>::restoreState(unsigned int cycle, double time, double dt) {
     this->cycle = cycle;
     this->time = time;
     this->dt = dt;
-    this->initialized = (cycle != 0);
+    // ZeroTimeInitialize() rebuilds per-process derived state (EOS lookups,
+    // boundary/obstacle setup, GridHydroBase::insideIds) that a freshly
+    // constructed process never ran, regardless of which cycle is restored --
+    // it does not touch cycle/time/dt, so it's safe to run again here.
+    this->initialized = false;
 }
