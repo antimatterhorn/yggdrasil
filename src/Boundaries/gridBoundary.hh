@@ -29,6 +29,9 @@ public:
             for (int i = 0; i < 2 * dim; ++i)
                 if (names[i] == f) { activeFaces[i] = true; break; }
     }
+
+    // Whether face `i` (in [-x,+x,-y,+y,-z,+z] order) is active.
+    bool isFaceActive(int i) const { return activeFaces[i]; }
 };
 
 #endif // GRIDBoundary_HH

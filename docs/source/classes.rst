@@ -35,7 +35,7 @@ from this physics class to the ``velocity`` derivatives from Kinematics.
 .. literalinclude:: constantForce.cc
    :language: c++
    :linenos:
-   :lines: 29-60
+   :lines: 29-59
    :lineno-start: 28
 
 ``EvaluateDerivatives`` is used to compute the derivatives of the ``State`` object at each node. In this case, we are computing the 
@@ -78,7 +78,7 @@ An example of this pattern for simple forward Euler integration is shown below:
 
 .. literalinclude:: ../../src/Integrators/integrator.cc
    :language: c++
-   :lines: 6-70
+   :lines: 6-71
 
 .. note::
    While this class is a foward Euler integrator, it is also the base class for all integrators in Yggdrasil, and as such,
@@ -94,7 +94,7 @@ work is self-described by the base class interface file ``equationOfState.hh``.
 .. literalinclude:: ../../src/EOS/equationOfState.hh
    :language: c++
    :linenos:
-   :lines: 9-51
+   :lines: 9-54
    :lineno-start: 9
 
 .. note::

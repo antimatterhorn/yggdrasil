@@ -9,6 +9,7 @@
 #include <cmath>
 #include <algorithm>
 #include <type_traits>
+#include "scalarMath.hh"
 
 namespace Lin {
 
@@ -88,6 +89,14 @@ double quadArea(const Vector2D& p1, const Vector2D& p2, const Vector2D& p3, cons
 template <int dim>
 Vector<dim> operator*(const double other, const Vector<dim>& vec);
 
+template<int dim>
+Vector<dim> minmodVec(const Vector<dim>& a, const Vector<dim>& b) {
+    Vector<dim> result;
+    for (int d = 0; d < dim; ++d)
+        result[d] = minmod(a[d], b[d]);
+    return result;
+}
+
 }
 
 template<int dim>
@@ -97,20 +106,6 @@ Lin::Vector<dim> unitAxis(int axis) {
         n[d] = (d == axis) ? 1.0 : 0.0;
     return n;
 }
-
-template<typename T>
-T minmod(const T& a, const T& b) {
-    return (a * b <= 0) ? T(0) : ((std::abs(a) < std::abs(b)) ? a : b);
-}
-
-template<int dim>
-Lin::Vector<dim> minmodVec(const Lin::Vector<dim>& a, const Lin::Vector<dim>& b) {
-    Lin::Vector<dim> result;
-    for (int d = 0; d < dim; ++d)
-        result[d] = minmod(a[d], b[d]);
-    return result;
-}
-
 
 #include "vectorMath.cc"
 

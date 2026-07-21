@@ -12,28 +12,16 @@ template <int dim>
 Integrator<dim>::~Integrator() {}
 
 template <int dim>
-std::vector<Physics<dim>*>
-Integrator<dim>::findAccumulators(Physics<dim>* owner) {
-    std::vector<std::string> ownedFields = owner->integrateFieldNames();
-    std::vector<Physics<dim>*> result;
-    for (auto* p : packages) {
-        if (p == owner) continue;
-        for (const std::string& name : p->accumulateFieldNames()) {
-            if (std::find(ownedFields.begin(), ownedFields.end(), name) != ownedFields.end()) {
-                result.push_back(p);
-                break;
-            }
-        }
-    }
-    return result;
+void Integrator<dim>::Initialize() {
+    if (initialized) return;
+    for (Physics<dim>* physics : packages)
+        physics->ZeroTimeInitialize();
+    initialized = true;
 }
 
 template <int dim>
 void Integrator<dim>::Step() {
-    if (cycle == 0) {
-        for (Physics<dim>* physics : packages)
-            physics->ZeroTimeInitialize();
-    }
+    Initialize();
 
     // Snapshot all states before any FinalizeStep modifies the NodeList.
     for (Physics<dim>* physics : packages) {
@@ -100,6 +88,23 @@ void Integrator<dim>::VoteDt() {
 }
 
 template <int dim>
+std::vector<Physics<dim>*>
+Integrator<dim>::findAccumulators(Physics<dim>* owner) {
+    std::vector<std::string> ownedFields = owner->integrateFieldNames();
+    std::vector<Physics<dim>*> result;
+    for (auto* p : packages) {
+        if (p == owner) continue;
+        for (const std::string& name : p->accumulateFieldNames()) {
+            if (std::find(ownedFields.begin(), ownedFields.end(), name) != ownedFields.end()) {
+                result.push_back(p);
+                break;
+            }
+        }
+    }
+    return result;
+}
+
+template <int dim>
 double const Integrator<dim>::Time() { return time; }
 
 template <int dim>
@@ -113,4 +118,9 @@ void Integrator<dim>::restoreState(unsigned int cycle, double time, double dt) {
     this->cycle = cycle;
     this->time = time;
     this->dt = dt;
+    // ZeroTimeInitialize() rebuilds per-process derived state (EOS lookups,
+    // boundary/obstacle setup, GridHydroBase::insideIds) that a freshly
+    // constructed process never ran, regardless of which cycle is restored --
+    // it does not touch cycle/time/dt, so it's safe to run again here.
+    this->initialized = false;
 }

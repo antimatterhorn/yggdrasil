@@ -1,47 +1,42 @@
 from yggdrasil import *
-from Animation import *
+
+# Free particles under zero force: each moves in a straight line at constant
+# velocity, x_i(t) = x0_i + v0_i * t. Verified against that exact solution at
+# the achieved time.
+
 
 def run():
-    animate = False
-    cycles = 35
     numNodes = 2
-
     constants = MKS()
-    myNodeList = NodeList(numNodes)
+    nodes = NodeList(numNodes)
 
-    gravVec = Vector2d(0, 0)
+    constantForce = ConstantForce2d(nodes, constants, Vector2d(0, 0))   # zero force
+    kinetics = Kinetics2d(nodes, constants)
+    integrator = RungeKutta4Integrator2d(packages=[constantForce, kinetics],
+                                         dtmin=0.01, verbose=False)
 
-    constantForce = ConstantForce2d(myNodeList, constants, gravVec)
-    kinetics = Kinetics2d(myNodeList,constants)
-    packages = [constantForce,kinetics]
-
-    integrator = RungeKutta4Integrator2d(packages=packages, dtmin=0.01,verbose=False)
-
-
-    rad = myNodeList.radius
-    mass = myNodeList.mass
+    pos = nodes.position
+    vel = nodes.velocity
+    x0 = [Vector2d(-10 + i / numNodes * 30, -0.5 + i / numNodes * 1) for i in range(numNodes)]
+    v0 = [Vector2d(3 * (-1) ** i, 0) for i in range(numNodes)]
     for i in range(numNodes):
-        rad[i] = 0.5
-        mass[i] = 0.2
+        pos[i] = x0[i]
+        vel[i] = v0[i]
 
-    pos = myNodeList.position
-    vel = myNodeList.velocity
+    Controller(integrator=integrator, periodicWork=[], statStep=100000).Step(35)
+    t = integrator.time
+
+    err = 0.0
     for i in range(numNodes):
-        pos[i] =  Vector2d(-10+i/numNodes*30, -0.5+i/numNodes*1)
-        vel[i] =  Vector2d(3*(-1)**i,0)
+        ex = x0[i].x + v0[i].x * t
+        ey = x0[i].y + v0[i].y * t
+        err = max(err, abs(pos[i].x - ex), abs(pos[i].y - ey))
 
-    controller = Controller(integrator=integrator, periodicWork=[], statStep=100)
+    return {"mode": "analytic", "checks": [
+        ("constant-velocity motion", bool(err < 1e-10),
+         f"max|pos - (x0+v0 t)|={err:.2e} at t={t:.3f}"),
+    ]}
 
-    bounds = (-10, 10, -10, 10)
-    if animate:
-        AnimateScatter(bounds, stepper=controller, positions=pos, frames=10, interval=50)
-    else:
-        out = []
-        controller.Step(cycles)
-        out.append(integrator.time)
-        for i in range(numNodes):
-            out.append(pos[i].x)
-        return out
 
 if __name__ == "__main__":
     print(run())

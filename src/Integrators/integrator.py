@@ -15,6 +15,8 @@ class Integrator(IntegratorBase):
                packages="std::vector<Physics<%(dim)s>*>",
                dtmin="double", verbose="bool"):
         return
+    def Initialize(self):
+        return
     def Step(self):
         return
     def Time(self):

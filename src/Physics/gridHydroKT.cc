@@ -34,14 +34,9 @@ public:
         }
     };
 
-    inline double 
-    minmod(double a, double b) const {
-        if (a * b <= 0.0) return 0.0;
-        return (std::abs(a) < std::abs(b)) ? a : b;
-    }
-
-    inline double 
+    inline double
     muscl_slope(double uL, double uC, double uR) const {
+        using Lin::minmod;
         return 0.5 * minmod(uC - uL, uR - uC);
     }
 

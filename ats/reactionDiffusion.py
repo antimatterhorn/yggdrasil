@@ -83,7 +83,7 @@ def run():
                 if i == nx // 2:
                     maxi = float(rgb_grid[k][0])
             max_values.append(maxi)
-        return max_values
+        return {"mode": "snapshot", "values": max_values}
 
 if __name__ == "__main__":
     print(run())

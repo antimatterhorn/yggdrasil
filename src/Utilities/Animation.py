@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
 
-def AnimateGrid2d(bounds, update_method, threeColors=False, frames=100, interval=50, scale=1, extremis=None, cmap='winter', save_as=None):
+def AnimateGrid2d(bounds, update_method, threeColors=False, frames=100, interval=50, scale=1, extremis=None, cmap='winter', save_as=None,
+                   lineout_axis='x', lineout_index=None):
     """
     Creates an animation of a 2D grid.
 
@@ -18,6 +19,10 @@ def AnimateGrid2d(bounds, update_method, threeColors=False, frames=100, interval
     - extremis: tuple of (vmin, vmax) for color scale limits
     - cmap: str, colormap for the grid
     - save_as: str, file name to save the animation (e.g., 'animation.mp4')
+    - lineout_axis: 'x' for a vertical lineout at a fixed column (default, varies over y)
+      or 'y' for a horizontal lineout at a fixed row (varies over x). Ignored if threeColors.
+    - lineout_index: index of the fixed column/row to sample. Defaults to the midpoint
+      (nx*scale//2 for 'x', ny*scale//2 for 'y'), matching the previous fixed behavior.
     """
     if threeColors:
         fig, ax = plt.subplots()
@@ -52,24 +57,30 @@ def AnimateGrid2d(bounds, update_method, threeColors=False, frames=100, interval
             # Generate RGB values for each cell
             rgb_grid = np.zeros((ny * scale, nx * scale))  # Rows = y, Cols = x
 
-            max_values = []
             for j in range(ny * scale):
-                maxi = 0
                 for i in range(nx * scale):
                     rgb_grid[j, i] = update_method(i % nx, j % ny)
-                    if i == nx * scale // 2:
-                        maxi = rgb_grid[j, i]
 
-                max_values.append(maxi)
+            if lineout_axis == 'y':
+                idx = lineout_index if lineout_index is not None else ny * scale // 2
+                lineout_values = rgb_grid[idx, :]
+                lineout_extent = nx * scale
+            else:
+                idx = lineout_index if lineout_index is not None else nx * scale // 2
+                lineout_values = rgb_grid[:, idx]
+                lineout_extent = ny * scale
+
             # Plot the grid
             if extremis:
-                ax_top.imshow(rgb_grid, origin='lower', extent=[0, nx * scale, 0, ny * scale], cmap=cmap, interpolation='nearest', 
+                ax_top.imshow(rgb_grid, origin='lower', extent=[0, nx * scale, 0, ny * scale], cmap=cmap, interpolation='nearest',
                               vmin=extremis[0], vmax=extremis[1])
             else:
                 ax_top.imshow(rgb_grid, origin='lower', extent=[0, nx * scale, 0, ny * scale], cmap=cmap, interpolation='nearest')
-            ax_bottom.plot(range(ny * scale), max_values, color='blue')
-            ax_bottom.set_xlim(0, ny * scale)
-            ax_bottom.set_ylim(min(max_values) * 1.1, max(max_values) * 1.1)
+            ax_bottom.plot(range(lineout_extent), lineout_values, color='blue')
+            ax_bottom.set_xlim(0, lineout_extent)
+            lo, hi = min(lineout_values), max(lineout_values)
+            margin = 0.1 * (hi - lo) if hi > lo else 0.1 * abs(lo) if lo != 0 else 1.0
+            ax_bottom.set_ylim(lo - margin, hi + margin)
             ax_top.set_title(update_method.module_title())
 
     ani = FuncAnimation(fig, update, frames=frames, interval=interval)

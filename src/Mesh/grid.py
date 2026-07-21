@@ -2,11 +2,22 @@
 
 from PYB11Generator import *
 
+# Expose the coordinate-system enum from C++ (namespace Mesh, not templated).
+Geometry = PYB11enum(
+    name="Geometry",
+    values=[
+        ("Cartesian",     "Mesh::Geometry::Cartesian"),
+        ("CylindricalRZ", "Mesh::Geometry::CylindricalRZ"),
+    ],
+    namespace="Mesh"
+)
+
 @PYB11template("dim")
 class Grid:
     def pyinit1(self,nx="int",sx="double"):
         return
-    def pyinit2(self,nx="int",ny="int",sx="double",sy="double"):
+    def pyinit2(self,nx="int",ny="int",sx="double",sy="double",
+                geometry=("Mesh::Geometry","Mesh::Geometry::Cartesian")):
         return
     def pyinit3(self,nx="int",ny="int",nz="int",sx="double",sy="double",sz="double"):
         return
@@ -39,6 +50,12 @@ class Grid:
         return
     def onBoundary(self,idx="int"):
         return
+    def geometry(self):
+        return "Mesh::Geometry"
+    def cellVolume(self,idx="int"):
+        return "double"
+    def cellRadius(self,idx="int"):
+        return "double"
 
     nx = PYB11property("int", getter="getnx", doc="The number of x coords.")
     ny = PYB11property("int", getter="getny", doc="The number of y coords.")

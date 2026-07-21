@@ -47,7 +47,7 @@ def run():
     for i in range(numNodes):
         out.append(positions[i].x)
         out.append(positions[i].y)
-    return out
+    return {"mode": "snapshot", "values": out}
 
 if __name__ == "__main__":
     print(run())

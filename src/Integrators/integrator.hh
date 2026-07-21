@@ -19,6 +19,7 @@ protected:
     std::vector<Physics<dim>*> packages;
     unsigned int cycle;
     bool verbose;
+    bool initialized = false;
     double time, dt, dtmin, dtMultiplier = 1;
 
     // Returns all packages that ACCUMULATE into any field that owner INTEGRATEs.
@@ -28,6 +29,7 @@ public:
     Integrator(std::vector<Physics<dim>*> packages, double dtmin, bool verbose = false);
     ~Integrator();
 
+    virtual void Initialize();
     virtual void Step();
     virtual State<dim> Integrate(Physics<dim>* physics,
                                   const std::vector<Physics<dim>*>& accumulators);

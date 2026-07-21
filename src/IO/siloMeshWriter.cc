@@ -141,7 +141,13 @@ SiloMeshWriter<dim>::writeQuadMesh(DBfile* dbfile) {
         coords_ptr[d] = coords[d].data();
     }
 
-    static const char* axisNames[3] = {"x", "y", "z"};
+    // Label the axes r/z for an RZ grid; Cartesian keeps x/y/z. Deliberately NOT
+    // Silo's DBOPT_COORDSYS=DB_CYLINDRICAL: its 2D variant is polar (r, theta),
+    // not the (r, z) mesh we write, so it would mislabel the data.
+    static const char* cartesianNames[3] = {"x", "y", "z"};
+    static const char* cylindricalNames[3] = {"r", "z", "z"};
+    const bool rz = (grid->geometry() == Mesh::Geometry::CylindricalRZ);
+    const char* const* axisNames = rz ? cylindricalNames : cartesianNames;
     const char* coordnames[dim];
     for (int d = 0; d < dim; ++d) {
         coordnames[d] = axisNames[d];

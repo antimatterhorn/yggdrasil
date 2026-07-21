@@ -21,6 +21,15 @@ most classes on integer dimensionality. For example,
 defines a derived class ``Kinetics`` that operates in 1, 2, or 3 spaital dimensions. When templated classes are Python wrapped in Yggdrasil,
 they typically specify dimensionality in their instantiated name, *e.g.* ``Kinetics2d``.
 
+It's worth being precise about what ``dim`` actually controls: it is the **number of vector components** (the length of
+a ``Vector<dim>``), not by itself the spatial *metric* — how cell volumes, face areas, and the divergence operator are
+computed. For ordinary Cartesian problems the two coincide, so a single integer says everything. They come apart,
+however, for axisymmetric *(r, z)* hydrodynamics ("2DRZ"): a two-component problem living on a *cylindrical* metric.
+Yggdrasil therefore treats geometry as a **runtime** property of the ``Grid`` (see :ref:`Eulerian Grids`), kept
+orthogonal to ``dim``. Everything above the mesh — ``Vector`` / ``Tensor``, ``State``, the integrators, the equation of
+state, and most boundaries — is metric-blind and unchanged; only the grid's metric and the finite-volume hydro update
+loop consult it.
+
 Units and Constants
 -------------------
 
@@ -153,6 +162,8 @@ Mesh/Grid Handling
 Yggdrasil supports three kinds of meshes: Eulerian grids, unstructured meshes (element meshes and ALE meshes),
 and Voronoi meshes.
 
+.. _Eulerian Grids:
+
 Eulerian Grids
 ^^^^^^^^^^^^^^
 Eulerian grids are invoked with the dimensional ``Grid`` class with
@@ -167,6 +178,37 @@ in ascending order in each spatial coordinate.
     coordinates (0,0), but you'd like the origin to sit at the center of the grid instead, you can do so simply by invoking
     ``myGrid.setOrigin(Vector2d(2,2))`` which will adjust all of the spatial coordinates of your cells to make
     the center of the grid the (0,0) coordinate.
+
+Cylindrical (2DRZ) grids
+""""""""""""""""""""""""
+A 2D grid may instead use an axisymmetric *(r, z)* metric by passing an optional ``geometry`` argument to the
+constructor:
+
+.. code-block:: python
+
+    from Mesh import Grid2d, Geometry
+    myGrid = Grid2d(nx=nr, ny=nz, dx=dr, dy=dz, geometry=Geometry.CylindricalRZ)
+
+Here axis 0 is the cylindrical radius *r* and axis 1 is the height *z*; the azimuthal direction is assumed
+symmetric. The grid is still two-component — only the *metric* changes: cell volumes and face areas are weighted
+by radius (``cellVolume = r·dr·dz``, measured per radian, so the constant *2π* cancels out of the update). This
+is exactly the geometric information the finite-volume hydro solver needs to integrate the cylindrical equations.
+The default, ``Geometry.Cartesian``, behaves identically to a plain grid.
+
+Two things then happen automatically when a ``GridHydro`` solver (HLLC, HLLE, or KT) is handed an RZ grid:
+
+* the radial-momentum equation picks up the cylindrical ``+p/r`` geometric source term, and
+* the *r = 0* symmetry axis is installed as a reflecting boundary for you. You therefore register boundary
+  conditions only on the remaining faces (``"right"``, ``"top"``, ``"bottom"``); assigning a boundary to the
+  ``"left"`` face of an RZ grid is rejected, since the solver manages the axis itself.
+
+Silo output for an RZ grid is written as an ordinary 2D quadmesh with its axes labelled *r* and *z* — apply
+VisIt's axisymmetric operators to view the full volume of revolution. See the ``sedovRZ.py`` example for a
+complete axisymmetric blast-wave setup.
+
+.. note::
+    2DRZ is currently limited to a static (Eulerian) ``Grid``. Swirl (an azimuthal *v_θ* velocity, sometimes
+    called "2.5D") and a spherical metric are not yet implemented.
 
 Unstructured Meshes
 ^^^^^^^^^^^^^^^^^^^^

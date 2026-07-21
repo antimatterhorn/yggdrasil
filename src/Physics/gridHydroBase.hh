@@ -3,7 +3,9 @@
 #pragma once
 #include "hydro.hh"
 #include "../Mesh/grid.hh"
+#include "../Boundaries/reflectingGridBoundary.cc"
 #include <iostream>
+#include <memory>
 #include <unordered_set>
 
 // Forward declaration for return type of computeFlux
@@ -21,6 +23,10 @@ protected:
     std::vector<int> insideIds;
     double dxmin = 1e30;
     mutable double dtmin = 1e30;
+
+    // r=0 axis (symmetry) boundary for RZ grids, owned here because the solver
+    // installs it rather than the user. Null for Cartesian.
+    std::unique_ptr<ReflectingGridBoundary<dim>> axisBoundary;
 
 public:
     GridHydroBase(NodeList* nodeList,
@@ -52,6 +58,24 @@ public:
         State<dim> state = this->state;
         NodeList* nodeList = this->nodeList;
         this->UpdateState();
+
+        // The r=0 axis is a symmetry line, i.e. a reflecting condition on the
+        // r-min ("left", face 0) boundary. Reject a user boundary already on that
+        // face, then append ours so it applies last.
+        if (grid->geometry() == Mesh::Geometry::CylindricalRZ && !axisBoundary) {
+            for (auto* bc : this->boundaries) {
+                auto* gb = dynamic_cast<GridBoundary<dim>*>(bc);
+                if (gb && gb->isFaceActive(0))
+                    throw std::runtime_error(
+                        "GridHydroBase: in CylindricalRZ geometry the r=0 axis "
+                        "(the 'left' face) is managed automatically; do not "
+                        "assign a boundary to it.");
+            }
+            axisBoundary = std::make_unique<ReflectingGridBoundary<dim>>(grid);
+            axisBoundary->setFaces({"left"});
+            this->addBoundary(axisBoundary.get());
+        }
+
         // InitializeBoundaries must run first so that any ReflectingGridBoundary
         // obstacles have their IDs deduped and their neighbor lists built before
         // we query getObstacleIds() below.
@@ -119,6 +143,9 @@ public:
             Vector net_mom_flux = Vector::zero();
             double net_E_flux = 0.0;
 
+            double Vi = grid->cellVolume(i);
+            double A_Lr = 0.0, A_Rr = 0.0;   // radial (axis-0) face areas, for the RZ source
+
             auto neighbors = grid->getNeighboringCells(i);
 
             for (int k = 0; k < dim; ++k) {
@@ -142,11 +169,24 @@ public:
                 auto flux_L = this->computeFlux(jL, i, k, *rho, *v, *u, *pressure, *soundSpeed);
                 auto flux_R = this->computeFlux(i, jR, k, *rho, *v, *u, *pressure, *soundSpeed);
 
-                double dx = grid->spacing(k);
-                net_rho_flux += (flux_L.mass - flux_R.mass) / dx;
-                net_mom_flux += (flux_L.momentum - flux_R.momentum) / dx;
-                net_E_flux   += (flux_L.energy - flux_R.energy) / dx;
+                // Area-weighted finite-volume divergence: sum(flux * face area)
+                // / cell volume. With the RZ metric this is the cylindrical
+                // divergence (1/r) d(r F)/dr + dF/dz.
+                double A_L = grid->faceArea(jL, i, k);
+                double A_R = grid->faceArea(i, jR, k);
+                if (k == 0) { A_Lr = A_L; A_Rr = A_R; }
+                net_rho_flux += (flux_L.mass     * A_L - flux_R.mass     * A_R) / Vi;
+                net_mom_flux += (flux_L.momentum * A_L - flux_R.momentum * A_R) / Vi;
+                net_E_flux   += (flux_L.energy   * A_L - flux_R.energy   * A_R) / Vi;
             }
+
+            // Cylindrical geometric source: the radius-weighted divergence above
+            // puts an extra p/r on radial momentum ((1/r) d(r*p)/dr = dp/dr +
+            // p/r), so adding p/r back leaves only the physical dp/dr. Written
+            // p*(A_Rr - A_Lr)/Vi (= p/r) to reuse the same radial face areas and
+            // volume as the flux, so a uniform gas stays exactly at rest.
+            if (grid->geometry() == Mesh::Geometry::CylindricalRZ)
+                net_mom_flux[0] += pressure->getValue(i) * (A_Rr - A_Lr) / Vi;
 
             drhodt->setValue(i, net_rho_flux);
             Vector dvi = (net_mom_flux - vi * net_rho_flux) / rhoi;

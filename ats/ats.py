@@ -11,11 +11,31 @@ YELLOW = "\033[93m"
 RESET  = "\033[0m"
 CYAN   = "\033[96m"
 
+# Two kinds of test, distinguished by the dict each run() returns:
+#
+#   {"mode": "analytic", "checks": [(label, ok_bool, detail_str), ...]}
+#       Self-verifying: the test compares itself against an exact/analytical
+#       solution (with its own tolerances) and reports one pass/fail per check.
+#       No stored reference is needed -- these prove correctness, not just
+#       "unchanged".
+#
+#   {"mode": "snapshot", "values": [float, ...], "tol": rel_tol}
+#       Regression: the returned values are diffed against ats_reference.txt.
+#       For problems with no closed form (chaotic N-body, pattern formation),
+#       this only proves the output hasn't drifted. Compared with a relative
+#       tolerance (default below) rather than exact equality, since OpenMP
+#       reductions are not bit-reproducible run to run.
+#
+# A bare list return is treated as a snapshot for backward compatibility.
+
+SNAPSHOT_RTOL = 1e-6
+SNAPSHOT_ATOL = 1e-9
+
+
 def load_reference_file(filename="ats_reference.txt"):
     references = {}
     current_test = None
     current_output = []
-
     with open(filename, "r") as f:
         for line in f:
             line = line.strip()
@@ -26,22 +46,20 @@ def load_reference_file(filename="ats_reference.txt"):
                 current_output = []
             elif line:
                 current_output.append(eval(line))  # assumes trusted source
-
         if current_test is not None:
             references[current_test] = current_output
-
     return references
 
+
+def snapshot_matches(expected, actual, rtol=SNAPSHOT_RTOL, atol=SNAPSHOT_ATOL):
+    if expected is None or len(expected) != len(actual):
+        return False
+    return all(abs(a - e) <= atol + rtol * abs(e) for e, a in zip(expected, actual))
+
+
 def print_diff(expected, actual):
-    expected_lines = [repr(x) for x in expected]
-    actual_lines = [repr(x) for x in actual]
-    diff = difflib.unified_diff(
-        expected_lines,
-        actual_lines,
-        fromfile="expected",
-        tofile="actual",
-        lineterm=""
-    )
+    diff = difflib.unified_diff([repr(x) for x in expected], [repr(x) for x in actual],
+                                fromfile="expected", tofile="actual", lineterm="")
     print(f"{CYAN}--- Diff ---{RESET}")
     for line in diff:
         if line.startswith('+'):
@@ -53,6 +71,7 @@ def print_diff(expected, actual):
         else:
             print(line)
 
+
 def main():
     references = load_reference_file()
     failures = []
@@ -60,29 +79,43 @@ def main():
     for name in scripts.tests:
         print(f"Testing {name}...")
         module = importlib.import_module(name)
+        if not (hasattr(module, 'run') and callable(module.run)):
+            print(f"{YELLOW}⚠️ {name} has no callable run(){RESET}")
+            failures.append((name, "snapshot", None, None))
+            continue
 
-        if hasattr(module, 'run') and callable(module.run):
-            actual = module.run()
-            expected = references.get(name)
+        result = module.run()
+        mode = result.get("mode", "snapshot") if isinstance(result, dict) else "snapshot"
 
-            if actual == expected:
+        if mode == "analytic":
+            checks = result["checks"]
+            for label, ok, detail in checks:
+                mark = f"{GREEN}[PASS]{RESET}" if ok else f"{RED}[FAIL]{RESET}"
+                print(f"   {mark} {label}: {detail}")
+            if all(ok for _, ok, _ in checks):
                 print(f"{GREEN}✅ {name} passed.{RESET}")
             else:
                 print(f"{RED}❌ {name} failed.{RESET}")
-                failures.append((name, expected, actual))
-        else:
-            print(f"{YELLOW}⚠️ {name} has no callable run(){RESET}")
-            failures.append((name, None, None))
+                failures.append((name, "analytic", None, None))
+        else:  # snapshot
+            actual = result["values"] if isinstance(result, dict) else result
+            expected = references.get(name)
+            if snapshot_matches(expected, actual):
+                print(f"{GREEN}✅ {name} passed (snapshot).{RESET}")
+            else:
+                print(f"{RED}❌ {name} failed (snapshot).{RESET}")
+                failures.append((name, "snapshot", expected, actual))
 
     print("\nSummary:")
     if not failures:
         print(f"{GREEN}🎉 All tests passed.{RESET}")
     else:
-        for name, expected, actual in failures:
+        for name, mode, expected, actual in failures:
             print(f"\n{RED}- {name} failed.{RESET}")
-            if expected is not None and actual is not None:
+            if mode == "snapshot" and expected is not None and actual is not None:
                 print_diff(expected, actual)
         print(f"\n{RED}{len(failures)} test(s) failed.{RESET}")
+
 
 if __name__ == "__main__":
     main()

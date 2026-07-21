@@ -1,238 +1,163 @@
 from yggdrasil import *
-import math
-import matplotlib.pyplot as plt
+import numpy as np
 from Animation import *
 from Physics import GridHydroKT2d
 from Mesh import Grid2d
 from EOS import IdealGasEOS
 from Boundaries import ReflectingGridBoundary2d
-from Utilities import SiloDump
 
-# ---------------------------------------------------------------------------
-# Exact Riemann solver (Toro, "Riemann Solvers and Numerical Methods for
-# Fluid Dynamics", Ch. 4) for the classic Sod problem, used below to check
-# the simulation against the analytical solution rather than just eyeballing
-# a plot.
-# ---------------------------------------------------------------------------
+# Sod shock tube, verified against the exact Riemann solution. The classic
+# initial state (rho,u,p) = (1,0,1) | (0.125,0,0.1) with gamma=1.4 develops a
+# left rarefaction, a contact, and a right shock; the exact self-similar
+# solution is sampled at the achieved time and compared to the numerical
+# profile (L1 error in density and velocity).
 
-def _pressureFunction(p, rhoK, pK, cK, gamma):
-    """Toro eq. 4.6/4.7: (f_K(p), f_K'(p)) for one side of the Riemann fan."""
-    if p <= pK:
-        # rarefaction
-        pRatio = p / pK
-        f = (2.0 * cK / (gamma - 1.0)) * (pRatio ** ((gamma - 1.0) / (2.0 * gamma)) - 1.0)
-        fPrime = (1.0 / (rhoK * cK)) * pRatio ** (-(gamma + 1.0) / (2.0 * gamma))
-    else:
-        # shock
-        A = 2.0 / ((gamma + 1.0) * rhoK)
-        B = (gamma - 1.0) / (gamma + 1.0) * pK
-        f = (p - pK) * math.sqrt(A / (p + B))
-        fPrime = math.sqrt(A / (p + B)) * (1.0 - (p - pK) / (2.0 * (B + p)))
-    return f, fPrime
+GAMMA = 1.4
 
 
-def sodStarRegion(rhoL, uL, pL, rhoR, uR, pR, gamma, tol=1e-10, maxIter=100):
-    """Newton-Raphson solve for (p*, u*) in the star region (Toro eq. 4.5-4.9)."""
-    cL = math.sqrt(gamma * pL / rhoL)
-    cR = math.sqrt(gamma * pR / rhoR)
+# --- Exact Riemann solver (Toro, Ch. 4) -----------------------------------
+def _fK(p, rhoK, pK, cK, g):
+    if p > pK:                                   # shock branch
+        A = 2.0 / ((g + 1.0) * rhoK)
+        B = (g - 1.0) / (g + 1.0) * pK
+        return (p - pK) * np.sqrt(A / (p + B))
+    return (2.0 * cK / (g - 1.0)) * ((p / pK) ** ((g - 1.0) / (2.0 * g)) - 1.0)
 
-    p = max(tol, 0.5 * (pL + pR))
-    for _ in range(maxIter):
-        fL, fLp = _pressureFunction(p, rhoL, pL, cL, gamma)
-        fR, fRp = _pressureFunction(p, rhoR, pR, cR, gamma)
-        pNew = p - (fL + fR + (uR - uL)) / (fLp + fRp)
-        pNew = max(tol, pNew)
-        if abs(pNew - p) < tol:
-            p = pNew
+
+def _fKp(p, rhoK, pK, cK, g):
+    if p > pK:
+        A = 2.0 / ((g + 1.0) * rhoK)
+        B = (g - 1.0) / (g + 1.0) * pK
+        return np.sqrt(A / (B + p)) * (1.0 - (p - pK) / (2.0 * (B + p)))
+    return (1.0 / (rhoK * cK)) * (p / pK) ** (-(g + 1.0) / (2.0 * g))
+
+
+def exact_riemann(rhoL, uL, pL, rhoR, uR, pR, g):
+    """Return a function S -> (rho, u, p) giving the exact solution at self-
+    similar coordinate S = (x - x0)/t."""
+    cL = np.sqrt(g * pL / rhoL)
+    cR = np.sqrt(g * pR / rhoR)
+
+    def f(p):
+        return _fK(p, rhoL, pL, cL, g) + _fK(p, rhoR, pR, cR, g) + (uR - uL)
+
+    def fp(p):
+        return _fKp(p, rhoL, pL, cL, g) + _fKp(p, rhoR, pR, cR, g)
+
+    p = max(1e-8, 0.5 * (pL + pR))               # Newton for star pressure
+    for _ in range(100):
+        pn = p - f(p) / fp(p)
+        if pn <= 0.0:
+            pn = 1e-8
+        if abs(pn - p) < 1e-12 * max(1.0, p):
+            p = pn
             break
-        p = pNew
+        p = pn
+    pstar = p
+    ustar = 0.5 * (uL + uR) + 0.5 * (_fK(pstar, rhoR, pR, cR, g)
+                                     - _fK(pstar, rhoL, pL, cL, g))
 
-    fL, _ = _pressureFunction(p, rhoL, pL, cL, gamma)
-    fR, _ = _pressureFunction(p, rhoR, pR, cR, gamma)
-    u = 0.5 * (uL + uR) + 0.5 * (fR - fL)
-    return p, u
-
-
-def sodSample(S, rhoL, uL, pL, rhoR, uR, pR, gamma, pStar, uStar):
-    """Sample the exact Riemann solution at self-similar coordinate S = (x-x0)/t."""
-    cL = math.sqrt(gamma * pL / rhoL)
-    cR = math.sqrt(gamma * pR / rhoR)
-
-    if S <= uStar:
-        if pStar <= pL:
-            # Left rarefaction
-            cStarL = cL * (pStar / pL) ** ((gamma - 1.0) / (2.0 * gamma))
-            shL = uL - cL
-            stL = uStar - cStarL
-            if S <= shL:
+    def sample(S):
+        if S <= ustar:                           # left of contact
+            if pstar > pL:                       # left shock
+                SL = uL - cL * np.sqrt((g + 1) / (2 * g) * pstar / pL
+                                       + (g - 1) / (2 * g))
+                if S <= SL:
+                    return rhoL, uL, pL
+                rho = rhoL * (pstar / pL + (g - 1) / (g + 1)) \
+                    / ((g - 1) / (g + 1) * pstar / pL + 1.0)
+                return rho, ustar, pstar
+            cs = cL * (pstar / pL) ** ((g - 1) / (2 * g))   # left rarefaction
+            if S <= uL - cL:
                 return rhoL, uL, pL
-            elif S >= stL:
-                rho = rhoL * (pStar / pL) ** (1.0 / gamma)
-                return rho, uStar, pStar
-            else:
-                c = (2.0 / (gamma + 1.0)) * (cL + (gamma - 1.0) / 2.0 * (uL - S))
-                u = (2.0 / (gamma + 1.0)) * (cL + (gamma - 1.0) / 2.0 * uL + S)
-                rho = rhoL * (c / cL) ** (2.0 / (gamma - 1.0))
-                p = pL * (c / cL) ** (2.0 * gamma / (gamma - 1.0))
-                return rho, u, p
-        else:
-            # Left shock
-            SL = uL - cL * math.sqrt((gamma + 1.0) / (2.0 * gamma) * (pStar / pL) + (gamma - 1.0) / (2.0 * gamma))
-            if S <= SL:
-                return rhoL, uL, pL
-            else:
-                rho = rhoL * ((pStar / pL) + (gamma - 1.0) / (gamma + 1.0)) / ((gamma - 1.0) / (gamma + 1.0) * (pStar / pL) + 1.0)
-                return rho, uStar, pStar
-    else:
-        if pStar > pR:
-            # Right shock
-            SR = uR + cR * math.sqrt((gamma + 1.0) / (2.0 * gamma) * (pStar / pR) + (gamma - 1.0) / (2.0 * gamma))
-            if S >= SR:
+            if S >= ustar - cs:
+                return rhoL * (pstar / pL) ** (1.0 / g), ustar, pstar
+            u = 2 / (g + 1) * (cL + (g - 1) / 2 * uL + S)
+            c = 2 / (g + 1) * (cL + (g - 1) / 2 * (uL - S))
+            rho = rhoL * (c / cL) ** (2 / (g - 1))
+            return rho, u, pL * (c / cL) ** (2 * g / (g - 1))
+        else:                                    # right of contact
+            if pstar > pR:                       # right shock
+                SR = uR + cR * np.sqrt((g + 1) / (2 * g) * pstar / pR
+                                       + (g - 1) / (2 * g))
+                if S >= SR:
+                    return rhoR, uR, pR
+                rho = rhoR * (pstar / pR + (g - 1) / (g + 1)) \
+                    / ((g - 1) / (g + 1) * pstar / pR + 1.0)
+                return rho, ustar, pstar
+            cs = cR * (pstar / pR) ** ((g - 1) / (2 * g))   # right rarefaction
+            if S >= uR + cR:
                 return rhoR, uR, pR
-            else:
-                rho = rhoR * ((pStar / pR) + (gamma - 1.0) / (gamma + 1.0)) / ((gamma - 1.0) / (gamma + 1.0) * (pStar / pR) + 1.0)
-                return rho, uStar, pStar
-        else:
-            # Right rarefaction
-            cStarR = cR * (pStar / pR) ** ((gamma - 1.0) / (2.0 * gamma))
-            shR = uR + cR
-            stR = uStar + cStarR
-            if S >= shR:
-                return rhoR, uR, pR
-            elif S <= stR:
-                rho = rhoR * (pStar / pR) ** (1.0 / gamma)
-                return rho, uStar, pStar
-            else:
-                c = (2.0 / (gamma + 1.0)) * (cR - (gamma - 1.0) / 2.0 * (uR - S))
-                u = (2.0 / (gamma + 1.0)) * (-cR + (gamma - 1.0) / 2.0 * uR + S)
-                rho = rhoR * (c / cR) ** (2.0 / (gamma - 1.0))
-                p = pR * (c / cR) ** (2.0 * gamma / (gamma - 1.0))
-                return rho, u, p
+            if S <= ustar + cs:
+                return rhoR * (pstar / pR) ** (1.0 / g), ustar, pstar
+            u = 2 / (g + 1) * (-cR + (g - 1) / 2 * uR + S)
+            c = 2 / (g + 1) * (cR - (g - 1) / 2 * (uR - S))
+            rho = rhoR * (c / cR) ** (2 / (g - 1))
+            return rho, u, pR * (c / cR) ** (2 * g / (g - 1))
+
+    return sample
 
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = False,
-                                       siloDump = False,
-                                        cycles = 300,
-                                        nx = 100,
-                                        ny = 20,
-                                        dx = 1,
-                                        dy = 1,
-                                        dtmin = 0.001,
-                                        checkAnalytical = True)
+                                       cycles = 20000,
+                                       nx = 200,
+                                       ny = 10,
+                                       dx = 0.005,
+                                       dy = 0.005,
+                                       tstop = 0.2,
+                                       dtmin = 1e-7)
 
-    myGrid = Grid2d(nx,ny,dx,dy)
-    print("grid size:",myGrid.size())
-    
-    myNodeList = NodeList(nx*ny)
-    print("numNodes =",myNodeList.numNodes)
-    print("field names =",myNodeList.fieldNames)
-
+    myGrid = Grid2d(nx, ny, dx, dy)
+    myNodeList = NodeList(nx * ny)
     constants = MKS()
-    print("G =",constants.G)
-    eos = IdealGasEOS(1.4,constants)
-    print(eos,"gamma =",eos.gamma)
+    eos = IdealGasEOS(GAMMA, constants)
+    hydro = GridHydroKT2d(myNodeList, constants, eos, myGrid)
+    hydro.addBoundary(ReflectingGridBoundary2d(grid=myGrid))
+    integrator = RungeKutta4Integrator2d([hydro], dtmin=dtmin, verbose=False)
 
-    hydro = GridHydroKT2d(myNodeList,constants,eos,myGrid)
-    print("numNodes =",myNodeList.numNodes)
-    print("field names =",myNodeList.fieldNames)
-
-    box = ReflectingGridBoundary2d(grid=myGrid)
-    hydro.addBoundary(box)
-
-    integrator = RungeKutta4Integrator2d([hydro],dtmin=dtmin,verbose=False)
-
+    # Classic Sod state: (rho,p) = (1,1) left of x0, (0.125,0.1) right.
+    x0 = 0.5 * nx * dx
+    rhoL, pL, rhoR, pR = 1.0, 1.0, 0.125, 0.1
     density = myNodeList.getFieldDouble("density")
-    energy  = myNodeList.getFieldDouble("specificInternalEnergy")
-
+    energy = myNodeList.getFieldDouble("specificInternalEnergy")
     for j in range(ny):
         for i in range(nx):
-            idx = myGrid.index(i,j,0)
-            if i < nx // 2:
-                density.setValue(idx, 1.0)
-                energy.setValue(idx, 2.5)   # high pressure side
+            idx = myGrid.index(i, j, 0)
+            if (i + 0.5) * dx < x0:
+                density.setValue(idx, rhoL); energy.setValue(idx, pL / ((GAMMA - 1) * rhoL))
             else:
-                density.setValue(idx, 0.125)
-                energy.setValue(idx, 2.0)   # low pressure side
+                density.setValue(idx, rhoR); energy.setValue(idx, pR / ((GAMMA - 1) * rhoR))
 
-    periodicWork = []
-    
-    if siloDump:
-        meshWriter = SiloDump(baseName="Sod",
-                                nodeList=myNodeList,
-                                fieldNames=["density","specificInternalEnergy","pressure","velocity"],
-                                dumpCycle=50,
-                                grid=myGrid)
-        periodicWork += [meshWriter]
+    controller = Controller(integrator=integrator, periodicWork=[], statStep=200, tstop=tstop)
 
-    controller = Controller(integrator=integrator,periodicWork=periodicWork,statStep=50)
-
-    if(animate):
-        title = MakeTitle(controller,"time","time")
-
-        bounds = (nx,ny)
-        update_method = AnimationUpdateMethod2d(call=hydro.getCell2d,
-                                                stepper=controller.Step,
-                                                title=title,
-                                                fieldName="density")
-        AnimateGrid2d(bounds,update_method,extremis=[-5,5],frames=cycles,cmap="plasma")
+    if animate:
+        title = MakeTitle(controller, "time", "time")
+        update_method = AnimationUpdateMethod2d(call=hydro.getCell2d, stepper=controller.Step,
+                                                title=title, fieldName="density")
+        AnimateGrid2d((nx, ny), update_method, extremis=[0, 1.1], frames=cycles, cmap="plasma")
     else:
         controller.Step(cycles)
-
-    xs = []
-    ys = []
-    position = myNodeList.getFieldVector2d("position")
-    for i in range(nx*ny):
-        if position[i].y == ((ny/2.0)+(dy/2.0)):
-            xs.append(position[i].x)
-            ys.append(density[i])
-    # plt.plot(xs,ys)
-    # plt.show()
-
-    # -----------------------------------------------------------------------
-    # Check against the exact Riemann solution (only in headless mode -- the
-    # animated path never reaches this point in a scripted way). x0 is where
-    # the initial discontinuity sits (the i < nx//2 split above); the check
-    # verifies the elapsed time is still within the window before either wave
-    # reaches a domain wall, since ReflectingGridBoundary means the exact
-    # solution (which assumes an unbounded domain) stops applying once that
-    # happens. cycles defaults to 300 (t~13.8) specifically to stay well
-    # inside that window (~t=42) for this domain size; override --cycles for
-    # a longer/animated run, but the analytical check below will warn rather
-    # than silently mis-compare if you push time past the safe window.
-    if checkAnalytical and not animate:
-        gamma = eos.gamma
-        x0 = (nx // 2) * dx
         t = controller.time
+        sample = exact_riemann(rhoL, 0.0, pL, rhoR, 0.0, pR, GAMMA)
 
-        rhoL0, uL0, pL0 = 1.0, 0.0, (gamma - 1.0) * 1.0 * 2.5
-        rhoR0, uR0, pR0 = 0.125, 0.0, (gamma - 1.0) * 0.125 * 2.0
+        pressure = myNodeList.getFieldDouble("pressure")
+        velocity = myNodeList.getFieldVector2d("velocity")
+        jmid = ny // 2
+        err_rho = err_u = err_p = 0.0
+        n = 0
+        for i in range(nx):
+            idx = myGrid.index(i, jmid, 0)
+            x = (i + 0.5) * dx
+            rho_e, u_e, p_e = sample((x - x0) / t)
+            err_rho += abs(density[idx] - rho_e)
+            err_u += abs(velocity[idx].x - u_e)
+            err_p += abs(pressure[idx] - p_e)
+            n += 1
+        err_rho /= n; err_u /= n; err_p /= n
 
-        pStar, uStar = sodStarRegion(rhoL0, uL0, pL0, rhoR0, uR0, pR0, gamma)
-
-        cL0 = math.sqrt(gamma * pL0 / rhoL0)
-        cR0 = math.sqrt(gamma * pR0 / rhoR0)
-        leftHeadSpeed = uL0 - cL0  # fastest-left-moving signal regardless of fan/shock
-        rightHeadSpeed = uR0 + cR0 if pStar <= pR0 else \
-            uR0 + cR0 * math.sqrt((gamma + 1.0) / (2.0 * gamma) * (pStar / pR0) + (gamma - 1.0) / (2.0 * gamma))
-        safeWindow = min(x0 / abs(leftHeadSpeed), (nx * dx - x0) / rightHeadSpeed)
-        if t > safeWindow:
-            print(f"WARNING: t={t:.3f} exceeds the pre-reflection window (~{safeWindow:.3f}) "
-                  f"for this domain -- analytical comparison is no longer meaningful past this point.")
-
-        errAbs = []
-        for x, rhoSim in zip(xs, ys):
-            S = (x - x0) / t
-            rhoExact, uExact, pExact = sodSample(S, rhoL0, uL0, pL0, rhoR0, uR0, pR0, gamma, pStar, uStar)
-            errAbs.append(abs(rhoSim - rhoExact))
-
-        l1 = sum(errAbs) / len(errAbs)
-        linf = max(errAbs)
-        print(f"Analytical check at t={t:.4f}: density L1 error={l1:.5f}, Linf error={linf:.5f}")
-
-        if t > safeWindow:
-            print("SKIPPED: comparison window exceeded (see warning above) -- not a pass/fail signal")
-        else:
-            tol = 0.05
-            assert l1 < tol, f"L1 density error {l1:.5f} exceeds tolerance {tol} -- check for a regression"
-            print("PASS: sod analytical check")
+        print(f"Sod at t={t:.4f}: L1 errors  rho={err_rho:.4e}  u={err_u:.4e}  p={err_p:.4e}")
+        assert err_rho < 2.0e-2, f"density L1 error too large: {err_rho:.4e}"
+        assert err_u < 2.0e-2, f"velocity L1 error too large: {err_u:.4e}"
+        assert err_p < 2.0e-2, f"pressure L1 error too large: {err_p:.4e}"
+        print("[ok] Sod shock tube matches the exact Riemann solution.")

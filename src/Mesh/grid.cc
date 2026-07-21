@@ -13,8 +13,9 @@ namespace Mesh {
     }
 
     template <int dim>
-    Grid<dim>::Grid(int num_cells_x, int num_cells_y, double spacing_x, double spacing_y)
-        : nx(num_cells_x), ny(num_cells_y), nz(1), dx(spacing_x), dy(spacing_y), dz(1) {
+    Grid<dim>::Grid(int num_cells_x, int num_cells_y, double spacing_x, double spacing_y,
+                    Geometry geometry)
+        : _geometry(geometry), nx(num_cells_x), ny(num_cells_y), nz(1), dx(spacing_x), dy(spacing_y), dz(1) {
         initializeGrid();
     }
 
