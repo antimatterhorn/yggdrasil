@@ -26,6 +26,8 @@ public:
         const Field<double>& cs) const override {
 
         using Vector = Lin::Vector<dim>;
+        using Lin::minmod;
+        using Lin::minmodVec;
 
         auto neighborsL = this->grid->getNeighboringCells(iL);
         auto neighborsR = this->grid->getNeighboringCells(iR);
@@ -37,17 +39,6 @@ public:
         int iRR = neighborsR[2 * axis + 1];
         if (iLL < 0) iLL = iL;
         if (iRR < 0) iRR = iR;
-
-        auto minmod = [](double a, double b) {
-            return (a * b <= 0.0) ? 0.0 : ((std::abs(a) < std::abs(b)) ? a : b);
-        };
-
-        auto minmodVec = [&](Vector a, Vector b) {
-            Vector result;
-            for (int d = 0; d < dim; ++d)
-                result[d] = minmod(a[d], b[d]);
-            return result;
-        };
 
         // Center values
         double rhoL0 = rho.getValue(iL);

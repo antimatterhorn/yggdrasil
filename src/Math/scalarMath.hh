@@ -22,8 +22,13 @@ size_t findIndex(const std::vector<double>& grid, double value) {
     return std::distance(grid.begin(), it) - 1;
 }
 
-double 
-bilinearInterp(const std::vector<std::vector<double>>& table, 
+template<typename T>
+T minmod(const T& a, const T& b) {
+    return (a * b <= 0) ? T(0) : ((std::abs(a) < std::abs(b)) ? a : b);
+}
+
+double
+bilinearInterp(const std::vector<std::vector<double>>& table,
                 const std::vector<double>& xgrid, const std::vector<double>& ygrid,
                 double x, double y) {
     size_t i = Lin::findIndex(xgrid, x);
