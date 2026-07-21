@@ -12,23 +12,6 @@ template <int dim>
 Integrator<dim>::~Integrator() {}
 
 template <int dim>
-std::vector<Physics<dim>*>
-Integrator<dim>::findAccumulators(Physics<dim>* owner) {
-    std::vector<std::string> ownedFields = owner->integrateFieldNames();
-    std::vector<Physics<dim>*> result;
-    for (auto* p : packages) {
-        if (p == owner) continue;
-        for (const std::string& name : p->accumulateFieldNames()) {
-            if (std::find(ownedFields.begin(), ownedFields.end(), name) != ownedFields.end()) {
-                result.push_back(p);
-                break;
-            }
-        }
-    }
-    return result;
-}
-
-template <int dim>
 void Integrator<dim>::Initialize() {
     if (initialized) return;
     for (Physics<dim>* physics : packages)
@@ -102,6 +85,23 @@ void Integrator<dim>::VoteDt() {
     dt = (dt < smallestDt ?  dt + 0.2 * (smallestDt - dt) : smallestDt);
 
     this->dt = std::max(dt, this->dtmin) * this->dtMultiplier;
+}
+
+template <int dim>
+std::vector<Physics<dim>*>
+Integrator<dim>::findAccumulators(Physics<dim>* owner) {
+    std::vector<std::string> ownedFields = owner->integrateFieldNames();
+    std::vector<Physics<dim>*> result;
+    for (auto* p : packages) {
+        if (p == owner) continue;
+        for (const std::string& name : p->accumulateFieldNames()) {
+            if (std::find(ownedFields.begin(), ownedFields.end(), name) != ownedFields.end()) {
+                result.push_back(p);
+                break;
+            }
+        }
+    }
+    return result;
 }
 
 template <int dim>
