@@ -231,7 +231,13 @@ SiloMeshWriter<dim>::writeUcdMesh(DBfile* dbfile) {
     float *coords_ptr[dim];
     for (int d = 0; d < dim; ++d) coords_ptr[d] = coords[d].data();
 
-    static const char* axisNames[3] = {"x", "y", "z"};
+    // Label the axes r/z for an RZ ALEMesh; Cartesian keeps x/y/z -- same
+    // convention as the Grid quadmesh writer above (deliberately not Silo's
+    // DB_CYLINDRICAL: its 2D variant is polar (r, theta), not (r, z)).
+    static const char* cartesianNames[3] = {"x", "y", "z"};
+    static const char* cylindricalNames[3] = {"r", "z", "z"};
+    const bool rz = (aleMesh->geometry() == Mesh::Geometry::CylindricalRZ);
+    const char* const* axisNames = rz ? cylindricalNames : cartesianNames;
     const char* coordnames[dim];
     for (int d = 0; d < dim; ++d) coordnames[d] = axisNames[d];
 

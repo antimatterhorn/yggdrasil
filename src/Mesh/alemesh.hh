@@ -11,6 +11,7 @@
 #include "../DataBase/field.hh"
 #include "polymesh.hh"
 #include "face.hh"
+#include "geometry.hh"
 
 namespace Mesh {
     template <int dim>
@@ -19,8 +20,13 @@ namespace Mesh {
         std::vector<Face<dim>> faces;
         std::vector<std::vector<size_t>> facesPerCell;
         std::vector<double> cellVolumes;
+        Geometry _geometry = Geometry::Cartesian;
 
         double computeCellArea(size_t cellIndex) const;
+        // Per-radian revolved volume in CylindricalRZ (cellCentroid(i).x() *
+        // computeCellArea(i), exact for any polygon by definition of
+        // centroid), else the plain area. Used to populate cellVolumes.
+        double computeCellVolume(size_t cellIndex) const;
         void computeFaceGeometry(Face<dim>& f) const;
 
     public:
@@ -28,7 +34,9 @@ namespace Mesh {
         using VectorField = Field<Vector>;
         using ScalarField = Field<double>;
 
-        ALEMesh();
+        ALEMesh(Geometry geometry = Geometry::Cartesian);
+
+        inline Geometry geometry() const { return _geometry; }
 
         // Builds the face list from the current cell adjacency: one interior
         // Face per pair of adjacent cells, plus one boundary Face (rightCell

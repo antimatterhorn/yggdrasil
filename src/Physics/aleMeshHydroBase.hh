@@ -4,9 +4,12 @@
 #include "hydro.hh"
 #include "../Mesh/alemesh.hh"
 #include "../Boundaries/aleMeshBoundary.hh"
+#include "../Boundaries/reflectingALEMeshBoundary.cc"
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <memory>
+#include <stdexcept>
 
 // Forward declaration for return type of computeFlux (definition in HLL.cc,
 // included by concrete solvers -- same pattern as GridHydroBase).
@@ -59,6 +62,11 @@ protected:
     // ALEMeshBoundary instances.
     std::vector<ALEMeshBoundary<dim>*> faceBoundary;
 
+    // r=0 axis (symmetry) boundary for RZ meshes, owned here because the
+    // solver installs it rather than the user -- mirrors GridHydroBase's
+    // axisBoundary. Null for Cartesian.
+    std::unique_ptr<ReflectingALEMeshBoundary<dim>> axisBoundary;
+
 public:
     ALEMeshHydroBase(NodeList* nodeList,
                       PhysicalConstants& constants,
@@ -95,6 +103,54 @@ public:
     ZeroTimeInitialize() override {
         EOSLookup();
 
+        if (mesh->getFaces().empty())
+            mesh->computeFaces();
+
+        if (mesh->geometry() == Mesh::Geometry::CylindricalRZ) {
+            const double tiny = 1e-12;
+            const auto& nodePositions = mesh->getNodes();
+
+            for (const auto& p : nodePositions)
+                if (p.x() < -tiny)
+                    throw std::runtime_error(
+                        "ALEMeshHydroBase: CylindricalRZ geometry requires every "
+                        "mesh node to have radius (x()) >= 0.");
+
+            // The r=0 axis is a symmetry line: any boundary face whose two
+            // endpoint nodes both lie at r=0. Reject a user boundary already
+            // covering one of those faces, then install ours so it applies
+            // last -- mirrors GridHydroBase's "left" face guard exactly.
+            if (!axisBoundary) {
+                std::vector<size_t> axisFaces;
+                const auto& faces = mesh->getFaces();
+                for (size_t faceId = 0; faceId < faces.size(); ++faceId) {
+                    const auto& f = faces[faceId];
+                    if (!f.isBoundary()) continue;
+                    bool onAxis = true;
+                    for (size_t nid : f.nodeIndices)
+                        if (nodePositions[nid].x() > tiny) onAxis = false;
+                    if (onAxis) axisFaces.push_back(faceId);
+                }
+
+                for (auto* bc : this->boundaries) {
+                    auto* aleBc = dynamic_cast<ALEMeshBoundary<dim>*>(bc);
+                    if (!aleBc) continue;
+                    for (size_t faceId : aleBc->getFaceIds())
+                        if (std::find(axisFaces.begin(), axisFaces.end(), faceId) != axisFaces.end())
+                            throw std::runtime_error(
+                                "ALEMeshHydroBase: in CylindricalRZ geometry the r=0 "
+                                "axis faces are managed automatically; do not assign "
+                                "a boundary to them.");
+                }
+
+                if (!axisFaces.empty()) {
+                    axisBoundary = std::make_unique<ReflectingALEMeshBoundary<dim>>(mesh);
+                    axisBoundary->setFaces(axisFaces);
+                    this->addBoundary(axisBoundary.get());
+                }
+            }
+        }
+
         // Seed the extensive fields from whatever density/velocity/specific-
         // internal-energy the caller set as the initial condition.
         auto* rho  = this->nodeList->template getField<double>("density");
@@ -117,9 +173,6 @@ public:
 
         this->UpdateState();
         this->InitializeBoundaries();
-
-        if (mesh->getFaces().empty())
-            mesh->computeFaces();
 
         faceBoundary.assign(mesh->getFaces().size(), nullptr);
         for (auto* bc : this->boundaries) {
@@ -257,6 +310,22 @@ public:
                     net_mom_flux  += flux.momentum * f.area;
                     net_E_flux    += flux.energy * f.area;
                 }
+            }
+
+            // Cylindrical geometric source: the radius-weighted face areas
+            // above make the flux divergence the cylindrical divergence
+            // (1/r) d(r F)/dr + dF/dz, which for the pressure part of the
+            // radial-momentum flux over-counts by p/r ((1/r) d(r p)/dr =
+            // dp/dr + p/r, but the true radial pressure force is just dp/dr).
+            // Adding p_cell * A_cell,2D back (the extensive, whole-cell form
+            // of GridHydroBase's intensive p/r term -- see the RZ plan doc
+            // for the derivation and the cross-check against GridHydroBase)
+            // leaves only the physical dp/dr. A_cell,2D is recovered from
+            // the RZ-weighted cellVolume (= r_centroid * A_cell,2D) rather
+            // than adding a separate mesh accessor for the plain area.
+            if (mesh->geometry() == Mesh::Geometry::CylindricalRZ) {
+                double ri = mesh->cellCentroid(i).x();
+                net_mom_flux[0] += pi * mesh->cellVolume(i) / ri;
             }
 
             dmassdt->setValue(i, net_mass_flux);

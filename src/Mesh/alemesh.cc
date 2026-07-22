@@ -11,7 +11,7 @@
 namespace Mesh {
 
 template <int dim>
-ALEMesh<dim>::ALEMesh() : PolyMesh<dim>() {}
+ALEMesh<dim>::ALEMesh(Geometry geometry) : PolyMesh<dim>(), _geometry(geometry) {}
 
 template <int dim>
 typename ALEMesh<dim>::Vector
@@ -44,6 +44,17 @@ ALEMesh<dim>::computeCellArea(size_t cellIndex) const {
 }
 
 template <int dim>
+double
+ALEMesh<dim>::computeCellVolume(size_t cellIndex) const {
+    double area = computeCellArea(cellIndex);
+    if constexpr (dim == 2) {
+        if (_geometry == Geometry::CylindricalRZ)
+            return cellCentroid(cellIndex).x() * area;
+    }
+    return area;
+}
+
+template <int dim>
 void
 ALEMesh<dim>::computeFaceGeometry(Face<dim>& f) const {
     if constexpr (dim == 2) {
@@ -54,6 +65,8 @@ ALEMesh<dim>::computeFaceGeometry(Face<dim>& f) const {
         Vector edge = p1 - p0;
 
         f.area = edge.magnitude();
+        if (_geometry == Geometry::CylindricalRZ)
+            f.area *= 0.5 * (p0.x() + p1.x());
         f.centroid = (p0 + p1) * 0.5;
 
         Vector n = Lin::Vector<dim>::zero();
@@ -146,7 +159,7 @@ ALEMesh<dim>::computeFaces() {
 
     cellVolumes.resize(cells.size());
     for (size_t ci = 0; ci < cells.size(); ++ci)
-        cellVolumes[ci] = computeCellArea(ci);
+        cellVolumes[ci] = computeCellVolume(ci);
 }
 
 template <int dim>
@@ -155,7 +168,7 @@ ALEMesh<dim>::updateGeometry() {
     const auto& cells = this->getConnectivityMap();
     cellVolumes.resize(cells.size());
     for (size_t ci = 0; ci < cells.size(); ++ci)
-        cellVolumes[ci] = computeCellArea(ci);
+        cellVolumes[ci] = computeCellVolume(ci);
 
     for (auto& f : faces)
         computeFaceGeometry(f);
@@ -181,7 +194,7 @@ template <int dim>
 double
 ALEMesh<dim>::cellMeasure(size_t cellIndex) const {
     if (cellIndex < cellVolumes.size()) return cellVolumes[cellIndex];
-    return computeCellArea(cellIndex);
+    return computeCellVolume(cellIndex);
 }
 
 // Explicit instantiation: 2D only for now (see class comment in alemesh.hh).

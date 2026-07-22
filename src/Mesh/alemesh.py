@@ -4,8 +4,11 @@ from PYB11Generator import *
 
 @PYB11template("dim")
 class ALEMesh:
-    def pyinit(self):
+    def pyinit(self,
+               geometry=("Mesh::Geometry", "Mesh::Geometry::Cartesian")):
         return
+    def geometry(self):
+        return "Mesh::Geometry"
     def addNode(self,position="Lin::Vector<%(dim)s>"):
         return
     def setNodePosition(self,nodeId="size_t",position="Lin::Vector<%(dim)s>"):

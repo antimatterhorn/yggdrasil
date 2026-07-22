@@ -7,7 +7,7 @@ class Face:
     def pyinit(self):
         return
 
-    nodeIndices = PYB11property("std::vector<size_t>", getter="getNodeIndices", doc="Mesh node indices shared by the two adjacent cells.")
+    nodeIndices = PYB11property("std::vector<size_t>&", getter="getNodeIndices", doc="Mesh node indices shared by the two adjacent cells.")
     normal      = PYB11property("Lin::Vector<%(dim)s>", getter="getNormal", doc="Unit face normal, pointing from leftCell toward rightCell.")
     area        = PYB11property("double", getter="getArea", doc="Face area (edge length in 2D).")
     centroid    = PYB11property("Lin::Vector<%(dim)s>", getter="getCentroid", doc="Face centroid.")
