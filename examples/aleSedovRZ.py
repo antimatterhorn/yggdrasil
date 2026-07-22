@@ -1,5 +1,5 @@
 from yggdrasil import *
-from ConstantDThetaPolyGenerator import ConstantDThetaPolyGenerator
+from ConstantDThetaPolyGenerator import ConstantDThetaPolyDisk2d
 from Mesh import ALEMesh2d, Geometry
 from Physics import ALEMeshHydroHLLE2d
 from EOS import IdealGasEOS
@@ -10,13 +10,13 @@ import os
 
 # Sedov point-blast on a genuinely unstructured, cylindrically-conformal
 # quarter-disk ALEMesh (r>=0, z>=0, r^2+z^2<=R^2) -- a quad-dominant polar
-# mesh (ConstantDThetaPolyGenerator: ntheta grows outward to hold arc-length
-# spacing roughly constant, doubling at intervals via the standard
-# 1-inner-segment-to-2-outer-segments triangle transition, plain quads
-# elsewhere, and a triangle fan from the single center point to the
-# innermost ring), not a quad grid and not a Voronoi/Delaunay triangulation.
-# Via axisymmetric revolution about z, this quarter (using both the r=0
-# axis and a z=0 equatorial symmetry wall) represents a true spherical
+# mesh (ConstantDThetaPolyDisk2d: Delaunay-triangulate ConstantDThetaDisk2d's
+# seed points, then greedily merge adjacent triangle pairs into quads
+# wherever the result is convex and close enough to square, ranked
+# best-quality-first; whatever can't cleanly merge is left as a triangle),
+# not a quad grid and not a fixed doubling-transition scheme. Via
+# axisymmetric revolution about z, this quarter (using both the r=0 axis
+# and a z=0 equatorial symmetry wall) represents a true spherical
 # (Sedov-Taylor d=3) point explosion -- exercising real curved-boundary
 # topology together with the RZ metric/source-term/axis-boundary machinery
 # all at once.
@@ -25,8 +25,8 @@ GAMMA = 1.4
 SEDOV_EXPONENT_3D = 2.0 / 5.0  # R ~ t^(2/(d+2)), d=3 for a true spherical blast
 
 
-def buildQuarterDiskMesh(nrings, ntheta0, R):
-    gen = ConstantDThetaPolyGenerator(nrings, ntheta0, thetaMin=0.0, thetaMax=math.pi / 2)
+def buildQuarterDiskMesh(npoints, R, angleTol=25.0):
+    gen = ConstantDThetaPolyDisk2d(npoints, thetaMin=0.0, thetaMax=math.pi / 2, angleTol=angleTol)
 
     mesh = ALEMesh2d(Geometry.CylindricalRZ)
     for p in gen.positions:
@@ -34,7 +34,13 @@ def buildQuarterDiskMesh(nrings, ntheta0, R):
     for cell in gen.cells:
         mesh.addCell(cell)
     mesh.computeFaces()
-    return mesh
+
+    # Cells touching the origin node (always node 0 -- ConstantDThetaDisk2d
+    # adds the center first) -- however many the triangulation happens to
+    # put there, found by topology rather than assumed from cell ordering
+    # or a distance cutoff, since this mesh has no ring structure to exploit.
+    originCells = [i for i, cell in enumerate(gen.cells) if 0 in cell]
+    return mesh, originCells
 
 
 def wallFaces(mesh, R):
@@ -59,7 +65,7 @@ def shockRadius(density, mesh, numCells, rho_ambient):
 
 
 if __name__ == "__main__":
-    commandLine = CommandLineArguments(nrings=32, ntheta0=5, R=3.0,
+    commandLine = CommandLineArguments(npoints=2000, R=3.0,
                                        siloDump = True,
                                        dumpCycle = 50,
                                        cycles=10000,
@@ -67,14 +73,14 @@ if __name__ == "__main__":
                                        vizDir = "viz",
                                        restartDir = "restart")
 
-    dumpDir = rootName + "/" + "nrings=%d_ntheta0=%d_R=%3.2f" % (nrings, ntheta0, R)
+    dumpDir = rootName + "/" + "npoints=%d_R=%3.2f" % (npoints, R)
 
     vizDir = dumpDir + "/" + vizDir
     restartDir = dumpDir + "/" + restartDir
     os.makedirs(vizDir, exist_ok=True)
     os.makedirs(restartDir, exist_ok=True)
 
-    mesh = buildQuarterDiskMesh(nrings, ntheta0, R)
+    mesh, originCells = buildQuarterDiskMesh(npoints, R)
     numCells = len(mesh.getConnectivityMap())
     print("quarter-disk ALEMesh cells:", numCells)
 
@@ -94,15 +100,13 @@ if __name__ == "__main__":
         density.setValue(i, rho_ambient)
         energy.setValue(i, 1e-3)
 
-    # Deposit blast energy into the entire innermost ring (the ntheta0
-    # triangle-fan cells around the center -- ConstantDThetaPolyGenerator
-    # always builds these first, so they're cells 0..ntheta0-1). Filling
-    # only a handful of cells nearest the origin by distance would cover a
-    # narrow angular wedge instead of the full ring, breaking axisymmetry
-    # and making the blast visibly spread angularly before advecting to the
-    # next ring out.
+    # Deposit blast energy into every cell touching the origin (all of
+    # originCells, found by topology in buildQuarterDiskMesh). Filling only
+    # a handful of cells nearest the origin by distance -- or assuming a
+    # fixed cell-index range -- would risk covering a narrow angular wedge
+    # instead of the whole region around the origin, breaking axisymmetry.
     E_blob = 2000.0
-    for i in range(ntheta0):
+    for i in originCells:
         energy.setValue(i, E_blob)
 
     periodicWork = []
