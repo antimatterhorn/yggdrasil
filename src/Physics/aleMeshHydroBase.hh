@@ -57,14 +57,7 @@ protected:
     NodeList* nodeVelocities;
     VectorField* meshVelocity = nullptr;
 
-    // Which ALEMeshBoundary (if any) governs each face index, built once in
-    // ZeroTimeInitialize from whichever registered boundaries are actually
-    // ALEMeshBoundary instances.
     std::vector<ALEMeshBoundary<dim>*> faceBoundary;
-
-    // r=0 axis (symmetry) boundary for RZ meshes, owned here because the
-    // solver installs it rather than the user -- mirrors GridHydroBase's
-    // axisBoundary. Null for Cartesian.
     std::unique_ptr<ReflectingALEMeshBoundary<dim>> axisBoundary;
 
 public:
@@ -204,11 +197,9 @@ public:
         auto* dmomdt  = deriv.template getField<Vector>("cellMomentum");
         auto* dEdt    = deriv.template getField<double>("cellEnergy");
 
-        // "Self" pressure/soundSpeed intentionally still come from the
-        // NodeList fields (last set by EOSLookup at the previous
-        // FinalizeStep, not recomputed per RK sub-stage) -- this reproduces
-        // the static solver's existing behavior exactly rather than
-        // introducing a new approximation as part of this refactor.
+        // "Self" pressure/soundSpeed come from the NodeList fields (last set
+        // by EOSLookup at the previous FinalizeStep), not recomputed per RK
+        // sub-stage like the freshly-derived rho/v/u below.
         auto* pressure   = this->nodeList->template getField<double>("pressure");
         auto* soundSpeed = this->nodeList->template getField<double>("soundSpeed");
 
@@ -313,16 +304,12 @@ public:
             }
 
             // Cylindrical geometric source: the radius-weighted face areas
-            // above make the flux divergence the cylindrical divergence
-            // (1/r) d(r F)/dr + dF/dz, which for the pressure part of the
-            // radial-momentum flux over-counts by p/r ((1/r) d(r p)/dr =
-            // dp/dr + p/r, but the true radial pressure force is just dp/dr).
-            // Adding p_cell * A_cell,2D back (the extensive, whole-cell form
-            // of GridHydroBase's intensive p/r term -- see the RZ plan doc
-            // for the derivation and the cross-check against GridHydroBase)
-            // leaves only the physical dp/dr. A_cell,2D is recovered from
-            // the RZ-weighted cellVolume (= r_centroid * A_cell,2D) rather
-            // than adding a separate mesh accessor for the plain area.
+            // above make the divergence pick up an extra p/r on radial
+            // momentum ((1/r) d(r p)/dr = dp/dr + p/r), so adding
+            // p_cell * A_cell,2D back (the extensive form of GridHydroBase's
+            // intensive p/r term) leaves only the physical dp/dr. A_cell,2D
+            // is recovered from the RZ-weighted cellVolume rather than
+            // adding a separate mesh accessor for the plain area.
             if (mesh->geometry() == Mesh::Geometry::CylindricalRZ) {
                 double ri = mesh->cellCentroid(i).x();
                 net_mom_flux[0] += pi * mesh->cellVolume(i) / ri;

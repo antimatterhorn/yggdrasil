@@ -10,9 +10,9 @@ from Boundaries import ReflectingALEMeshBoundary2d
 # Grid2d:
 #
 #   A. Uniform gas at rest stays at rest. This is THE test of the +p/r
-#      source term derived in the RZ plan doc: the radius-weighted pressure
-#      flux imbalance across the curved faces must be cancelled exactly by
-#      the source, or a uniform gas would spuriously accelerate radially.
+#      source term: the radius-weighted pressure flux imbalance across the
+#      curved faces must be cancelled exactly by the source, or a uniform
+#      gas would spuriously accelerate radially.
 #
 #   B. A z-oriented problem (uniform in r) reduces to the Cartesian result:
 #      the RZ mid-r-column density profile must match a pure Cartesian run

@@ -421,8 +421,8 @@ computeHLLCFluxFromStates(
 // across each wave, unaffected by how fast the face moves), computed exactly
 // as in the static solve. What changes is (a) the base left/right flux, which
 // picks up the ALE correction F(U)-S*U (advective terms shift by S, pressure
-// terms don't -- see plan doc: naively shifting vn inside the p*vn energy
-// term introduces a spurious -S*p error), and (b) which lab-frame speed the
+// terms don't -- naively shifting vn inside the p*vn energy term too would
+// introduce a spurious -S*p error), and (b) which lab-frame speed the
 // face's own trajectory S is compared against to pick a region, and the wave
 // speed used in the star-region flux correction term, both shifted by -S. At
 // S=0 this reduces algebraically to exactly the static formula above.
