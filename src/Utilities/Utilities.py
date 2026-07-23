@@ -193,3 +193,41 @@ def restoreIfAvailable(nodeList, integrator, restartDir, rootName, restoreCycle=
               (restoreFrom, integrator.Cycle(), integrator.Time()))
 
     return restoreFrom
+
+class MeshViz:
+    def __init__(self, generator):
+        self.positions = np.array(generator.positions)
+        self.cells = generator.cells
+
+    def plot(self):
+        import matplotlib.pyplot as plt
+        from matplotlib.patches import Polygon as MplPolygon
+        fig, ax = plt.subplots(figsize=(7, 7))
+
+        tris = []
+        quads = []
+        for c in self.cells:
+            if len(c) == 3:
+                tris.append(c)
+            elif len(c) == 4:
+                quads.append(c)
+            else:
+                raise ValueError(f"Unexpected cell with {len(c)} vertices.")
+
+        for t in tris:
+            poly = MplPolygon(self.positions[t], closed=True, fill=True,
+                            facecolor="lightblue", edgecolor="darkblue", linewidth=1.2)
+            ax.add_patch(poly)
+
+        for q in quads:
+            poly = MplPolygon(self.positions[q], closed=True, fill=True,
+                            facecolor="navajowhite", edgecolor="darkorange", linewidth=1.2)
+            ax.add_patch(poly)
+
+        ax.plot(self.positions[:, 0], self.positions[:, 1], "o", color="black", markersize=2)
+        ax.set_xlim(-1.1, 1.1)
+        ax.set_ylim(-1.1, 1.1)
+        ax.set_aspect("equal")
+        ax.set_title(f"mesh: {len(quads)} quads, {len(tris)} triangles")
+        plt.tight_layout()
+        plt.show()
