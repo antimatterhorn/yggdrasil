@@ -1,4 +1,5 @@
 configure_file(Animation.py Animation.py COPYONLY)
+configure_file(AnalyticSolutions.py AnalyticSolutions.py COPYONLY)
 configure_file(Controller.py Controller.py COPYONLY)
 configure_file(CodeVersion.py CodeVersion.py COPYONLY)
 configure_file(CommandLineArgs.py CommandLineArgs.py COPYONLY)

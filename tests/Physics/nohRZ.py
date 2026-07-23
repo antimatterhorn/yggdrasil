@@ -1,15 +1,17 @@
 from yggdrasil import *
 import numpy as np
+import matplotlib.pyplot as plt
 from Animation import *
 from Physics import GridHydroHLLE2d
 from Mesh import Grid2d, Geometry
 from EOS import IdealGasEOS
 from Boundaries import OutflowGridBoundary2d
+from AnalyticSolutions import NohSolution
 
 # Cylindrical Noh problem in axisymmetric (r,z) coordinates, verified against its
-# exact solution. Cold gas (rho=1, p~0) falls radially inward at speed v0,
-# stagnates on the r=0 axis, and drives a shock back outward. For gamma=5/3,
-# v0=1 the exact solution is:
+# exact solution (AnalyticSolutions.py). Cold gas (rho=1, p~0) falls radially
+# inward at speed v0, stagnates on the r=0 axis, and drives a shock back
+# outward. For gamma=5/3, v0=1 the exact solution is:
 #   * shocked region r < D t : rho = rho0*((g+1)/(g-1))^2 = 16, v = 0,
 #                              p = (g-1)*rho2*v0^2/2 = 16/3
 #   * unshocked region       : rho = rho0*(1 + v0 t / r), v = -v0, p ~ 0
@@ -25,6 +27,7 @@ GAMMA = 5.0 / 3.0
 V0 = 1.0
 RHO0 = 1.0
 P0 = 1.0e-6
+GEOMETRY = 2                                # cylindrical: converges in r only, z is free
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = False,
@@ -34,7 +37,8 @@ if __name__ == "__main__":
                                        dr = 0.005,
                                        dz = 0.005,
                                        tstop = 0.6,
-                                       dtmin = 1e-7)
+                                       dtmin = 1e-7,
+                                       plot = True)
 
     myGrid = Grid2d(nr, nz, dr, dz, Geometry.CylindricalRZ)
     myNodeList = NodeList(nr * nz)
@@ -70,11 +74,11 @@ if __name__ == "__main__":
     else:
         controller.Step(cycles)
         t = controller.time
+        noh = NohSolution(GAMMA, GEOMETRY, V0, RHO0)
 
         # Exact solution.
-        rho_shock = RHO0 * ((GAMMA + 1) / (GAMMA - 1)) ** 2    # = 16
-        D = V0 * (GAMMA - 1) / 2.0                             # shock speed = 1/3
-        rs = D * t                                             # shock radius
+        rho_shock = noh.rho2
+        rs = noh.shockRadius(t)                                # shock radius
 
         def rho_exact(r):
             return rho_shock if r < rs else RHO0 * (1.0 + V0 * t / r)
@@ -141,3 +145,25 @@ if __name__ == "__main__":
             f"pre-shock convergent profile off: max rel err {preshock_err:.3e}"
         print("[ok] Cylindrical Noh matches the exact solution "
               "(r^2 compression, convergent pre-shock profile, stagnation, shock speed).")
+
+        if plot:
+            r_sim = np.array([myGrid.cellRadius(myGrid.index(i, jmid, 0)) for i in range(nr)])
+            rho_sim = np.array([density[myGrid.index(i, jmid, 0)] for i in range(nr)])
+            pressure = myNodeList.getFieldDouble("pressure")
+            p_sim = np.array([pressure[myGrid.index(i, jmid, 0)] for i in range(nr)])
+            u_sim = np.array([velocity[myGrid.index(i, jmid, 0)].x for i in range(nr)])
+
+            # Analytic pre-shock profile diverges as r->0 (only meaningful ahead
+            # of the shock); evaluate on the same r_sim grid directly.
+            rho_fine, u_fine, p_fine = noh.profile(t, r_sim)
+
+            fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+            for ax, sim, fine, label in ((axes[0], rho_sim, rho_fine, "density"),
+                                         (axes[1], p_sim, p_fine, "pressure"),
+                                         (axes[2], u_sim, u_fine, "radial velocity")):
+                ax.plot(r_sim, sim, "o", ms=3, label="simulation")
+                ax.plot(r_sim, fine, "-", label="Noh analytic")
+                ax.set_xlabel("r"); ax.set_ylabel(label); ax.legend()
+            fig.suptitle(f"Cylindrical (r,z) Noh problem at t={t:.4f}, cycle={controller.cycle}")
+            fig.tight_layout()
+            plt.show()
