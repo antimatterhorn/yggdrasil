@@ -4,14 +4,14 @@ from DataBase import *
 from LinearAlgebra import *
 
 class Lattice2d:
-    def __init__(self, nx, ny):
+    def __init__(self, nx, ny, origin=(1,1)):
         self.numNodes = nx*ny
         self.positions = []
         self.bounds = [[-1, -1], [1, 1]]
         from Mesh import Grid2d
 
         mesh = Grid2d(nx=nx,ny=ny,sx=2/nx,sy=2/ny)
-        mesh.setOrigin(Vector2d(1,1))
+        mesh.setOrigin(Vector2d(*origin))
         
         for i in range(self.numNodes):
             self.positions.append((mesh.position(i).x,mesh.position(i).y))

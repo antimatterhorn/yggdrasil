@@ -6,7 +6,6 @@ from scipy.spatial import Delaunay
 from ConstantDThetaGenerator import ConstantDThetaDisk2d
 from PointsToPoly import PointsToPoly2d
 
-
 class ConstantDThetaPolyDisk2d:
     def __init__(self, npoints, thetaMin=0.0, thetaMax=2 * np.pi, angleTol=25.0):
         self.positions = ConstantDThetaDisk2d(npoints, thetaMin, thetaMax).positions
