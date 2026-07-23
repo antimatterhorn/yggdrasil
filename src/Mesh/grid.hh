@@ -7,11 +7,9 @@
 #include "../Math/vectorMath.hh"
 #include "../DataBase/field.hh"
 #include "../DataBase/nodeList.hh"
+#include "geometry.hh"
 
 namespace Mesh {
-    // CylindricalRZ makes a 2D grid axisymmetric (axis 0 = r, axis 1 = z): cell
-    // volumes and face areas are weighted by radius.
-    enum class Geometry { Cartesian, CylindricalRZ };
 
     template <int dim>
     class Grid {

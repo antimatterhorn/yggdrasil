@@ -4,14 +4,19 @@
 #define SILOMESHWRITER_CC
 
 #include "siloMeshWriter.hh"
+#include <map>
 
 template <int dim>
 SiloMeshWriter<dim>::SiloMeshWriter(const std::string& baseName, const NodeList& nodeList, const std::vector<std::string>& fieldNames)
-    : baseName(baseName), nodeList(nodeList), fieldNames(fieldNames), grid(nullptr) {}
+    : baseName(baseName), nodeList(nodeList), fieldNames(fieldNames), grid(nullptr), aleMesh(nullptr) {}
 
 template <int dim>
 SiloMeshWriter<dim>::SiloMeshWriter(const std::string& baseName, const NodeList& nodeList, const std::vector<std::string>& fieldNames, Mesh::Grid<dim>* grid)
-    : baseName(baseName), nodeList(nodeList), fieldNames(fieldNames), grid(grid) {}
+    : baseName(baseName), nodeList(nodeList), fieldNames(fieldNames), grid(grid), aleMesh(nullptr) {}
+
+template <int dim>
+SiloMeshWriter<dim>::SiloMeshWriter(const std::string& baseName, const NodeList& nodeList, const std::vector<std::string>& fieldNames, Mesh::ALEMesh<dim>* aleMesh)
+    : baseName(baseName), nodeList(nodeList), fieldNames(fieldNames), grid(nullptr), aleMesh(aleMesh) {}
 
 template <int dim>
 void
@@ -26,6 +31,8 @@ SiloMeshWriter<dim>::write(const std::string& fileName) {
 
     if (grid && writeQuadMesh(dbfile)) {
         writeQuadFields(dbfile);
+    } else if (aleMesh && writeUcdMesh(dbfile)) {
+        writeUcdFields(dbfile);
     } else {
         writePointMesh(dbfile);
         writeFields(dbfile);
@@ -196,6 +203,130 @@ SiloMeshWriter<dim>::writeQuadFields(DBfile* dbfile) {
             }
 
             DBPutQuadvar(dbfile, field_name.c_str(), "quadmesh", dim, componentNamePtrs, field_data_ptr, zdims, dim, nullptr, 0, DB_FLOAT, DB_ZONECENT, nullptr);
+        }
+    }
+}
+
+template <int dim>
+bool
+SiloMeshWriter<dim>::writeUcdMesh(DBfile* dbfile) {
+    const auto& cells = aleMesh->getConnectivityMap();
+    const auto& nodes = aleMesh->getNodes();
+
+    if (nodeList.size() != cells.size()) {
+        std::cerr << "SiloMeshWriter: NodeList size (" << nodeList.size()
+                   << ") does not match ALEMesh cell count (" << cells.size()
+                   << "); writing a point mesh instead." << std::endl;
+        return false;
+    }
+
+    // Node coordinates: the mesh's own node positions, not NodeList's
+    // (NodeList is cell-centered here -- one entry per zone).
+    std::vector<float> coords[dim];
+    for (int d = 0; d < dim; ++d) coords[d].resize(nodes.size());
+    for (size_t i = 0; i < nodes.size(); ++i)
+        for (int d = 0; d < dim; ++d)
+            coords[d][i] = static_cast<float>(nodes[i][d]);
+
+    float *coords_ptr[dim];
+    for (int d = 0; d < dim; ++d) coords_ptr[d] = coords[d].data();
+
+    // Label the axes r/z for an RZ ALEMesh; Cartesian keeps x/y/z -- same
+    // convention as the Grid quadmesh writer above (deliberately not Silo's
+    // DB_CYLINDRICAL: its 2D variant is polar (r, theta), not (r, z)).
+    static const char* cartesianNames[3] = {"x", "y", "z"};
+    static const char* cylindricalNames[3] = {"r", "z", "z"};
+    const bool rz = (aleMesh->geometry() == Mesh::Geometry::CylindricalRZ);
+    const char* const* axisNames = rz ? cylindricalNames : cartesianNames;
+    const char* coordnames[dim];
+    for (int d = 0; d < dim; ++d) coordnames[d] = axisNames[d];
+
+    // Silo's zonelist requires zones of the same shape (vertex count) to be
+    // contiguous, so group cells by vertex count first. std::map keeps the
+    // groups in ascending vertex-count order, which is deterministic but
+    // otherwise arbitrary -- zoneOrder records which original cell each
+    // resulting zone corresponds to, so writeUcdFields can follow the same
+    // permutation.
+    std::map<size_t, std::vector<size_t>> cellsByShape;
+    for (size_t i = 0; i < cells.size(); ++i)
+        cellsByShape[cells[i].size()].push_back(i);
+
+    std::vector<int> nodelist;
+    std::vector<int> shapetype, shapesize, shapecnt;
+    zoneOrder.clear();
+    zoneOrder.reserve(cells.size());
+
+    for (const auto& group : cellsByShape) {
+        size_t nVerts = group.first;
+        const auto& cellIds = group.second;
+        if (nVerts < 3) {
+            std::cerr << "SiloMeshWriter: skipping " << cellIds.size()
+                       << " degenerate cell(s) with < 3 nodes." << std::endl;
+            continue;
+        }
+        for (size_t cellId : cellIds) {
+            for (size_t nodeId : cells[cellId])
+                nodelist.push_back(static_cast<int>(nodeId));
+            zoneOrder.push_back(cellId);
+        }
+        shapetype.push_back(DB_ZONETYPE_POLYGON);
+        shapesize.push_back(static_cast<int>(nVerts));
+        shapecnt.push_back(static_cast<int>(cellIds.size()));
+    }
+
+    int nzones = static_cast<int>(zoneOrder.size());
+    int nshapes = static_cast<int>(shapetype.size());
+
+    DBPutZonelist2(dbfile, "zonelist", nzones, dim,
+                    nodelist.data(), static_cast<int>(nodelist.size()), 0,
+                    0, 0,
+                    shapetype.data(), shapesize.data(), shapecnt.data(), nshapes,
+                    nullptr);
+
+    DBPutUcdmesh(dbfile, "ucdmesh", dim, const_cast<char**>(coordnames), coords_ptr,
+                 static_cast<int>(nodes.size()), nzones, "zonelist", nullptr, DB_FLOAT, nullptr);
+
+    return true;
+}
+
+template <int dim>
+void
+SiloMeshWriter<dim>::writeUcdFields(DBfile* dbfile) {
+    int nzones = static_cast<int>(zoneOrder.size());
+
+    for (const auto& field_name : fieldNames) {
+        if (field_name == "position") continue;  // Skip the position field
+
+        auto field_double = nodeList.getField<double>(field_name);
+        if (field_double) {
+            std::vector<float> field_data(nzones);
+            for (int k = 0; k < nzones; ++k)
+                field_data[k] = static_cast<float>(field_double->getValue(zoneOrder[k]));
+            DBPutUcdvar1(dbfile, field_name.c_str(), "ucdmesh", field_data.data(), nzones, nullptr, 0, DB_FLOAT, DB_ZONECENT, nullptr);
+            continue;
+        }
+
+        auto field_vector = nodeList.getField<Lin::Vector<dim>>(field_name);
+        if (field_vector) {
+            std::vector<float> field_data[dim];
+            for (int d = 0; d < dim; ++d) field_data[d].resize(nzones);
+            for (int k = 0; k < nzones; ++k) {
+                Lin::Vector<dim> vec = field_vector->getValue(zoneOrder[k]);
+                for (int d = 0; d < dim; ++d)
+                    field_data[d][k] = static_cast<float>(vec[d]);
+            }
+
+            float *field_data_ptr[dim];
+            static const char* axisSuffix[3] = {"_x", "_y", "_z"};
+            std::string componentNames[dim];
+            const char* componentNamePtrs[dim];
+            for (int d = 0; d < dim; ++d) {
+                field_data_ptr[d] = field_data[d].data();
+                componentNames[d] = field_name + axisSuffix[d];
+                componentNamePtrs[d] = componentNames[d].c_str();
+            }
+
+            DBPutUcdvar(dbfile, field_name.c_str(), "ucdmesh", dim, componentNamePtrs, field_data_ptr, nzones, nullptr, 0, DB_FLOAT, DB_ZONECENT, nullptr);
         }
     }
 }

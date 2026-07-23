@@ -14,33 +14,19 @@
 namespace Mesh {
 
 template <int dim>
-FEMesh<dim>::FEMesh() : positions("positions") {}
+FEMesh<dim>::FEMesh() : PolyMesh<dim>() {}
 
 template <int dim>
-void 
-FEMesh<dim>::addNode(const Vector& position) {
-    positions.addValue(position);
-}
-
-template <int dim>
-void 
+void
 FEMesh<dim>::addElement(ElementType type, const std::vector<size_t>& nodeIndices) {
-    // Check validity of node indices
-    for (size_t idx : nodeIndices) {
-        if (idx >= positions.size()) {
-            throw std::out_of_range("Node index out of bounds in addElement()");
-        }
-    }
+    // PolyMesh::addCell validates the node indices and registers the generic
+    // connectivity; the Element we construct here mirrors it 1:1 at the same
+    // index, so cells[i] (base) and elements[i] (here) always agree.
+    this->addCell(nodeIndices);
 
-    // Create element using factory
     auto element = createElement<dim>(type, nodeIndices);
     elements.push_back(element);
     elementTypes.push_back(type);
-}
-
-template <int dim>
-const std::vector<typename FEMesh<dim>::Vector>& FEMesh<dim>::getNodes() const {
-    return positions.getValues();
 }
 
 template <int dim>
@@ -48,62 +34,9 @@ const std::vector<std::shared_ptr<Element<dim>>>& FEMesh<dim>::getElements() con
     return elements;
 }
 
-
 template <int dim>
 const std::vector<ElementType>& FEMesh<dim>::getElementTypes() const {
     return elementTypes;
-}
-
-template <int dim>
-void 
-FEMesh<dim>::computeNeighbors() {
-    neighbors.clear();
-
-    for (const auto& element : elements) {
-        const auto& nodeIds = element->nodeIndices();
-        for (size_t i = 0; i < nodeIds.size(); ++i) {
-            size_t ni = nodeIds[i];
-            for (size_t j = 0; j < nodeIds.size(); ++j) {
-                if (i != j) {
-                    neighbors[ni].push_back(nodeIds[j]);
-                }
-            }
-        }
-    }
-
-    // Optional: remove duplicate neighbors
-    for (auto& pair : neighbors) {
-        std::set<size_t> unique(pair.second.begin(), pair.second.end());
-        pair.second.assign(unique.begin(), unique.end());
-    }
-}
-
-template <int dim>
-std::vector<size_t> 
-FEMesh<dim>::getNeighbors(size_t nodeId) const {
-    auto it = neighbors.find(nodeId);
-    if (it != neighbors.end()) {
-        return it->second;
-    } else {
-        return {};
-    }
-}
-
-template <int dim>
-void 
-FEMesh<dim>::identifyBoundaryNodes() {
-    // Placeholder: could later be based on element adjacency, tags, or external criteria
-    boundaryNodes.clear();
-    for (size_t i = 0; i < positions.size(); ++i) {
-        if (neighbors.find(i) == neighbors.end() || neighbors.at(i).size() < 2) {
-            boundaryNodes.push_back(i);
-        }
-    }
-}
-
-template <int dim>
-const std::vector<size_t>& FEMesh<dim>::getBoundaryNodes() const {
-    return boundaryNodes;
 }
 
 template <int dim>
@@ -126,7 +59,7 @@ FEMesh<dim>::getElementInfo() const {
 }
 
 
-void 
+void
 buildFromObj2dHelper(FEMesh<2>& mesh, const std::string& filepath, const std::string& axes) {
     auto [vertices, faces] = importObj2d(filepath, axes);
 
@@ -161,7 +94,7 @@ buildFromObj2dHelper(FEMesh<2>& mesh, const std::string& filepath, const std::st
 }
 
 template <int dim>
-void 
+void
 FEMesh<dim>::buildFromObj(const std::string& filepath, const std::string& axes) {
     std::cout << "loading " << filepath << "..." << std::endl;
 
@@ -171,83 +104,14 @@ FEMesh<dim>::buildFromObj(const std::string& filepath, const std::string& axes) 
         throw std::runtime_error("buildFromObj is only implemented for 2D FEMesh");
     }
 
-    computeConnectivityMap();
+    this->computeConnectivityMap();
 }
 
 template <int dim>
-void 
-FEMesh<dim>::writeVTK(const std::string& filepath) const {
-    std::ofstream file(filepath);
-    if (!file) throw std::runtime_error("Failed to open file for writing: " + filepath);
-    std::cout << "writing to " << filepath << "..." << std::endl;
-    file << "# vtk DataFile Version 3.0\n";
-    file << "FEMesh Export\n";
-    file << "ASCII\n";
-    file << "DATASET UNSTRUCTURED_GRID\n";
-
-    const auto& nodes = positions.getValues();
-    file << "POINTS " << nodes.size() << " double\n";
-    for (const auto& node : nodes) {
-        for (int i = 0; i < dim; ++i) file << node[i] << " ";
-        if (dim == 2) file << "0.0";  // VTK expects 3D coords
-        file << "\n";
-    }
-
-    size_t totalIndices = 0;
-    for (const auto& e : elements) totalIndices += e->nodeIndices().size();
-    file << "CELLS " << elements.size() << " " << (elements.size() + totalIndices) << "\n";
-    for (const auto& e : elements) {
-        const auto& conn = e->nodeIndices();
-        file << conn.size();
-        for (auto id : conn) file << " " << id;
-        file << "\n";
-    }
-
-    file << "CELL_TYPES " << elements.size() << "\n";
-    for (const auto& e : elements) {
-        switch (e->nodeIndices().size()) {
-            case 3: file << "5\n"; break;  // VTK_TRIANGLE
-            case 4: file << "9\n"; break;  // VTK_QUAD
-            default: file << "0\n"; break; // unknown
-        }
-    }
-
-    file << "\nPOINT_DATA " << nodes.size() << "\n";
-    file << "SCALARS x double 1\nLOOKUP_TABLE default\n";
-    for (const auto& node : nodes) file << node[0] << "\n";
-    file << "\nSCALARS y double 1\nLOOKUP_TABLE default\n";
-    for (const auto& node : nodes) file << ((dim > 1) ? node[1] : 0.0) << "\n";
-
-    file << "\nCELL_DATA " << elements.size() << "\n";
-    file << "SCALARS area double 1\nLOOKUP_TABLE default\n";
-    for (const auto& e : elements) file << e->computeArea(nodes) << "\n";
+double
+FEMesh<dim>::cellMeasure(size_t cellIndex) const {
+    return elements[cellIndex]->computeArea(this->getNodes());
 }
-
-template <int dim>
-void FEMesh<dim>::computeConnectivityMap() {
-    connectivityMap.clear();
-    nodeToElementMap.clear();
-
-    for (size_t ei = 0; ei < elements.size(); ++ei) {
-        const auto& nodeIds = elements[ei]->nodeIndices();
-        connectivityMap.push_back(nodeIds);
-
-        for (size_t nodeId : nodeIds) {
-            nodeToElementMap[nodeId].push_back(ei);
-        }
-    }
-}
-
-template <int dim>
-const std::vector<std::vector<size_t>>& FEMesh<dim>::getConnectivityMap() const {
-    return connectivityMap;
-}
-
-template <int dim>
-const std::unordered_map<size_t, std::vector<size_t>>& FEMesh<dim>::getNodeToElementMap() const {
-    return nodeToElementMap;
-}
-
 
 // Explicit instantiations
 template class FEMesh<2>;

@@ -1,16 +1,19 @@
 from yggdrasil import *
 import numpy as np
+import matplotlib.pyplot as plt
 from Animation import *
 from Physics import GridHydroHLLE2d
 from Mesh import Grid2d
 from EOS import IdealGasEOS
 from Boundaries import OutflowGridBoundary2d
+from AnalyticSolutions import NohSolution
 
-# Planar Noh problem, verified against its exact solution. Two cold streams
-# (rho=1, p~0) collide head-on at x0 with speed v0, driving a pair of shocks
-# outward from the stagnation point. For gamma=5/3, v0=1 the exact solution is:
+# Planar Noh problem, verified against its exact solution (AnalyticSolutions.py).
+# Two cold streams (rho=1, p~0) collide head-on at x0 with speed v0, driving a
+# pair of shocks outward from the stagnation point. For gamma=5/3, v0=1 the
+# exact solution is:
 #   * shocked region |x-x0| < D t : rho = rho0*(g+1)/(g-1) = 4, v = 0,
-#                                    p = rho0*v0^2*(g+1)/2 = 4/3
+#                                    p = (g-1)*rho2*v0^2/2 = 4/3
 #   * unshocked region             : rho = rho0, v = +/- v0 (toward x0), p ~ 0
 # with shock speed D = v0*(g-1)/2 = 1/3. The stagnation point suffers the
 # well-known Noh "wall heating" over a few cells, so the plateau is checked away
@@ -20,6 +23,7 @@ GAMMA = 5.0 / 3.0
 V0 = 1.0
 RHO0 = 1.0
 P0 = 1.0e-6
+GEOMETRY = 1                                # planar: two independent 1D streams
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = False,
@@ -29,7 +33,8 @@ if __name__ == "__main__":
                                        dx = 0.005,
                                        dy = 0.005,
                                        tstop = 0.3,
-                                       dtmin = 1e-7)
+                                       dtmin = 1e-7,
+                                       plot = True)
 
     myGrid = Grid2d(nx, ny, dx, dy)
     myNodeList = NodeList(nx * ny)
@@ -63,12 +68,13 @@ if __name__ == "__main__":
     else:
         controller.Step(cycles)
         t = controller.time
+        noh = NohSolution(GAMMA, GEOMETRY, V0, RHO0)
 
         # Exact solution constants.
-        rho_shock = RHO0 * (GAMMA + 1) / (GAMMA - 1)      # = 4
-        p_shock = RHO0 * V0 * V0 * (GAMMA + 1) / 2.0       # = 4/3
-        D = V0 * (GAMMA - 1) / 2.0                         # shock speed = 1/3
-        xs = D * t                                         # shock half-extent
+        rho_shock = noh.rho2
+        p_shock = noh.p2
+        D = noh.D
+        xs = noh.shockRadius(t)                            # shock half-extent
 
         pressure = myNodeList.getFieldDouble("pressure")
         jmid = ny // 2
@@ -116,3 +122,28 @@ if __name__ == "__main__":
         assert plateau_v < 5.0e-2, f"post-shock velocity not stagnant: {plateau_v:.3e}"
         assert abs(x_front - xs) < 5 * dx, f"shock front misplaced: {x_front:.4f} vs {xs:.4f}"
         print("[ok] Noh problem matches the exact solution (density jump, stagnation, shock speed).")
+
+        if plot:
+            # Fold both streams onto a single radius-from-stagnation-point axis
+            # -- the outward-projected (signed) velocity component so both
+            # sides show the same "negative = inbound" convention as the
+            # analytic profile.
+            r_sim = np.array([abs((i + 0.5) * dx - x0) for i in range(nx)])
+            rho_sim = np.array([density[myGrid.index(i, jmid, 0)] for i in range(nx)])
+            p_sim = np.array([pressure[myGrid.index(i, jmid, 0)] for i in range(nx)])
+            u_sim = np.array([velocity[myGrid.index(i, jmid, 0)].x * (1.0 if (i + 0.5) * dx > x0 else -1.0)
+                              for i in range(nx)])
+
+            r_fine = np.linspace(0.0, r_sim.max(), 400)
+            rho_fine, u_fine, p_fine = noh.profile(t, r_fine)
+
+            fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+            for ax, sim, fine, label in ((axes[0], rho_sim, rho_fine, "density"),
+                                         (axes[1], p_sim, p_fine, "pressure"),
+                                         (axes[2], u_sim, u_fine, "radial velocity")):
+                ax.plot(r_sim, sim, "o", ms=3, label="simulation")
+                ax.plot(r_fine, fine, "-", label="Noh analytic")
+                ax.set_xlabel("r = |x-x0|"); ax.set_ylabel(label); ax.legend()
+            fig.suptitle(f"Planar Noh problem at t={t:.4f}, cycle={controller.cycle}")
+            fig.tight_layout()
+            plt.show()

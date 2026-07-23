@@ -128,19 +128,26 @@ class SiloDump:
 
     If `grid` is given (the Mesh::Grid the nodeList's fields live on), the
     writer emits a real Silo quadmesh with zone-centered fields, so VisIt
-    shows actual grid cells. Without it, falls back to a point mesh (e.g.
-    for particle data with no matching Grid)."""
+    shows actual grid cells. If `mesh` is given instead (an ALEMesh), the
+    writer emits a real Silo unstructured (UCD) mesh from the ALEMesh's own
+    node positions and cell connectivity -- arbitrary polygon zones, not
+    just quads. Give at most one of the two. Without either, falls back to
+    a point mesh (e.g. for particle data with no matching Grid/ALEMesh)."""
     _writerClasses = {1: SiloMeshWriter1d, 2: SiloMeshWriter2d, 3: SiloMeshWriter3d}
 
-    def __init__(self,baseName,nodeList,fieldNames,dumpCycle=10,grid=None):
+    def __init__(self,baseName,nodeList,fieldNames,dumpCycle=10,grid=None,mesh=None):
+        if grid is not None and mesh is not None:
+            raise ValueError("SiloDump: pass at most one of grid= or mesh=, not both")
         dim = nodeList.inferDim()
         if dim not in self._writerClasses:
             raise ValueError("SiloDump: couldn't infer a spatial dimension from nodeList "
                               "(no Vector1/2/3 field like 'position' found) -- can't write a point mesh")
-        if grid is None:
-            self.meshWriter = self._writerClasses[dim](baseName=baseName,nodeList=nodeList,fieldNames=fieldNames)
-        else:
+        if grid is not None:
             self.meshWriter = self._writerClasses[dim](baseName=baseName,nodeList=nodeList,fieldNames=fieldNames,grid=grid)
+        elif mesh is not None:
+            self.meshWriter = self._writerClasses[dim](baseName=baseName,nodeList=nodeList,fieldNames=fieldNames,aleMesh=mesh)
+        else:
+            self.meshWriter = self._writerClasses[dim](baseName=baseName,nodeList=nodeList,fieldNames=fieldNames)
         self.cycle = dumpCycle
     def __call__(self,cycle,time,dt):
         self.meshWriter.write("-cycle=%03d.silo"%(cycle))

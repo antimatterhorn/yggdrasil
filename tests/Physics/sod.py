@@ -1,102 +1,20 @@
 from yggdrasil import *
 import numpy as np
+import matplotlib.pyplot as plt
 from Animation import *
 from Physics import GridHydroKT2d
 from Mesh import Grid2d
 from EOS import IdealGasEOS
 from Boundaries import ReflectingGridBoundary2d
+from AnalyticSolutions import SodSolution
 
-# Sod shock tube, verified against the exact Riemann solution. The classic
-# initial state (rho,u,p) = (1,0,1) | (0.125,0,0.1) with gamma=1.4 develops a
-# left rarefaction, a contact, and a right shock; the exact self-similar
-# solution is sampled at the achieved time and compared to the numerical
-# profile (L1 error in density and velocity).
+# Sod shock tube, verified against the exact Riemann solution (AnalyticSolutions.py).
+# The classic initial state (rho,u,p) = (1,0,1) | (0.125,0,0.1) with gamma=1.4
+# develops a left rarefaction, a contact, and a right shock; the exact
+# self-similar solution is sampled at the achieved time and compared to the
+# numerical profile (L1 error), and plotted alongside it when plot=True.
 
 GAMMA = 1.4
-
-
-# --- Exact Riemann solver (Toro, Ch. 4) -----------------------------------
-def _fK(p, rhoK, pK, cK, g):
-    if p > pK:                                   # shock branch
-        A = 2.0 / ((g + 1.0) * rhoK)
-        B = (g - 1.0) / (g + 1.0) * pK
-        return (p - pK) * np.sqrt(A / (p + B))
-    return (2.0 * cK / (g - 1.0)) * ((p / pK) ** ((g - 1.0) / (2.0 * g)) - 1.0)
-
-
-def _fKp(p, rhoK, pK, cK, g):
-    if p > pK:
-        A = 2.0 / ((g + 1.0) * rhoK)
-        B = (g - 1.0) / (g + 1.0) * pK
-        return np.sqrt(A / (B + p)) * (1.0 - (p - pK) / (2.0 * (B + p)))
-    return (1.0 / (rhoK * cK)) * (p / pK) ** (-(g + 1.0) / (2.0 * g))
-
-
-def exact_riemann(rhoL, uL, pL, rhoR, uR, pR, g):
-    """Return a function S -> (rho, u, p) giving the exact solution at self-
-    similar coordinate S = (x - x0)/t."""
-    cL = np.sqrt(g * pL / rhoL)
-    cR = np.sqrt(g * pR / rhoR)
-
-    def f(p):
-        return _fK(p, rhoL, pL, cL, g) + _fK(p, rhoR, pR, cR, g) + (uR - uL)
-
-    def fp(p):
-        return _fKp(p, rhoL, pL, cL, g) + _fKp(p, rhoR, pR, cR, g)
-
-    p = max(1e-8, 0.5 * (pL + pR))               # Newton for star pressure
-    for _ in range(100):
-        pn = p - f(p) / fp(p)
-        if pn <= 0.0:
-            pn = 1e-8
-        if abs(pn - p) < 1e-12 * max(1.0, p):
-            p = pn
-            break
-        p = pn
-    pstar = p
-    ustar = 0.5 * (uL + uR) + 0.5 * (_fK(pstar, rhoR, pR, cR, g)
-                                     - _fK(pstar, rhoL, pL, cL, g))
-
-    def sample(S):
-        if S <= ustar:                           # left of contact
-            if pstar > pL:                       # left shock
-                SL = uL - cL * np.sqrt((g + 1) / (2 * g) * pstar / pL
-                                       + (g - 1) / (2 * g))
-                if S <= SL:
-                    return rhoL, uL, pL
-                rho = rhoL * (pstar / pL + (g - 1) / (g + 1)) \
-                    / ((g - 1) / (g + 1) * pstar / pL + 1.0)
-                return rho, ustar, pstar
-            cs = cL * (pstar / pL) ** ((g - 1) / (2 * g))   # left rarefaction
-            if S <= uL - cL:
-                return rhoL, uL, pL
-            if S >= ustar - cs:
-                return rhoL * (pstar / pL) ** (1.0 / g), ustar, pstar
-            u = 2 / (g + 1) * (cL + (g - 1) / 2 * uL + S)
-            c = 2 / (g + 1) * (cL + (g - 1) / 2 * (uL - S))
-            rho = rhoL * (c / cL) ** (2 / (g - 1))
-            return rho, u, pL * (c / cL) ** (2 * g / (g - 1))
-        else:                                    # right of contact
-            if pstar > pR:                       # right shock
-                SR = uR + cR * np.sqrt((g + 1) / (2 * g) * pstar / pR
-                                       + (g - 1) / (2 * g))
-                if S >= SR:
-                    return rhoR, uR, pR
-                rho = rhoR * (pstar / pR + (g - 1) / (g + 1)) \
-                    / ((g - 1) / (g + 1) * pstar / pR + 1.0)
-                return rho, ustar, pstar
-            cs = cR * (pstar / pR) ** ((g - 1) / (2 * g))   # right rarefaction
-            if S >= uR + cR:
-                return rhoR, uR, pR
-            if S <= ustar + cs:
-                return rhoR * (pstar / pR) ** (1.0 / g), ustar, pstar
-            u = 2 / (g + 1) * (-cR + (g - 1) / 2 * uR + S)
-            c = 2 / (g + 1) * (cR - (g - 1) / 2 * (uR - S))
-            rho = rhoR * (c / cR) ** (2 / (g - 1))
-            return rho, u, pR * (c / cR) ** (2 * g / (g - 1))
-
-    return sample
-
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = False,
@@ -106,7 +24,8 @@ if __name__ == "__main__":
                                        dx = 0.005,
                                        dy = 0.005,
                                        tstop = 0.2,
-                                       dtmin = 1e-7)
+                                       dtmin = 1e-7,
+                                       plot = True)
 
     myGrid = Grid2d(nx, ny, dx, dy)
     myNodeList = NodeList(nx * ny)
@@ -139,25 +58,38 @@ if __name__ == "__main__":
     else:
         controller.Step(cycles)
         t = controller.time
-        sample = exact_riemann(rhoL, 0.0, pL, rhoR, 0.0, pR, GAMMA)
+        sod = SodSolution(GAMMA, rhoL, 0.0, pL, rhoR, 0.0, pR)
 
         pressure = myNodeList.getFieldDouble("pressure")
         velocity = myNodeList.getFieldVector2d("velocity")
         jmid = ny // 2
-        err_rho = err_u = err_p = 0.0
-        n = 0
-        for i in range(nx):
-            idx = myGrid.index(i, jmid, 0)
-            x = (i + 0.5) * dx
-            rho_e, u_e, p_e = sample((x - x0) / t)
-            err_rho += abs(density[idx] - rho_e)
-            err_u += abs(velocity[idx].x - u_e)
-            err_p += abs(pressure[idx] - p_e)
-            n += 1
-        err_rho /= n; err_u /= n; err_p /= n
+        x_sim = np.array([(i + 0.5) * dx for i in range(nx)])
+        rho_sim = np.array([density[myGrid.index(i, jmid, 0)] for i in range(nx)])
+        p_sim = np.array([pressure[myGrid.index(i, jmid, 0)] for i in range(nx)])
+        u_sim = np.array([velocity[myGrid.index(i, jmid, 0)].x for i in range(nx)])
+
+        rho_ex, u_ex, p_ex = sod.profile(t, x_sim, x0=x0)
+        err_rho = np.mean(np.abs(rho_sim - rho_ex))
+        err_u = np.mean(np.abs(u_sim - u_ex))
+        err_p = np.mean(np.abs(p_sim - p_ex))
 
         print(f"Sod at t={t:.4f}: L1 errors  rho={err_rho:.4e}  u={err_u:.4e}  p={err_p:.4e}")
         assert err_rho < 2.0e-2, f"density L1 error too large: {err_rho:.4e}"
         assert err_u < 2.0e-2, f"velocity L1 error too large: {err_u:.4e}"
         assert err_p < 2.0e-2, f"pressure L1 error too large: {err_p:.4e}"
         print("[ok] Sod shock tube matches the exact Riemann solution.")
+
+        if plot:
+            x_fine = np.linspace(x_sim.min(), x_sim.max(), 400)
+            rho_fine, u_fine, p_fine = sod.profile(t, x_fine, x0=x0)
+
+            fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+            for ax, sim, fine, label in ((axes[0], rho_sim, rho_fine, "density"),
+                                         (axes[1], p_sim, p_fine, "pressure"),
+                                         (axes[2], u_sim, u_fine, "velocity")):
+                ax.plot(x_sim, sim, "o", ms=3, label="simulation")
+                ax.plot(x_fine, fine, "-", label="exact Riemann")
+                ax.set_xlabel("x"); ax.set_ylabel(label); ax.legend()
+            fig.suptitle(f"Sod shock tube at t={t:.4f}, cycle={controller.cycle}")
+            fig.tight_layout()
+            plt.show()
