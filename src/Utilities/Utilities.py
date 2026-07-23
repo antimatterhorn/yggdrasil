@@ -199,7 +199,7 @@ class MeshViz:
         self.positions = np.array(generator.positions)
         self.cells = generator.cells
 
-    def plot(self):
+    def plot(self, title=" "):
         import matplotlib.pyplot as plt
         from matplotlib.patches import Polygon as MplPolygon
         fig, ax = plt.subplots(figsize=(7, 7))
@@ -228,6 +228,6 @@ class MeshViz:
         ax.set_xlim(-1.1, 1.1)
         ax.set_ylim(-1.1, 1.1)
         ax.set_aspect("equal")
-        ax.set_title(f"mesh: {len(quads)} quads, {len(tris)} triangles")
+        ax.set_title(f"{title} mesh: {len(quads)} quads, {len(tris)} triangles")
         plt.tight_layout()
         plt.show()
