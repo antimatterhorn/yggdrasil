@@ -16,7 +16,7 @@ if __name__ == "__main__":
                                         ny = 100,
                                         dx = 1,
                                         dy = 1,
-                                        g  = -980,
+                                        g  = -200,
                                         dtmin = 1e-6,
                                         intVerbose = False)
 
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     print("numNodes =",myNodeList.numNodes)
     print("field names =",myNodeList.fieldNames)
 
-    constants = CGS()
+    constants = MKS()
     eos = IdealGasEOS(1.4,constants)
     print(eos,"gamma =",eos.gamma)
 
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     # With rho_heavy=5 at the top, cs_top = sqrt(gamma*p0/rho_heavy).
     # p0 = 1e6 gives cs_top ~ 529 cm/s (Ma ~ 0.5, marginal).
     # p0 = 1e7 gives cs_top ~ 1673 cm/s (Ma ~ 0.15, safely subsonic).
-    p0    = 1.0e7
+    p0    = 1.0e4
     gamma = eos.gamma
 
     rho = np.zeros((nx, ny))

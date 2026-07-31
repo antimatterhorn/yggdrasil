@@ -1,0 +1,16 @@
+# Illustrative bolide (meteor airburst) energy-deposition trail for
+# bolideAtmosphere.py. Each row is one deposition event as the body descends
+# and disintegrates through the modeled 0-10km atmospheric column. Total
+# energy ~1.5e14 J (~37kt TNT-equivalent), sized to clearly outrun the
+# ambient atmosphere's own numerical settling under this grid/BC combination.
+#   time (s), altitude (m), energy (J)
+time,altitude,energy
+0.0,9000,3.0e12
+0.3,7500,9.0e12
+0.6,6000,1.8e13
+0.9,4800,2.7e13
+1.2,3600,3.6e13
+1.5,2600,3.0e13
+1.8,1800,1.8e13
+2.1,1200,9.0e12
+2.4,800,3.0e12

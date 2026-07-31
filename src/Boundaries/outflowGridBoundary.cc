@@ -12,47 +12,28 @@ private:
 
     template <typename T>
     void ApplyThis(Field<T>* field) {
+        // Snapshot so a corner shared by two active faces copies from
+        // pre-call values on both, not from the other face's fresh write.
+        const std::vector<T> snapshot = field->getValues();
+
         for (int face = 0; face < 2 * dim; ++face) {
             if (!this->activeFaces[face]) continue;
             const std::vector<int>& ghost = boundaryIds[2 * face];     // ghost cells
             const std::vector<int>& inner = boundaryIds[2 * face + 1]; // first interior cells
-
-            std::vector<int> next;
-            next.reserve(inner.size());
-
-            for (int idx : inner) {
-                auto [ix, iy, iz] = this->grid->indexToCoordinates(idx);
-                int di = 0, dj = 0, dk = 0;
-
-                switch (face) {
-                    case 0: di = -1; break;  // -x face
-                    case 1: di = +1; break;  // +x face
-                    case 2: dj = -1; break;  // -y face
-                    case 3: dj = +1; break;  // +y face
-                    case 4: dk = -1; break;  // -z face
-                    case 5: dk = +1; break;  // +z face
-                }
-
-                int nextIdx = this->grid->index(ix + di, iy + dj, iz + dk);
-                next.push_back(nextIdx);
-            }
-
-            ExtrapolateBoundaryData(field, ghost, inner, next);
+            ExtrapolateBoundaryData(field, snapshot, ghost, inner);
         }
     }
 
+    // Zero-gradient outflow: ghost cell copies the first-interior cell.
     template<typename T>
     void ExtrapolateBoundaryData(Field<T>* field,
+                                const std::vector<T>& snapshot,
                                 const std::vector<int>& boundaryIds,
-                                const std::vector<int>& copyIds,
-                                const std::vector<int>& nextInteriorIds) {
+                                const std::vector<int>& copyIds) {
         assert(copyIds.size() == boundaryIds.size() &&
                "OutflowGridBoundary: ghost and inner cell lists are different sizes");
-        assert(nextInteriorIds.size() == boundaryIds.size() &&
-               "OutflowGridBoundary: next-interior list size mismatch");
         for (size_t i = 0; i < boundaryIds.size(); ++i) {
-            T val = field->getValue(copyIds[i]) * 2.0 - field->getValue(nextInteriorIds[i]);
-            field->setValue(boundaryIds[i], val);
+            field->setValue(boundaryIds[i], snapshot[copyIds[i]]);
         }
     }
 public:

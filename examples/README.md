@@ -6,6 +6,7 @@ Illustrative scripts demonstrating Yggdrasil's simulation stack and standalone c
 
 | Script | Description |
 |---|---|
+| [bolideAtmosphere.py](bolideAtmosphere.py) | Axisymmetric `(r,z)` Earth atmosphere in hydrostatic equilibrium (`GridHydroKT2d`, `CylindricalRZ` `Grid`, constant downward gravity) out to ~10km, perturbed by a bolide's deposited-energy trail read from an external `(time, altitude, energy)` text file (`bolide.txt`) and sourced into the r=0 column as the clock crosses each entry's timestamp, dumped to Silo |
 | [cherenkov.py](cherenkov.py) | 2D scalar wave equation on a grid with a source that accelerates past the wave speed, producing a Cherenkov-like Mach cone wake |
 | [complexDiff.py](complexDiff.py) | Complex-valued wave equation (Schrödinger-like) on a grid with two out-of-phase point sources injected into real/imaginary components, bounded by a row of circular Dirichlet obstacles |
 | [cosmo.py](cosmo.py) | Runs the standalone `Cosmology` calculator to compute cosmological quantities at a given redshift for a flat ΛCDM universe |
@@ -34,4 +35,4 @@ Illustrative scripts demonstrating Yggdrasil's simulation stack and standalone c
 
 ## Assets
 
-Non-script data files consumed by the scripts above: `example.obj` (mesh geometry for `fem_elasticity.py`), `sfo.asc` (bathymetry depth map for `tsunami.py`), and `pi.png` (default input image for `imageToStringArt.py`). `einstein.jpg`, `lincoln.jpg`, `logo_test.png`, and `logo.xlsx` are additional sample/scratch assets not directly referenced by any script but usable as alternate `filename` input to `imageToStringArt.py` (image files only).
+Non-script data files consumed by the scripts above: `example.obj` (mesh geometry for `fem_elasticity.py`), `sfo.asc` (bathymetry depth map for `tsunami.py`), `bolide.txt` (sample energy-deposition trail for `bolideAtmosphere.py`), and `pi.png` (default input image for `imageToStringArt.py`). `einstein.jpg`, `lincoln.jpg`, `logo_test.png`, and `logo.xlsx` are additional sample/scratch assets not directly referenced by any script but usable as alternate `filename` input to `imageToStringArt.py` (image files only).

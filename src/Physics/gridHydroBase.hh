@@ -218,7 +218,7 @@ public:
 
         const double rho_floor = 1e-12;
         const double v_max = 1e3;
-        const double u_max = 1e4;
+        const double u_max = 1e6;
 
         #pragma omp parallel for
         for (int i = 0; i < this->nodeList->size(); ++i) {
@@ -233,8 +233,11 @@ public:
                 vi = vi.normal() * v_max;
 
             // Clamp energy if absurd
-            if (ui > u_max)
+            if (ui > u_max) {
+                std::cout << "GridHydroBase: energy cap triggered at cell " << i
+                          << " (u=" << ui << " > u_max=" << u_max << ")" << std::endl;
                 ui = u_max;
+            }
 
             density->setValue(i, rhoi);
             velocity->setValue(i, vi);
