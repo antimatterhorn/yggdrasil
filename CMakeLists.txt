@@ -77,6 +77,7 @@ add_subdirectory(src/Utilities)
 add_subdirectory(src/Calculators)
 add_subdirectory(src/Generation)
 add_subdirectory(src/IO)
+add_subdirectory(src/AMR)
 
 # Add dependency on Silo to IO target
 add_dependencies(IO silo)

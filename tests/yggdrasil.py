@@ -22,7 +22,8 @@ for dir in ["Math",
             "Boundaries",
             "Calculators",
             "IO",
-            "Generation"]:
+            "Generation",
+            "AMR"]:
     sys.path.append(buildir+dir)
 
 from CodeVersion import *
