@@ -11,6 +11,9 @@ class GridHydroKT(Hydro):
                eos="EquationOfState*",
                grid="Mesh::Grid<%(dim)s>*"):
         return
+    def attachFluxObserver(self, observer="FluxObserver<%(dim)s>*"):
+        "Tap this solver's face fluxes, e.g. with an AMR flux register."
+        return
     @PYB11cppname("getCell")
     def getCell2d(self,i="int",j="int",fieldName="std::string"):
         return

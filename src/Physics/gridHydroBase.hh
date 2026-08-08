@@ -2,6 +2,7 @@
 
 #pragma once
 #include "hydro.hh"
+#include "fluxObserver.hh"
 #include "../Mesh/grid.hh"
 #include "../Boundaries/reflectingGridBoundary.cc"
 #include <iostream>
@@ -28,7 +29,12 @@ protected:
     // installs it rather than the user. Null for Cartesian.
     std::unique_ptr<ReflectingGridBoundary<dim>> axisBoundary;
 
+    // Null unless an AMR flux register is attached; see FluxObserver.
+    FluxObserver<dim>* fluxObserver = nullptr;
+
 public:
+    void attachFluxObserver(FluxObserver<dim>* observer) { fluxObserver = observer; }
+
     GridHydroBase(NodeList* nodeList,
                   PhysicalConstants& constants,
                   EquationOfState* eos,
@@ -175,6 +181,15 @@ public:
                 double A_L = grid->faceArea(jL, i, k);
                 double A_R = grid->faceArea(i, jR, k);
                 if (k == 0) { A_Lr = A_L; A_Rr = A_R; }
+
+                if (fluxObserver) {
+                    #pragma omp critical
+                    {
+                        fluxObserver->recordFlux(i, k, false, flux_L.mass, flux_L.momentum, flux_L.energy, A_L);
+                        fluxObserver->recordFlux(i, k, true,  flux_R.mass, flux_R.momentum, flux_R.energy, A_R);
+                    }
+                }
+
                 net_rho_flux += (flux_L.mass     * A_L - flux_R.mass     * A_R) / Vi;
                 net_mom_flux += (flux_L.momentum * A_L - flux_R.momentum * A_R) / Vi;
                 net_E_flux   += (flux_L.energy   * A_L - flux_R.energy   * A_R) / Vi;

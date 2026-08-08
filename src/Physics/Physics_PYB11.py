@@ -2,6 +2,7 @@
 
 from PYB11Generator import *
 PYB11includes = ['"physics.hh"',
+                '"fluxObserver.hh"',
                 '"kinematics.hh"',
                 '"../Materials/material.hh"',
                 '"../Materials/linearElastic.cc"',
@@ -33,6 +34,7 @@ PYB11includes = ['"physics.hh"',
                 ]
 
 from physics import *
+from fluxObserver import *
 from kinematics import *
 from constantForce import *
 from pointSourceGravity import *

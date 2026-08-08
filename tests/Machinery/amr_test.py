@@ -4,7 +4,7 @@ from EOS import IdealGasEOS
 from Physics import GridHydroHLLC2d
 from Boundaries import ReflectingGridBoundary2d
 from AMRController import (AMRController, buildPatch, wireSiblingBoundaries,
-                            wireCoarseFineBoundary, buildRestriction)
+                            wireCoarseFineBoundary, buildRestriction, buildReflux)
 
 # Milestone 1: Patch/AMRController scaffolding. Checks that a patch built
 # from an arbitrary (level, box) lands at the correct world-space position.
@@ -358,3 +358,114 @@ for label, f, c in zip(labels, fineTotals, coarseTotals):
 
 assert rcRho[sentinelIdx] == 7.5, "restriction modified a coarse cell outside the covered region"
 print("[ok] AMR milestone 4 (RestrictionOperator) passes: mass, momentum and energy conserved exactly; uncovered cells untouched.")
+
+# ============================================================================
+# Milestone 5: AMR::FluxRegister + Refluxer. Without reflux the coarse and fine
+# sides of the interface disagree about how much material crossed it and the
+# composite hierarchy's mass drifts; with reflux the interface stops leaking.
+# Still a single dt for both levels -- subcycling is milestone 6.
+#
+# The bar is set by measuring a plain single-grid run of the same problem
+# rather than by asserting machine precision: GridHydroBase + a reflecting wall
+# is itself only approximately mass-conserving (ApplyBoundaries runs once per
+# step, so the wall's ghost cells are stale during RK2's second stage), and
+# that pre-existing error is far larger than anything the interface contributes.
+# ============================================================================
+
+fxNx, fxNy = 16, 16
+fxDx = 0.05
+FX_CYCLES = 40
+FX_LO, FX_HI = 6, 9
+
+def setBlob(nodeList, grid):
+    """Ambient gas with an over-pressured blob straddling the refined region's
+    edge, so real flow crosses the coarse-fine interface in both directions."""
+    rho = nodeList.getFieldDouble("density")
+    u = nodeList.getFieldDouble("specificInternalEnergy")
+    vel = nodeList.getFieldVector2d("velocity")
+    centre = 0.5 * fxNx * fxDx
+    for idx in range(grid.size()):
+        pos = grid.position(idx)
+        inBlob = (pos.x - centre) ** 2 + (pos.y - centre) ** 2 < (2.5 * fxDx) ** 2
+        rho.setValue(idx, 2.0 if inBlob else 1.0)
+        u.setValue(idx, (5.0 if inBlob else 1.0) / ((GAMMA - 1) * (2.0 if inBlob else 1.0)))
+        vel.setValue(idx, Vector2d(0.0, 0.0))
+
+def runHierarchy(useReflux):
+    """Advance a 2-level hierarchy for FX_CYCLES and return its relative mass drift."""
+    grid = Grid2d(fxNx, fxNy, fxDx, fxDx)
+    nodes = NodeList(grid.size())
+    hier = AMRController(grid, nodes, physicsFactory, RungeKutta2Integrator2d,
+                          dtmin=1e-8, refinementRatio=REFINEMENT_RATIO, nghost=NGHOST,
+                          boundaries=[ReflectingGridBoundary2d(grid=grid)])
+    coarse = hier.levels[0][0]
+    fine = hier.buildPatch(level=1, box=(FX_LO * REFINEMENT_RATIO, FX_LO * REFINEMENT_RATIO,
+                                          FX_HI * REFINEMENT_RATIO + REFINEMENT_RATIO - 1,
+                                          FX_HI * REFINEMENT_RATIO + REFINEMENT_RATIO - 1))
+    wireCoarseFineBoundary(fine, coarse, REFINEMENT_RATIO)
+    restriction = buildRestriction(fine, coarse, REFINEMENT_RATIO, eos)
+    reflux = buildReflux(fine, coarse, REFINEMENT_RATIO, eos) if useReflux else None
+
+    setBlob(nodes, grid)
+    setBlob(fine.nodeList, fine.grid)
+
+    fnx = (fine.box[2] - fine.box[0] + 1) + 2 * NGHOST
+    fny = (fine.box[3] - fine.box[1] + 1) + 2 * NGHOST
+    fineInterior = [fine.grid.index(li, lj, 0)
+                    for lj in range(NGHOST, fny - NGHOST) for li in range(NGHOST, fnx - NGHOST)]
+    # Coarse cells that are real (not the domain's wall-ghost rim) and not covered by the fine patch.
+    uncovered = [grid.index(ci, cj, 0)
+                 for cj in range(1, fxNy - 1) for ci in range(1, fxNx - 1)
+                 if not (FX_LO <= ci <= FX_HI and FX_LO <= cj <= FX_HI)]
+
+    cRho = nodes.getFieldDouble("density")
+    fRho = fine.nodeList.getFieldDouble("density")
+    def mass():
+        return (sum(cRho[i] * grid.cellVolume(i) for i in uncovered)
+                + sum(fRho[i] * fine.grid.cellVolume(i) for i in fineInterior))
+
+    coarse.integrator.Initialize()
+    fine.integrator.Initialize()
+    m0 = mass()
+    for cyc in range(FX_CYCLES):
+        dt = min(coarse.integrator.dt, fine.integrator.dt)
+        # Both levels must advance by the same dt for a single-dt reflux to be
+        # consistent; restoreState is the only bound way to set an integrator's dt.
+        coarse.integrator.restoreState(cyc, cyc * dt, dt)
+        fine.integrator.restoreState(cyc, cyc * dt, dt)
+        coarse.integrator.Step()
+        fine.integrator.Step()
+        if reflux:
+            reflux.apply(dt)
+        restriction.apply()
+    return abs(mass() - m0) / m0
+
+def runSingleGrid():
+    """Same problem on a plain single grid -- the scheme's own conservation floor."""
+    grid = Grid2d(fxNx, fxNy, fxDx, fxDx)
+    nodes = NodeList(grid.size())
+    physics = physicsFactory(nodes, grid)
+    physics.addBoundary(ReflectingGridBoundary2d(grid=grid))
+    integrator = RungeKutta2Integrator2d([physics], dtmin=1e-8)
+    setBlob(nodes, grid)
+    real = [grid.index(i, j, 0) for j in range(1, fxNy - 1) for i in range(1, fxNx - 1)]
+    rho = nodes.getFieldDouble("density")
+    mass = lambda: sum(rho[i] * grid.cellVolume(i) for i in real)
+    integrator.Initialize()
+    m0 = mass()
+    for _ in range(FX_CYCLES):
+        integrator.Step()
+    return abs(mass() - m0) / m0
+
+driftBaseline = runSingleGrid()
+driftReflux = runHierarchy(useReflux=True)
+driftNoReflux = runHierarchy(useReflux=False)
+
+print(f"mass drift over {FX_CYCLES} cycles:  single grid={driftBaseline:.3e}"
+      f"  hierarchy+reflux={driftReflux:.3e}  hierarchy no reflux={driftNoReflux:.3e}")
+assert driftReflux < max(driftBaseline, 1e-12), (
+    f"reflux hierarchy ({driftReflux:.3e}) drifts more than a plain single grid ({driftBaseline:.3e})")
+assert driftNoReflux > 10 * driftReflux, (
+    f"reflux made no appreciable difference: {driftNoReflux:.3e} vs {driftReflux:.3e}")
+print("[ok] AMR milestone 5 (FluxRegister/reflux) passes: the interface stops leaking mass, "
+      "leaving the hierarchy no worse than a single grid.")

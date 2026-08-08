@@ -6,7 +6,8 @@
 from Mesh import Grid2d
 from DataBase import NodeList
 from LinearAlgebra import Vector2d
-from AMR import PatchNeighborBoundary2d, CoarseFineBoundary2d, RestrictionOperator2d
+from AMR import (PatchNeighborBoundary2d, CoarseFineBoundary2d, RestrictionOperator2d,
+                  FluxRegister2d, Refluxer2d)
 
 
 class AMRPatch:
@@ -181,6 +182,74 @@ def buildRestriction(finePatch, coarsePatch, refinementRatio, eos):
     return RestrictionOperator2d(finePatch.nodeList, coarsePatch.nodeList,
                                   finePatch.grid, coarsePatch.grid, eos,
                                   fineIds, coarseIds)
+
+
+class Reflux:
+    """Flux registers for a coarse-fine interface plus the correction that uses
+    them. Holds both registers so they outlive the raw pointers handed to the
+    Refluxer and to each solver."""
+    def __init__(self, refluxer, coarseRegister, fineRegister):
+        self.refluxer = refluxer
+        self.coarseRegister = coarseRegister
+        self.fineRegister = fineRegister
+
+    def apply(self, dt):
+        self.refluxer.apply(dt)
+
+
+def buildReflux(finePatch, coarsePatch, refinementRatio, eos):
+    """Register the faces along finePatch's boundary and the coarse faces they
+    cover, attach a flux register to each solver, and return the Reflux that
+    corrects the coarse cells once both levels have advanced."""
+    r = refinementRatio
+    box = finePatch.box
+    for axis in (0, 1):
+        assert box[axis] % r == 0 and (box[axis + 2] + 1) % r == 0, \
+            "reflux needs the fine box aligned to coarse cell boundaries"
+
+    nghost = finePatch.nghost
+    lowLevel = [box[0], box[1]]
+    interior = [box[2] - box[0] + 1, box[3] - box[1] + 1]
+    cLow = [coarsePatch.box[0], coarsePatch.box[1]]
+    cGhost = coarsePatch.nghost
+
+    coarseRegister = FluxRegister2d(coarsePatch.grid.size())
+    fineRegister = FluxRegister2d(finePatch.grid.size())
+    coarseSlots, fineSlots = [], []
+
+    for axis in (0, 1):
+        other = 1 - axis
+        covLow = lowLevel[axis] // r
+        covHigh = (lowLevel[axis] + interior[axis] - 1) // r
+        perpLow = lowLevel[other] // r
+        perpHigh = (lowLevel[other] + interior[other] - 1) // r
+
+        # fineOnPlus: the coarse cell just below the patch, whose +axis face borders it.
+        for fineOnPlus in (True, False):
+            cAlong = covLow - 1 if fineOnPlus else covHigh + 1
+            fineEdge = nghost if fineOnPlus else nghost + interior[axis] - 1
+            for cPerp in range(perpLow, perpHigh + 1):
+                cLocal = [0, 0]
+                cLocal[axis] = cAlong - cLow[axis] + cGhost
+                cLocal[other] = cPerp - cLow[other] + cGhost
+                if not (0 <= cLocal[0] < coarsePatch.grid.nx and 0 <= cLocal[1] < coarsePatch.grid.ny):
+                    continue
+                cSlot = coarseRegister.registerFace(coarsePatch.grid.index(cLocal[0], cLocal[1], 0),
+                                                     axis, fineOnPlus)
+                for k in range(r):
+                    fLocal = [0, 0]
+                    fLocal[axis] = fineEdge
+                    fLocal[other] = cPerp * r + k - lowLevel[other] + nghost
+                    fSlot = fineRegister.registerFace(finePatch.grid.index(fLocal[0], fLocal[1], 0),
+                                                       axis, not fineOnPlus)
+                    coarseSlots.append(cSlot)
+                    fineSlots.append(fSlot)
+
+    coarsePatch.physics.attachFluxObserver(coarseRegister)
+    finePatch.physics.attachFluxObserver(fineRegister)
+    refluxer = Refluxer2d(coarsePatch.nodeList, coarsePatch.grid, eos,
+                           coarseRegister, fineRegister, coarseSlots, fineSlots)
+    return Reflux(refluxer, coarseRegister, fineRegister)
 
 
 def wireSiblingBoundaries(patchA, patchB, nghost):
