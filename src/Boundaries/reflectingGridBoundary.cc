@@ -81,42 +81,45 @@ public:
     ReflectingGridBoundary(Mesh::Grid<dim>* grid) :
         GridBoundary<dim>(grid) {
         if constexpr (dim == 1) {
-            boundaryLists.push_back(grid->leftMost());
+            boundaryLists.push_back(grid->lowMost(0));
             interiorLists.push_back({1});
 
-            boundaryLists.push_back(grid->rightMost());
-            interiorLists.push_back({grid->rightMost()[0]-1});
+            boundaryLists.push_back(grid->highMost(0));
+            interiorLists.push_back({grid->highMost(0)[0]-1});
         }
         else if constexpr (dim == 2) {
-            std::vector<int> left   = grid->leftMost();
-            std::vector<int> right  = grid->rightMost();
-            std::vector<int> top    = grid->topMost();
-            std::vector<int> bottom = grid->bottomMost();
+            std::vector<int> xLow  = grid->lowMost(0);
+            std::vector<int> xHigh = grid->highMost(0);
+            std::vector<int> yLow  = grid->lowMost(1);
+            std::vector<int> yHigh = grid->highMost(1);
 
-            std::vector<int> leftInt, rightInt, topInt, bottomInt;
+            std::vector<int> xLowInt, xHighInt, yLowInt, yHighInt;
 
-            for (int j = 0; j < (int)right.size(); ++j) {
-                leftInt.push_back(grid->index(1, j));
-                rightInt.push_back(grid->index(grid->size_x() - 2, j));
+            int Nx = grid->size_x();
+            int Ny = grid->size_y();
+
+            for (int j = 0; j < Ny; ++j) {
+                xLowInt.push_back(grid->index(1, j));
+                xHighInt.push_back(grid->index(Nx - 2, j));
             }
 
-            for (int i = 0; i < (int)bottom.size(); ++i) {
-                topInt.push_back(grid->index(i, 1));
-                bottomInt.push_back(grid->index(i, grid->size_y() - 2));
+            for (int i = 0; i < Nx; ++i) {
+                yLowInt.push_back(grid->index(i, 1));
+                yHighInt.push_back(grid->index(i, Ny - 2));
             }
 
-            boundaryLists = {left, right, top, bottom};
-            interiorLists = {leftInt, rightInt, topInt, bottomInt};
+            boundaryLists = {xLow, xHigh, yLow, yHigh};
+            interiorLists = {xLowInt, xHighInt, yLowInt, yHighInt};
         }
         else if constexpr (dim == 3) {
-            std::vector<int> left   = grid->leftMost();
-            std::vector<int> right  = grid->rightMost();
-            std::vector<int> top    = grid->topMost();
-            std::vector<int> bottom = grid->bottomMost();
-            std::vector<int> front  = grid->frontMost();
-            std::vector<int> back   = grid->backMost();
+            std::vector<int> xLow  = grid->lowMost(0);
+            std::vector<int> xHigh = grid->highMost(0);
+            std::vector<int> yLow  = grid->lowMost(1);
+            std::vector<int> yHigh = grid->highMost(1);
+            std::vector<int> zLow  = grid->lowMost(2);
+            std::vector<int> zHigh = grid->highMost(2);
 
-            std::vector<int> leftInt, rightInt, topInt, bottomInt, frontInt, backInt;
+            std::vector<int> xLowInt, xHighInt, yLowInt, yHighInt, zLowInt, zHighInt;
 
             int Nx = grid->size_x();
             int Ny = grid->size_y();
@@ -124,32 +127,32 @@ public:
 
             // Iteration order here must match Grid<3>::findBoundaries exactly,
             // since ApplyThis pairs boundaryLists[i][j] with interiorLists[i][j]
-            // by position: j outer / k inner for left-right (matches lm/rm).
+            // by position: j outer / k inner for the x faces.
             for (int j = 0; j < Ny; ++j) {
                 for (int k = 0; k < Nz; ++k) {
-                    leftInt.push_back(grid->index(1, j, k));
-                    rightInt.push_back(grid->index(Nx - 2, j, k));
+                    xLowInt.push_back(grid->index(1, j, k));
+                    xHighInt.push_back(grid->index(Nx - 2, j, k));
                 }
             }
 
-            // i outer / k inner for top-bottom (matches tm/bm).
+            // i outer / k inner for the y faces.
             for (int i = 0; i < Nx; ++i) {
                 for (int k = 0; k < Nz; ++k) {
-                    topInt.push_back(grid->index(i, 1, k));
-                    bottomInt.push_back(grid->index(i, Ny - 2, k));
+                    yLowInt.push_back(grid->index(i, 1, k));
+                    yHighInt.push_back(grid->index(i, Ny - 2, k));
                 }
             }
 
-            // i outer / j inner for front-back (matches fm/km).
+            // i outer / j inner for the z faces.
             for (int i = 0; i < Nx; ++i) {
                 for (int j = 0; j < Ny; ++j) {
-                    frontInt.push_back(grid->index(i, j, 1));
-                    backInt.push_back(grid->index(i, j, Nz - 2));
+                    zLowInt.push_back(grid->index(i, j, 1));
+                    zHighInt.push_back(grid->index(i, j, Nz - 2));
                 }
             }
 
-            boundaryLists = {left, right, top, bottom, front, back};
-            interiorLists = {leftInt, rightInt, topInt, bottomInt, frontInt, backInt};
+            boundaryLists = {xLow, xHigh, yLow, yHigh, zLow, zHigh};
+            interiorLists = {xLowInt, xHighInt, yLowInt, yHighInt, zLowInt, zHighInt};
         }
     }
 

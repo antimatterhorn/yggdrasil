@@ -36,18 +36,10 @@ class Grid:
         return "std::array<int, %(dim)s>"
     def assignPositions(self,nodeList="NodeList*"):
         return
-    def leftMost(self):
-        return
-    def rightMost(self):
-        return
-    def topMost(self):
-        return
-    def bottomMost(self):
-        return
-    def frontMost(self):
-        return
-    def backMost(self):
-        return
+    def lowMost(self,axis="int"):
+        return "std::vector<int>"
+    def highMost(self,axis="int"):
+        return "std::vector<int>"
     def onBoundary(self,idx="int"):
         return
     def geometry(self):

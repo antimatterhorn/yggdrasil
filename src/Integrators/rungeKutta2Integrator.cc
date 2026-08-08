@@ -39,6 +39,7 @@ public:
         evalWithAccum(state, k1, time, 0);
 
         interim += k1 * dt;
+        physics->ApplyStageBoundaries(&interim);
 
         evalWithAccum(&interim, k2, time, dt);
 

@@ -238,7 +238,7 @@ def test_multi_bc():
 #
 # Regression test for two bugs that both required a non-cubic 3D grid to
 # surface (a cubic grid masks them since nx==ny==nz numerically):
-#   1. Grid<3>::findBoundaries computed rightMost() using size()-1-b
+#   1. Grid<3>::findBoundaries computed the high-x face list using size()-1-b
 #      (total cell count) instead of nx-1-b, producing wildly out-of-range
 #      indices that PeriodicGridBoundary<3> fed straight into an unchecked
 #      Field::setValue -- a heap buffer overflow write.
@@ -385,10 +385,10 @@ def test_reflecting_3d_noncubic_pairing():
 #
 # DirichletGridBoundary<3> never builds a separately-ordered interior-neighbor
 # list (it just saves/restores IC values at the same `ids` list from
-# leftMost()/rightMost()/etc.), so it isn't exposed to the Nx/Ny/Nz-mislabeling
+# lowMost()/highMost()), so it isn't exposed to the Nx/Ny/Nz-mislabeling
 # bug the other three had. It WAS still transitively exposed to the root-cause
-# bug in Grid<3>::findBoundaries() (rightMost() returning out-of-range indices
-# on any 3D grid, cubic or not) via its own use of rightMost(), so it's worth
+# bug in Grid<3>::findBoundaries() (the high-x face list returning out-of-range
+# indices on any 3D grid, cubic or not) via its own use of it, so it's worth
 # its own non-cubic regression check now that that's fixed.
 # ---------------------------------------------------------------------------
 def test_dirichlet_3d_noncubic():
@@ -410,6 +410,85 @@ def test_dirichlet_3d_noncubic():
           abs(d[grid.index(nx - 1, mid_j, mid_k)] - (1.0 + 0.1 * (nx - 1))) < 1e-6)
 
 # ---------------------------------------------------------------------------
+# Test 11: Grid face lists are on the geometric side their axis argument names
+#
+# Grid used to expose these as leftMost()/rightMost()/topMost()/bottomMost(),
+# where topMost() returned the *low*-j row -- inverted relative to how every
+# caller and every setFaces() name uses "top". GridBoundary::setFaces indexes
+# its names array [-x,+x,-y,+y,-z,+z], so the two inversions cancelled and the
+# behaviour was right, but reading either half alone made it look like top and
+# bottom were swapped. Pin the orientation down directly.
+# ---------------------------------------------------------------------------
+def test_grid_face_list_orientation():
+    print("Test 11: Grid.lowMost/highMost are on the named side of each axis")
+    nx, ny = 5, 8
+    grid = Grid2d(nx, ny, 0.01, 0.01)
+    check("lowMost(0)  is the i=0 column",
+          sorted(grid.lowMost(0))  == sorted(grid.index(0, j, 0)      for j in range(ny)))
+    check("highMost(0) is the i=nx-1 column",
+          sorted(grid.highMost(0)) == sorted(grid.index(nx - 1, j, 0) for j in range(ny)))
+    check("lowMost(1)  is the j=0 row",
+          sorted(grid.lowMost(1))  == sorted(grid.index(i, 0, 0)      for i in range(nx)))
+    check("highMost(1) is the j=ny-1 row",
+          sorted(grid.highMost(1)) == sorted(grid.index(i, ny - 1, 0) for i in range(nx)))
+
+# ---------------------------------------------------------------------------
+# Test 12: every setFaces name activates the edge it is named after
+#
+# Only 'bottom' and 'left' were covered in isolation before (Tests 2 and 3);
+# 'top' and 'right' were only ever exercised together with their partner face,
+# which is exactly the case that hides a low/high mix-up.
+# ---------------------------------------------------------------------------
+def test_reflecting_each_face_orientation():
+    print("Test 12: Reflecting BC — each setFaces name hits its own edge")
+    nx, ny = 7, 7
+    mid = 3
+
+    # (face name, ghost cell that must flip, cell that must stay intact, component)
+    cases = [
+        ("left",   (0, mid),      (nx - 1, mid), "x"),
+        ("right",  (nx - 1, mid), (0, mid),      "x"),
+        ("bottom", (mid, 0),      (mid, ny - 1), "y"),
+        ("top",    (mid, ny - 1), (mid, 0),      "y"),
+    ]
+
+    for face, flipped, intact, comp in cases:
+        grid, nodeList, hydro, *_ = make_hydro(nx, ny)
+        fill_uniform(nodeList, grid, nx, ny, rho=1.4, vx=1.0, vy=1.0)
+        bc = ReflectingGridBoundary2d(grid=grid)
+        bc.setFaces([face])
+        hydro.addBoundary(bc)
+        run_one_step(hydro)
+        v = nodeList.getFieldVector2d("velocity")
+        get = (lambda p: v[grid.index(p[0], p[1], 0)].x) if comp == "x" else \
+              (lambda p: v[grid.index(p[0], p[1], 0)].y)
+        check(f"setFaces(['{face}']): v{comp} flipped at {flipped}", get(flipped) < 0)
+        check(f"setFaces(['{face}']): v{comp} intact  at {intact}",  get(intact)  > 0)
+
+# ---------------------------------------------------------------------------
+# Test 13: outflow top-only / bottom-only pick opposite rows
+# ---------------------------------------------------------------------------
+def test_outflow_top_and_bottom_only():
+    print("Test 13: Outflow BC — setFaces(['top']) vs setFaces(['bottom'])")
+    nx, ny = 7, 7
+    mid = 3
+    rho_fn = lambda i, j: 1.0 + 0.1 * j
+
+    for face, ghost_j, inner_j, untouched_j in [("top",    ny - 1, ny - 2, 0),
+                                                ("bottom", 0,      1,      ny - 1)]:
+        grid, nodeList, hydro, *_ = make_hydro(nx, ny)
+        fill_gradient(nodeList, grid, nx, ny, rho_fn)
+        bc = OutflowGridBoundary2d(grid=grid)
+        bc.setFaces([face])
+        hydro.addBoundary(bc)
+        run_one_step(hydro)
+        d = nodeList.getFieldDouble("density")
+        check(f"setFaces(['{face}']): j={ghost_j} ghost copies j={inner_j}",
+              abs(d[grid.index(mid, ghost_j, 0)] - d[grid.index(mid, inner_j, 0)]) < 1e-12)
+        check(f"setFaces(['{face}']): j={untouched_j} ghost left at its IC",
+              abs(d[grid.index(mid, untouched_j, 0)] - rho_fn(mid, untouched_j)) < 1e-12)
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -424,6 +503,9 @@ if __name__ == "__main__":
     test_outflow_3d_noncubic()
     test_reflecting_3d_noncubic_pairing()
     test_dirichlet_3d_noncubic()
+    test_grid_face_list_orientation()
+    test_reflecting_each_face_orientation()
+    test_outflow_top_and_bottom_only()
 
     n_pass  = sum(_results)
     n_total = len(_results)

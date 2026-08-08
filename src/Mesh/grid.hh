@@ -15,7 +15,7 @@ namespace Mesh {
     class Grid {
     private:
         std::vector<std::shared_ptr<FieldBase>> _extraFields;
-        std::vector<int> lm,rm,tm,bm,fm,km;
+        std::array<std::vector<int>, 3> lowIds, highIds;
         Geometry _geometry = Geometry::Cartesian;
     public:
         using Vector = Lin::Vector<dim>;
@@ -51,12 +51,10 @@ namespace Mesh {
         inline double getdx() const { return dx; };
         inline double getdy() const { return dy; };
         inline double getdz() const { return dz; };
-        inline std::vector<int> leftMost() const    { return lm; };
-        inline std::vector<int> rightMost() const   { return rm; };
-        inline std::vector<int> topMost() const     { return tm; };
-        inline std::vector<int> bottomMost() const  { return bm; };
-        inline std::vector<int> frontMost() const   { return fm; };
-        inline std::vector<int> backMost() const    { return km; };
+        // Boundary cell indices on the low/high side of `axis` (0=x, 1=y, 2=z),
+        // matching getNeighboringCells' [low-x, high-x, low-y, ...] ordering.
+        inline std::vector<int> lowMost(int axis) const  { return lowIds[axis]; };
+        inline std::vector<int> highMost(int axis) const { return highIds[axis]; };
 
         // Cell-centre radius (the axis-0 coordinate), used as r by the RZ metric.
         inline double cellRadius(int idx) const { return gridPositions[idx][0]; }

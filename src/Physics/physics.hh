@@ -136,6 +136,16 @@ public:
             for (const auto& boundary : boundaries)
                 boundary->ApplyBoundaries(bState,nodeList);
     }
+
+    // Ghost-cell fills only, for an integrator's intermediate states. Derivatives
+    // are never written for ghost cells, so an interim state carries a stale rim
+    // into the next sub-stage unless it is refreshed here.
+    virtual void
+    ApplyStageBoundaries(State<dim>* bState) {
+        for (const auto& boundary : boundaries)
+            if (boundary->refreshPerStage())
+                boundary->ApplyBoundaries(bState,nodeList);
+    }
     
     std::vector<std::string> integrateFieldNames() const { return state.integrateFieldNames(); }
     std::vector<std::string> accumulateFieldNames() const { return state.accumulateFieldNames(); }

@@ -146,28 +146,26 @@ namespace Mesh {
     template <int dim>
     void
     Grid<dim>::findBoundaries(const int buffer) {
-        lm.clear();
-        rm.clear();
-        tm.clear();
-        bm.clear();
-        fm.clear();
-        km.clear();
-        
+        for (int d = 0; d < 3; ++d) {
+            lowIds[d].clear();
+            highIds[d].clear();
+        }
+
         if constexpr (dim == 1) {
             for (int b=0; b<buffer; ++b) {
-                lm.push_back(index(b));
-                rm.push_back(index(nx - 1 - b));
+                lowIds[0].push_back(index(b));
+                highIds[0].push_back(index(nx - 1 - b));
             }
         }
         else if constexpr (dim == 2) {
             for (int b=0; b<buffer; ++b) {
                 for (int j = 0; j < ny; ++j) {
-                    lm.push_back(index(b, j));
-                    rm.push_back(index(nx - 1 - b, j));
+                    lowIds[0].push_back(index(b, j));
+                    highIds[0].push_back(index(nx - 1 - b, j));
                 }
                 for (int i = 0; i < nx; ++i) {
-                    tm.push_back(index(i, b));
-                    bm.push_back(index(i, ny - 1 - b));
+                    lowIds[1].push_back(index(i, b));
+                    highIds[1].push_back(index(i, ny - 1 - b));
                 }
             }
         }
@@ -175,20 +173,20 @@ namespace Mesh {
             for (int b=0; b<buffer; ++b) {
                 for (int j = 0; j < ny; ++j) {
                     for (int k = 0; k < nz; ++k) {
-                        lm.push_back(index(b, j, k));
-                        rm.push_back(index(nx - 1 - b, j, k));
+                        lowIds[0].push_back(index(b, j, k));
+                        highIds[0].push_back(index(nx - 1 - b, j, k));
                     }
                 }
                 for (int i = 0; i < nx; ++i) {
                     for (int k = 0; k < nz; ++k) {
-                        tm.push_back(index(i, b, k));
-                        bm.push_back(index(i, ny - 1 - b, k));
+                        lowIds[1].push_back(index(i, b, k));
+                        highIds[1].push_back(index(i, ny - 1 - b, k));
                     }
                 }
                 for (int i = 0; i < nx; ++i) {
                     for (int j = 0; j < ny; ++j) {
-                        fm.push_back(index(i, j, b));
-                        km.push_back(index(i, j, nz - 1 - b));
+                        lowIds[2].push_back(index(i, j, b));
+                        highIds[2].push_back(index(i, j, nz - 1 - b));
                     }
                 }
             }
@@ -198,52 +196,13 @@ namespace Mesh {
     template <int dim>
     bool 
     Grid<dim>::onBoundary(const int idx) {
-        bool inside = true;
-    
-        for (int i=0;i<lm.size();++i) {
-            if (lm[i]==idx) {
-                inside = false;
-                break;
-            }
+        for (int d = 0; d < dim; ++d) {
+            for (int i : lowIds[d])
+                if (i == idx) return true;
+            for (int i : highIds[d])
+                if (i == idx) return true;
         }
-        for (int i=0;i<rm.size();++i) {
-            if (rm[i]==idx) {
-                inside = false;
-                break;
-            }
-        }
-
-        if (dim>1) {
-            for (int i=0;i<tm.size();++i) {
-                if (tm[i]==idx) {
-                    inside = false;
-                    break;
-                }
-            }
-            for (int i=0;i<bm.size();++i) {
-                if (bm[i]==idx) {
-                    inside = false;
-                    break;
-                }
-            } 
-        }
-
-        if (dim>2) {
-            for (int i=0;i<fm.size();++i) {
-                if (fm[i]==idx) {
-                    inside = false;
-                    break;
-                }
-            }
-            for (int i=0;i<km.size();++i) {
-                if (km[i]==idx) {
-                    inside = false;
-                    break;
-                }
-            }
-        }
-
-        return !inside;
+        return false;
     }
 
     template <int dim>

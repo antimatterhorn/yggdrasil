@@ -102,13 +102,15 @@ def test_pure_z_reduces_to_cartesian():
     maxdiff = max(abs(a - b) for a, b in zip(rz_prof, ca_prof))
     assert maxdiff < 1e-3, f"RZ z-Sod mid column differs from Cartesian by {maxdiff:.3e}"
 
-    # (ii) no NEW radial instability: RZ radial noise is comparable to the base
-    # scheme's transverse noise in Cartesian (both nonzero, RZ within ~2x).
-    ratio = rz_vt / max(ca_vt, 1e-30)
-    assert ratio < 2.0, (f"RZ radial noise {rz_vt:.3e} exceeds 2x Cartesian "
-                         f"transverse noise {ca_vt:.3e} (ratio {ratio:.2f})")
+    # (ii) no NEW radial instability: RZ radial noise stays within ~2x the base
+    # scheme's transverse noise in Cartesian. Both sit at round-off once the
+    # integrators refresh the ghost rim every sub-stage, so this needs an
+    # absolute floor too -- a bare ratio is meaningless against a zero baseline.
+    tol = max(2.0 * ca_vt, 1e-12)
+    assert rz_vt < tol, (f"RZ radial noise {rz_vt:.3e} exceeds tolerance {tol:.3e} "
+                         f"(2x Cartesian transverse noise {ca_vt:.3e})")
     print(f"[B ok] pure-z reduces to Cartesian: |RZ-Cart|_density={maxdiff:.2e}; "
-          f"radial noise {rz_vt:.2e} vs Cartesian transverse {ca_vt:.2e} (x{ratio:.2f})")
+          f"radial noise {rz_vt:.2e} vs Cartesian transverse {ca_vt:.2e} (tol {tol:.2e})")
 
 
 def test_axis_guard_and_autoinstall():

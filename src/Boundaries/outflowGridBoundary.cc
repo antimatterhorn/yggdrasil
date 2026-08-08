@@ -44,117 +44,106 @@ public:
     OutflowGridBoundary(Mesh::Grid<dim>* grid) : 
         GridBoundary<dim>(grid) {
         if (dim == 1) {
-            std::vector<int> leftIds = grid->leftMost();  
-            std::vector<int> leftcol;
-            leftcol.push_back(1);
+            std::vector<int> xLow = grid->lowMost(0);
+            std::vector<int> xLowInt;
+            xLowInt.push_back(1);
 
-            std::vector<int> rightIds = grid->rightMost();
-            std::vector<int> rightcol;
-            rightcol.push_back(rightIds[0]-1);
+            std::vector<int> xHigh = grid->highMost(0);
+            std::vector<int> xHighInt;
+            xHighInt.push_back(xHigh[0]-1);
 
-            boundaryIds.push_back(leftIds);
-            boundaryIds.push_back(leftcol);
-            boundaryIds.push_back(rightIds);
-            boundaryIds.push_back(rightcol);
+            boundaryIds.push_back(xLow);
+            boundaryIds.push_back(xLowInt);
+            boundaryIds.push_back(xHigh);
+            boundaryIds.push_back(xHighInt);
         }
         else if (dim == 2) {
-            std::vector<int> leftIds   = grid->leftMost();  
-            std::vector<int> leftcol;
+            std::vector<int> xLow  = grid->lowMost(0);
+            std::vector<int> xHigh = grid->highMost(0);
+            std::vector<int> yLow  = grid->lowMost(1);
+            std::vector<int> yHigh = grid->highMost(1);
 
-            std::vector<int> rightIds  = grid->rightMost();
-            std::vector<int> rightcol;
+            std::vector<int> xLowInt, xHighInt, yLowInt, yHighInt;
 
-            std::vector<int> topIds    = grid->topMost();
-            std::vector<int> topcol;
+            int Nx = grid->size_x();
+            int Ny = grid->size_y();
 
-            std::vector<int> bottomIds = grid->bottomMost();
-            std::vector<int> bottomcol;
-            
-            // left/right inner cols: one entry per row (ny entries)
-            for (int j=0; j<(int)leftIds.size(); ++j) {
-                leftcol.push_back(grid->index(1,j));
-                rightcol.push_back(grid->index(bottomIds.size()-2,j));
+            // x inner cols: one entry per row (ny entries)
+            for (int j = 0; j < Ny; ++j) {
+                xLowInt.push_back(grid->index(1, j));
+                xHighInt.push_back(grid->index(Nx - 2, j));
             }
 
-            // top/bottom inner rows: one entry per column (nx entries)
-            for (int i=0; i<(int)bottomIds.size(); ++i) {
-                topcol.push_back(grid->index(i,1));
-                bottomcol.push_back(grid->index(i,leftIds.size()-2));
+            // y inner rows: one entry per column (nx entries)
+            for (int i = 0; i < Nx; ++i) {
+                yLowInt.push_back(grid->index(i, 1));
+                yHighInt.push_back(grid->index(i, Ny - 2));
             }
 
-            boundaryIds.push_back(leftIds);
-            boundaryIds.push_back(leftcol);
-            boundaryIds.push_back(rightIds);
-            boundaryIds.push_back(rightcol);
+            boundaryIds.push_back(xLow);
+            boundaryIds.push_back(xLowInt);
+            boundaryIds.push_back(xHigh);
+            boundaryIds.push_back(xHighInt);
 
-            boundaryIds.push_back(topIds);
-            boundaryIds.push_back(topcol);
-            boundaryIds.push_back(bottomIds);
-            boundaryIds.push_back(bottomcol);
+            boundaryIds.push_back(yLow);
+            boundaryIds.push_back(yLowInt);
+            boundaryIds.push_back(yHigh);
+            boundaryIds.push_back(yHighInt);
         }
         else if (dim == 3) {
-            std::vector<int> leftIds   = grid->leftMost();  
-            std::vector<int> leftcol;
+            std::vector<int> xLow  = grid->lowMost(0);
+            std::vector<int> xHigh = grid->highMost(0);
+            std::vector<int> yLow  = grid->lowMost(1);
+            std::vector<int> yHigh = grid->highMost(1);
+            std::vector<int> zLow  = grid->lowMost(2);
+            std::vector<int> zHigh = grid->highMost(2);
 
-            std::vector<int> rightIds  = grid->rightMost();
-            std::vector<int> rightcol;
-
-            std::vector<int> topIds    = grid->topMost();
-            std::vector<int> topcol;
-
-            std::vector<int> bottomIds = grid->bottomMost();
-            std::vector<int> bottomcol;
-
-            std::vector<int> frontIds  = grid->frontMost();
-            std::vector<int> frontcol;
-
-            std::vector<int> backIds   = grid->backMost();
-            std::vector<int> backcol;
+            std::vector<int> xLowInt, xHighInt, yLowInt, yHighInt, zLowInt, zHighInt;
 
             int Nx = grid->size_x();
             int Ny = grid->size_y();
             int Nz = grid->size_z();
 
             // Iteration order here must match Grid<3>::findBoundaries exactly,
-            // since these pair positionally with leftIds/rightIds/etc: j outer
-            // / k inner for left-right (matches lm/rm).
+            // since these pair positionally with the face lists: j outer / k
+            // inner for the x faces.
             for (int j = 0; j < Ny; ++j) {
                 for (int k = 0; k < Nz; ++k) {
-                    leftcol.push_back(grid->index(1, j, k));
-                    rightcol.push_back(grid->index(Nx - 2, j, k));
+                    xLowInt.push_back(grid->index(1, j, k));
+                    xHighInt.push_back(grid->index(Nx - 2, j, k));
                 }
             }
 
-            // i outer / k inner for top-bottom (matches tm/bm).
+            // i outer / k inner for the y faces.
             for (int i = 0; i < Nx; ++i) {
                 for (int k = 0; k < Nz; ++k) {
-                    topcol.push_back(grid->index(i, 1, k));
-                    bottomcol.push_back(grid->index(i, Ny - 2, k));
+                    yLowInt.push_back(grid->index(i, 1, k));
+                    yHighInt.push_back(grid->index(i, Ny - 2, k));
                 }
             }
 
-            // i outer / j inner for front-back (matches fm/km).
+            // i outer / j inner for the z faces.
             for (int i = 0; i < Nx; ++i) {
                 for (int j = 0; j < Ny; ++j) {
-                    frontcol.push_back(grid->index(i, j, 1));
-                    backcol.push_back(grid->index(i, j, Nz - 2));
+                    zLowInt.push_back(grid->index(i, j, 1));
+                    zHighInt.push_back(grid->index(i, j, Nz - 2));
                 }
             }
 
-            boundaryIds.push_back(leftIds);
-            boundaryIds.push_back(leftcol);
-            boundaryIds.push_back(rightIds);
-            boundaryIds.push_back(rightcol);
+            boundaryIds.push_back(xLow);
+            boundaryIds.push_back(xLowInt);
+            boundaryIds.push_back(xHigh);
+            boundaryIds.push_back(xHighInt);
 
-            boundaryIds.push_back(topIds);
-            boundaryIds.push_back(topcol);
-            boundaryIds.push_back(bottomIds);
-            boundaryIds.push_back(bottomcol);
+            boundaryIds.push_back(yLow);
+            boundaryIds.push_back(yLowInt);
+            boundaryIds.push_back(yHigh);
+            boundaryIds.push_back(yHighInt);
 
-            boundaryIds.push_back(frontIds);
-            boundaryIds.push_back(frontcol);
-            boundaryIds.push_back(backIds);
-            boundaryIds.push_back(backcol);
+            boundaryIds.push_back(zLow);
+            boundaryIds.push_back(zLowInt);
+            boundaryIds.push_back(zHigh);
+            boundaryIds.push_back(zHighInt);
         }
     }
 
@@ -231,15 +220,9 @@ public:
 
     std::vector<std::vector<int>> GetBounds(Mesh::Grid<dim>* grid) {
         std::vector<std::vector<int>> retVector;
-        retVector.push_back(grid->leftMost());
-        retVector.push_back(grid->rightMost());
-        if (dim>1) {
-            retVector.push_back(grid->topMost());
-            retVector.push_back(grid->bottomMost());
-        }
-        if (dim>2) {
-            retVector.push_back(grid->frontMost());
-            retVector.push_back(grid->backMost());
+        for (int d = 0; d < dim; ++d) {
+            retVector.push_back(grid->lowMost(d));
+            retVector.push_back(grid->highMost(d));
         }
         return retVector;
     }
