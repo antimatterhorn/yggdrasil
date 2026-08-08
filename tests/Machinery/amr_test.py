@@ -3,7 +3,8 @@ from Mesh import Grid2d
 from EOS import IdealGasEOS
 from Physics import GridHydroHLLC2d
 from Boundaries import ReflectingGridBoundary2d
-from AMRController import AMRController, buildPatch, wireSiblingBoundaries
+from AMRController import (AMRController, buildPatch, wireSiblingBoundaries,
+                            wireCoarseFineBoundary, buildRestriction)
 
 # Milestone 1: Patch/AMRController scaffolding. Checks that a patch built
 # from an arbitrary (level, box) lands at the correct world-space position.
@@ -167,3 +168,193 @@ for j in range(ny2):
 print(f"max |split - reference| after {NCYCLES} cycles: {maxErr:.3e}")
 assert maxErr < 1e-12, f"split-domain result diverged from single-grid reference: maxErr={maxErr:.3e}"
 print("[ok] AMR milestone 2 (PatchNeighborBoundary) passes: split domain reproduces the single-grid reference to near machine precision.")
+
+# ============================================================================
+# Milestone 3: AMR::CoarseFineBoundary -- piecewise-constant prolongation from
+# a coarse parent into a fine patch's ghost rim. Static 2-level hierarchy: no
+# subcycling, no restriction, no reflux yet.
+# ============================================================================
+
+coarseNx, coarseNy = 10, 10
+cdx, cdy = 0.1, 0.1
+
+coarseGrid = Grid2d(coarseNx, coarseNy, cdx, cdy)
+coarseNodes = NodeList(coarseGrid.size())
+hier = AMRController(coarseGrid, coarseNodes, physicsFactory,
+                      RungeKutta2Integrator2d, dtmin=1e-7,
+                      refinementRatio=REFINEMENT_RATIO, nghost=NGHOST)
+
+# A distinct value per coarse cell, small enough not to trip the solver's explode guard.
+coarseDensity = coarseNodes.getFieldDouble("density")
+coarseEnergy = coarseNodes.getFieldDouble("specificInternalEnergy")
+coarseVel = coarseNodes.getFieldVector2d("velocity")
+for idx in range(coarseGrid.size()):
+    coarseDensity.setValue(idx, 1.0 + 0.01 * idx)
+    coarseEnergy.setValue(idx, 1.0)
+    coarseVel.setValue(idx, Vector2d(0.0, 0.0))
+
+def containingCoarseCell(pos):
+    """Coarse cell whose extent contains `pos`, found by scanning coarse cell centers."""
+    for cIdx in range(coarseGrid.size()):
+        c = coarseGrid.position(cIdx)
+        if abs(c.x - pos.x) <= 0.5 * cdx + 1e-12 and abs(c.y - pos.y) <= 0.5 * cdy + 1e-12:
+            return cIdx
+    return None
+
+def checkGhostMapping(box, label):
+    """Wire a fine patch at `box` to the coarse level, step it once, and verify
+    every ghost cell got the value of the coarse cell geometrically containing
+    it -- checked from world positions, not the wiring's own index math."""
+    patch = hier.buildPatch(level=1, box=box)
+    paired = wireCoarseFineBoundary(patch, hier.levels[0][0], REFINEMENT_RATIO)
+
+    nx = (box[2] - box[0] + 1) + 2 * NGHOST
+    ny = (box[3] - box[1] + 1) + 2 * NGHOST
+    expected = nx * ny - (nx - 2 * NGHOST) * (ny - 2 * NGHOST)
+    assert paired == expected, f"{label}: paired {paired} cells, expected {expected} ghosts"
+
+    density = patch.nodeList.getFieldDouble("density")
+    energy = patch.nodeList.getFieldDouble("specificInternalEnergy")
+    vel = patch.nodeList.getFieldVector2d("velocity")
+    for idx in range(patch.grid.size()):
+        density.setValue(idx, 1.0)
+        energy.setValue(idx, 1.0)
+        vel.setValue(idx, Vector2d(0.0, 0.0))
+
+    patch.integrator.Initialize()
+    patch.integrator.Step()
+
+    checked = 0
+    for lj in range(ny):
+        for li in range(nx):
+            if (NGHOST <= li < nx - NGHOST) and (NGHOST <= lj < ny - NGHOST):
+                continue
+            gIdx = patch.grid.index(li, lj, 0)
+            cIdx = containingCoarseCell(patch.grid.position(gIdx))
+            assert cIdx is not None, f"{label}: ghost ({li},{lj}) has no containing coarse cell"
+            assert abs(density[gIdx] - coarseDensity[cIdx]) < 1e-14, (
+                f"{label}: ghost ({li},{lj}) got {density[gIdx]}, expected coarse cell {cIdx} value {coarseDensity[cIdx]}")
+            checked += 1
+    print(f"[ok] {label}: all {checked} ghost cells received the value of the coarse cell containing them.")
+    return patch
+
+# Aligned: patch edges fall on coarse cell boundaries. Misaligned: they don't,
+# exercising the floor division that maps a fine index onto its coarse cell.
+fine = checkGhostMapping((3 * REFINEMENT_RATIO, 3 * REFINEMENT_RATIO,
+                          6 * REFINEMENT_RATIO + REFINEMENT_RATIO - 1,
+                          6 * REFINEMENT_RATIO + REFINEMENT_RATIO - 1), "aligned patch")
+checkGhostMapping((5, 5, 12, 12), "misaligned patch")
+
+fineNx = (fine.box[2] - fine.box[0] + 1) + 2 * NGHOST
+fineNy = (fine.box[3] - fine.box[1] + 1) + 2 * NGHOST
+fineDensity = fine.nodeList.getFieldDouble("density")
+fineEnergy = fine.nodeList.getFieldDouble("specificInternalEnergy")
+fineVel = fine.nodeList.getFieldVector2d("velocity")
+
+# --- A uniform state must stay exactly uniform: prolongation into the rim
+# must not inject spurious structure at the coarse-fine interface. ---
+UNIFORM_RHO, UNIFORM_U, UNIFORM_VX = 1.0, 1.0, 0.3
+for idx in range(coarseGrid.size()):
+    coarseDensity.setValue(idx, UNIFORM_RHO)
+    coarseEnergy.setValue(idx, UNIFORM_U)
+    coarseVel.setValue(idx, Vector2d(UNIFORM_VX, 0.0))
+for idx in range(fine.grid.size()):
+    fineDensity.setValue(idx, UNIFORM_RHO)
+    fineEnergy.setValue(idx, UNIFORM_U)
+    fineVel.setValue(idx, Vector2d(UNIFORM_VX, 0.0))
+
+for _ in range(10):
+    fine.integrator.Step()
+
+worstUniform = 0.0
+for lj in range(NGHOST, fineNy - NGHOST):
+    for li in range(NGHOST, fineNx - NGHOST):
+        idx = fine.grid.index(li, lj, 0)
+        worstUniform = max(worstUniform, abs(fineDensity[idx] - UNIFORM_RHO))
+        worstUniform = max(worstUniform, abs(fineEnergy[idx] - UNIFORM_U))
+        worstUniform = max(worstUniform, abs(fineVel[idx].x - UNIFORM_VX))
+        worstUniform = max(worstUniform, abs(fineVel[idx].y))
+
+print(f"max deviation from uniform on the fine patch after 10 cycles: {worstUniform:.3e}")
+assert worstUniform < 1e-12, f"coarse-fine interface injected structure into a uniform state: {worstUniform:.3e}"
+print("[ok] AMR milestone 3 (CoarseFineBoundary) passes: prolongation maps ghosts correctly and preserves a uniform state.")
+
+# ============================================================================
+# Milestone 4: AMR::RestrictionOperator -- fine->coarse averaging. Mass,
+# momentum and total energy over the covered region must be identical before
+# and after, which a naive arithmetic mean of velocity/sie would not give.
+# ============================================================================
+
+rGrid = Grid2d(coarseNx, coarseNy, cdx, cdy)
+rNodes = NodeList(rGrid.size())
+rHier = AMRController(rGrid, rNodes, physicsFactory, RungeKutta2Integrator2d,
+                       dtmin=1e-7, refinementRatio=REFINEMENT_RATIO, nghost=NGHOST)
+rCoarse = rHier.levels[0][0]
+
+COVERED_LO, COVERED_HI = 3, 6   # coarse cells covered by the fine patch, aligned so each is covered in full
+rFine = rHier.buildPatch(level=1, box=(COVERED_LO * REFINEMENT_RATIO, COVERED_LO * REFINEMENT_RATIO,
+                                        COVERED_HI * REFINEMENT_RATIO + REFINEMENT_RATIO - 1,
+                                        COVERED_HI * REFINEMENT_RATIO + REFINEMENT_RATIO - 1))
+restriction = buildRestriction(rFine, rCoarse, REFINEMENT_RATIO, eos)
+
+# Coarse state starts uniform, with a sentinel outside the covered region to
+# confirm restriction leaves uncovered cells alone.
+rcRho = rNodes.getFieldDouble("density")
+rcU = rNodes.getFieldDouble("specificInternalEnergy")
+rcVel = rNodes.getFieldVector2d("velocity")
+for idx in range(rGrid.size()):
+    rcRho.setValue(idx, 1.0)
+    rcU.setValue(idx, 1.0)
+    rcVel.setValue(idx, Vector2d(0.0, 0.0))
+sentinelIdx = rGrid.index(0, 0, 0)
+rcRho.setValue(sentinelIdx, 7.5)
+
+# Non-uniform fine state, so a wrong (unweighted) average would show up.
+rfRho = rFine.nodeList.getFieldDouble("density")
+rfU = rFine.nodeList.getFieldDouble("specificInternalEnergy")
+rfVel = rFine.nodeList.getFieldVector2d("velocity")
+fineNx4 = (rFine.box[2] - rFine.box[0] + 1) + 2 * NGHOST
+fineNy4 = (rFine.box[3] - rFine.box[1] + 1) + 2 * NGHOST
+for lj in range(fineNy4):
+    for li in range(fineNx4):
+        idx = rFine.grid.index(li, lj, 0)
+        rfRho.setValue(idx, 1.0 + 0.3 * ((li * 7 + lj * 3) % 5))
+        rfU.setValue(idx, 1.0 + 0.1 * ((li + 2 * lj) % 4))
+        rfVel.setValue(idx, Vector2d(0.2 * ((li % 3) - 1), 0.15 * ((lj % 3) - 1)))
+
+def totals(nodeList, grid, cells):
+    """(mass, momentum_x, momentum_y, total energy) summed over `cells`."""
+    rho = nodeList.getFieldDouble("density")
+    u = nodeList.getFieldDouble("specificInternalEnergy")
+    vel = nodeList.getFieldVector2d("velocity")
+    m = px = py = e = 0.0
+    for idx in cells:
+        vol = grid.cellVolume(idx)
+        dm = rho[idx] * vol
+        v = vel[idx]
+        m += dm
+        px += dm * v.x
+        py += dm * v.y
+        e += dm * (u[idx] + 0.5 * (v.x * v.x + v.y * v.y))
+    return m, px, py, e
+
+fineInterior = [rFine.grid.index(li, lj, 0)
+                for lj in range(NGHOST, fineNy4 - NGHOST)
+                for li in range(NGHOST, fineNx4 - NGHOST)]
+coveredCoarse = [rGrid.index(ci, cj, 0)
+                 for cj in range(COVERED_LO, COVERED_HI + 1)
+                 for ci in range(COVERED_LO, COVERED_HI + 1)]
+
+fineTotals = totals(rFine.nodeList, rFine.grid, fineInterior)
+restriction.apply()
+coarseTotals = totals(rNodes, rGrid, coveredCoarse)
+
+labels = ("mass", "momentum x", "momentum y", "total energy")
+for label, f, c in zip(labels, fineTotals, coarseTotals):
+    scale = max(abs(f), 1e-30)
+    relErr = abs(c - f) / scale
+    print(f"  {label}: fine={f:.12e}  coarse={c:.12e}  rel err={relErr:.3e}")
+    assert relErr < 1e-12, f"restriction did not conserve {label}: rel err {relErr:.3e}"
+
+assert rcRho[sentinelIdx] == 7.5, "restriction modified a coarse cell outside the covered region"
+print("[ok] AMR milestone 4 (RestrictionOperator) passes: mass, momentum and energy conserved exactly; uncovered cells untouched.")

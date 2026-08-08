@@ -6,7 +6,7 @@
 from Mesh import Grid2d
 from DataBase import NodeList
 from LinearAlgebra import Vector2d
-from AMR import PatchNeighborBoundary2d
+from AMR import PatchNeighborBoundary2d, CoarseFineBoundary2d, RestrictionOperator2d
 
 
 class AMRPatch:
@@ -115,6 +115,72 @@ def _wireFacePairing(nearPatch, farPatch, axis, nghost):
 
     nearPatch.physics.addBoundary(PatchNeighborBoundary2d(farPatch.nodeList, nearIds, farIds))
     return (perpLo, perpHi)
+
+
+def wireCoarseFineBoundary(finePatch, coarsePatch, refinementRatio):
+    """Register a CoarseFineBoundary on finePatch filling each of its ghost
+    cells from the coarse cell of coarsePatch containing it (piecewise-constant
+    injection). Ghost cells with no covering coarse cell -- e.g. on a face that
+    is really a domain boundary -- are skipped. Returns the number of cells
+    paired."""
+    iLow, jLow, iHigh, jHigh = finePatch.box
+    nghost = finePatch.nghost
+    interiorNx = iHigh - iLow + 1
+    interiorNy = jHigh - jLow + 1
+
+    cLowI, cLowJ = coarsePatch.box[0], coarsePatch.box[1]
+    cGhost = coarsePatch.nghost
+
+    ghostIds, coarseIds = [], []
+    for lj in range(interiorNy + 2 * nghost):
+        for li in range(interiorNx + 2 * nghost):
+            if nghost <= li < nghost + interiorNx and nghost <= lj < nghost + interiorNy:
+                continue
+            # Floor division is what we want here: a negative fine index still lands in the coarse cell covering it.
+            cLocalI = (iLow + li - nghost) // refinementRatio - cLowI + cGhost
+            cLocalJ = (jLow + lj - nghost) // refinementRatio - cLowJ + cGhost
+            if not (0 <= cLocalI < coarsePatch.grid.nx and 0 <= cLocalJ < coarsePatch.grid.ny):
+                continue
+            ghostIds.append(finePatch.grid.index(li, lj, 0))
+            coarseIds.append(coarsePatch.grid.index(cLocalI, cLocalJ, 0))
+
+    finePatch.physics.addBoundary(CoarseFineBoundary2d(coarsePatch.nodeList, ghostIds, coarseIds))
+    return len(ghostIds)
+
+
+def buildRestriction(finePatch, coarsePatch, refinementRatio, eos):
+    """Build a RestrictionOperator averaging finePatch's interior cells onto
+    the coarse cells they cover. Only coarse cells covered in full by fine
+    interior cells are included -- a partially covered cell (possible when the
+    fine box isn't aligned to the coarse grid) would otherwise be overwritten
+    using only part of its volume."""
+    iLow, jLow, iHigh, jHigh = finePatch.box
+    nghost = finePatch.nghost
+    cLowI, cLowJ = coarsePatch.box[0], coarsePatch.box[1]
+    cGhost = coarsePatch.nghost
+
+    perCoarse = {}
+    for lj in range(nghost, nghost + (jHigh - jLow + 1)):
+        for li in range(nghost, nghost + (iHigh - iLow + 1)):
+            cLocalI = (iLow + li - nghost) // refinementRatio - cLowI + cGhost
+            cLocalJ = (jLow + lj - nghost) // refinementRatio - cLowJ + cGhost
+            if not (0 <= cLocalI < coarsePatch.grid.nx and 0 <= cLocalJ < coarsePatch.grid.ny):
+                continue
+            key = coarsePatch.grid.index(cLocalI, cLocalJ, 0)
+            perCoarse.setdefault(key, []).append(finePatch.grid.index(li, lj, 0))
+
+    fullyCovered = refinementRatio ** 2
+    fineIds, coarseIds = [], []
+    for cIdx, fIdxs in perCoarse.items():
+        if len(fIdxs) != fullyCovered:
+            continue
+        for f in fIdxs:
+            fineIds.append(f)
+            coarseIds.append(cIdx)
+
+    return RestrictionOperator2d(finePatch.nodeList, coarsePatch.nodeList,
+                                  finePatch.grid, coarsePatch.grid, eos,
+                                  fineIds, coarseIds)
 
 
 def wireSiblingBoundaries(patchA, patchB, nghost):
