@@ -176,38 +176,9 @@ public:
 
     virtual void
     addDomain() {
-        if (dim == 1) {
-            std::vector<int> leftIds = grid->leftMost();
-            std::vector<int> rightIds = grid->rightMost();
-
-            addIds(leftIds);
-            addIds(rightIds);
-        }
-        else if (dim == 2) {
-            std::vector<int> leftIds   = grid->leftMost();
-            std::vector<int> rightIds  = grid->rightMost();
-            std::vector<int> topIds    = grid->topMost();
-            std::vector<int> bottomIds = grid->bottomMost();
-
-            addIds(leftIds);
-            addIds(rightIds);
-            addIds(topIds);
-            addIds(bottomIds);
-        }
-        else if (dim == 3) {
-            std::vector<int> leftIds   = grid->leftMost();
-            std::vector<int> rightIds  = grid->rightMost();
-            std::vector<int> topIds    = grid->topMost();
-            std::vector<int> bottomIds = grid->bottomMost();
-            std::vector<int> frontIds  = grid->frontMost();
-            std::vector<int> backIds   = grid->backMost();
-
-            addIds(leftIds);
-            addIds(rightIds);
-            addIds(topIds);
-            addIds(bottomIds);
-            addIds(frontIds);
-            addIds(backIds);
+        for (int d = 0; d < dim; ++d) {
+            addIds(grid->lowMost(d));
+            addIds(grid->highMost(d));
         }
     }
 

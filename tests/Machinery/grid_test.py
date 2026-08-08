@@ -38,10 +38,10 @@ for j in range(ny):
 print("\ndirichlet ids:")
 print(dgb.boundaryIds())
 
-print("\nleft:\t",", ".join(f"{num:02d}" for num in myGrid.leftMost()))
-print("right:\t",", ".join(f"{num:02d}" for num in myGrid.rightMost()))
-print("top:\t",", ".join(f"{num:02d}" for num in myGrid.topMost()))
-print("bottom:\t",", ".join(f"{num:02d}" for num in myGrid.bottomMost()))
+print("\nx-low  (left):\t",  ", ".join(f"{num:02d}" for num in myGrid.lowMost(0)))
+print("x-high (right):\t",   ", ".join(f"{num:02d}" for num in myGrid.highMost(0)))
+print("y-low  (bottom):",    ", ".join(f"{num:02d}" for num in myGrid.lowMost(1)))
+print("y-high (top):\t",     ", ".join(f"{num:02d}" for num in myGrid.highMost(1)))
 
 print("\npositions:")
 for j in range(ny):

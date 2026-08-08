@@ -36,9 +36,12 @@ public:
 
         evalWithAccum(state, k1, time, 0.0);
 
-        // Initial guess: Euler forward
+        // Initial guess: Euler forward. Both sides of the convergence test below
+        // must have their rims refreshed alike, or the rim contributes a constant
+        // residual and the fixed-point iteration never converges.
         State<dim> predicted = state->deepCopy();
         predicted += k1 * dt;
+        physics->ApplyStageBoundaries(&predicted);
 
         // Fixed-point iteration
         const double tolerance = 1e-10;
@@ -53,6 +56,7 @@ public:
             avgDeriv *= 0.5 * dt;
 
             newPredicted += avgDeriv;
+            physics->ApplyStageBoundaries(&newPredicted);
 
             double delta = (newPredicted - predicted).L2Norm();
 

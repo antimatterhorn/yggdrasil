@@ -31,6 +31,11 @@ public:
     // to override this; all other boundary types return an empty list.
     virtual std::vector<int> getObstacleIds() const { return {}; }
 
+    // Whether this is a ghost-cell fill, which every derivative evaluation needs
+    // refreshed, rather than a once-per-step state event (a collision impulse, a
+    // constraint) that must not re-fire inside an integrator's sub-stages.
+    virtual bool refreshPerStage() const { return false; }
+
     virtual void
     ApplyBoundaries(State<dim>* state, NodeList* nodeList) {
         for (int i = 0; i < state->count(); ++i) {
