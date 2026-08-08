@@ -26,6 +26,8 @@ public:
 
     virtual ~PatchNeighborBoundary() = default;
 
+    bool refreshPerStage() const override { return true; }
+
     void ApplyScalar(ScalarField* field) override { ApplyThis<double>(field); }
     void ApplyVector(VectorField* field) override { ApplyThis<Vector>(field); }
     void ApplyComplex(ComplexField* field) override { ApplyThis<Complex>(field); }
