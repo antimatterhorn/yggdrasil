@@ -2,6 +2,7 @@
 
 import json
 from Integrators import *
+from Colors import BRIGHT_CYAN, BRIGHT_GREEN, BRIGHT_YELLOW, DIM, colorize
 
 class Controller:
     def __init__(self,integrator,periodicWork=[],statStep=1,tstop=None):
@@ -49,9 +50,9 @@ class Controller:
             time = self.integrator.Time()
             dt = self.integrator.dt
             if self.integrator.Cycle() % self.statStep == 0:
-                print("Cycle: %04d"%cycle,
-                    " Time: %03.3e"%time,
-                    " dt: %03.3e"%dt)
+                print(colorize("Cycle:", DIM), colorize("%04d"%cycle, BRIGHT_CYAN),
+                    colorize(" Time:", DIM), colorize("%03.3e"%time, BRIGHT_GREEN),
+                    colorize(" dt:", DIM), colorize("%03.3e"%dt, BRIGHT_YELLOW))
             if len(self.periodicWork) > 0:
                 for work in self.periodicWork:
                     if cycle % work.cycle == 0:

@@ -5,6 +5,8 @@
 
 #include <cmath> // for round
 
+#include "colors.hh"
+
 void ProgressBar(double pct, std::string text) {
     // Define the length of the progress bar
     const int barWidth = 20;
@@ -13,17 +15,21 @@ void ProgressBar(double pct, std::string text) {
     int filledLength = static_cast<int>(round(pct * barWidth));
 
     // Create the progress bar string
-    std::string bar = "[";
+    std::string filled, remainder;
     for (int i = 0; i < filledLength; ++i) {
-        bar += "=";
+        filled += "=";
     }
-    bar += ">";
     for (int i = filledLength + 1; i < barWidth; ++i) {
-        bar += "·";
+        remainder += "·";
     }
-    bar += "]";
 
-    bar += " " + std::to_string(pct*100) + "%";
+    std::string bar = Color::colorize("[", Color::dim());
+    bar += Color::colorize(filled, Color::green());
+    bar += Color::colorize(">", Color::brightGreen());
+    bar += Color::colorize(remainder, Color::dim());
+    bar += Color::colorize("]", Color::dim());
+
+    bar += Color::colorize(" " + std::to_string(pct*100) + "%", Color::brightWhite());
 
     bar += " " + text;
 
