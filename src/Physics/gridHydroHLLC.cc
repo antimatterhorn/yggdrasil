@@ -37,6 +37,7 @@ public:
         // difference collapses to zero instead of reading an invalid index.
         int iLL = neighborsL[2 * axis];
         int iRR = neighborsR[2 * axis + 1];
+        const bool atEdge = (iLL < 0 || iRR < 0);
         if (iLL < 0) iLL = iL;
         if (iRR < 0) iRR = iR;
 
@@ -67,6 +68,13 @@ public:
         for (int d = 0; d < dim; ++d) {
             svL[d] = std::clamp(svL[d], -slopeLimiterMax, slopeLimiterMax);
             svR[d] = std::clamp(svR[d], -slopeLimiterMax, slopeLimiterMax);
+        }
+
+        // A one-sided slope at a domain edge breaks the mirror symmetry a wall's flux cancellation needs.
+        if (atEdge) {
+            srhoL = srhoR = 0.0;
+            suL   = suR   = 0.0;
+            svL   = svR   = Vector::zero();
         }
 
         // Reconstruct states at interface

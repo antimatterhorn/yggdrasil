@@ -50,6 +50,12 @@ public:
         return (2.0 * deltaL * deltaR) / (deltaL + deltaR);
     }
 
+    // Whether `idx` has both neighbours along `axis`, i.e. a full slope stencil.
+    bool slopesAvailable(int idx, int axis) const {
+        auto neighbors = this->grid->getNeighboringCells(idx);
+        return neighbors[2 * axis] >= 0 && neighbors[2 * axis + 1] >= 0;
+    }
+
     template<typename T>
     T slopeLimitedValue(const Field<T>& field, int idx, int axis) const {
         auto neighbors = this->grid->getNeighboringCells(idx);
@@ -97,6 +103,14 @@ public:
         double duR      = slopeLimitedValue(u, iR, axis);
         double dpL      = slopeLimitedValue(p, iL, axis);
         double dpR      = slopeLimitedValue(p, iR, axis);
+
+        // A one-sided slope at a domain edge breaks the mirror symmetry a wall's flux cancellation needs.
+        if (!slopesAvailable(iL, axis) || !slopesAvailable(iR, axis)) {
+            drhoL = drhoR = 0.0;
+            duL   = duR   = 0.0;
+            dpL   = dpR   = 0.0;
+            dvL   = dvR   = Vector::zero();
+        }
 
         // Reconstructed interface values
         double rhoL = rho0L + 0.5 * drhoL;
