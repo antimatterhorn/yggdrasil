@@ -66,11 +66,6 @@ public:
         this->InitializeBoundaries();
     }
 
-    virtual void PreStepInitialize() override {
-        SetConductivity();
-        this->state.updateFields(this->nodeList);
-    }
-
     // EvaluateDerivatives leaves T and X at the last RK sub-stage; resync them
     // against the finalized energy so anything reading the NodeList sees the step's
     // actual end-of-step values.
