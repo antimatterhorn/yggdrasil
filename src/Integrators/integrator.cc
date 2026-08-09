@@ -63,10 +63,8 @@ Integrator<dim>::Integrate(Physics<dim>* physics,
         derivatives.accumulateFrom(accDeriv, acc->accumulateFieldNames());
     }
 
-    derivatives *= dt;
-    State<dim> newState(state->size());
-    newState = state->deepCopy();
-    newState += derivatives;
+    State<dim> newState = state->deepCopy();
+    newState.axpy(dt, derivatives);
     return newState;
 }
 

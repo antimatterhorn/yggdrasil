@@ -40,7 +40,7 @@ public:
         // must have their rims refreshed alike, or the rim contributes a constant
         // residual and the fixed-point iteration never converges.
         State<dim> predicted = state->deepCopy();
-        predicted += k1 * dt;
+        predicted.axpy(dt, k1);
         physics->ApplyStageBoundaries(&predicted);
 
         // Fixed-point iteration
@@ -51,14 +51,11 @@ public:
             evalWithAccum(&predicted, k2, time, dt);
 
             State<dim> newPredicted = state->deepCopy();
-            State<dim> avgDeriv = k1.deepCopy();
-            avgDeriv += k2;
-            avgDeriv *= 0.5 * dt;
-
-            newPredicted += avgDeriv;
+            newPredicted.axpy(0.5 * dt, k1);
+            newPredicted.axpy(0.5 * dt, k2);
             physics->ApplyStageBoundaries(&newPredicted);
 
-            double delta = (newPredicted - predicted).L2Norm();
+            double delta = newPredicted.distanceL2(predicted);
 
             if (this->verbose)
                 std::cout << "CrankNicolson iteration " << iter << ": Δ = " << delta << "\n";

@@ -188,6 +188,16 @@ public:
         return *this;
     }
 
+    // Fused this += scalar*other. The equivalent `*this += other * scalar` clones
+    // and scales a whole State just to add it once and discard it.
+    State& axpy(const double scalar, const State& other) {
+        if (this->count() != other.count() || this->size() != other.size()) {
+            throw std::invalid_argument("Incompatible State objects for axpy");
+        }
+        forEachMatchingTypedField(other, [scalar](auto* a, const auto* b) { a->axpy(scalar, *b); });
+        return *this;
+    }
+
     State operator*(const double& scalar) const {
         State<dim> newState(numNodes);
         newState.clone(this);
@@ -277,6 +287,38 @@ public:
             }
         }
 
+        return std::sqrt(sum);
+    }
+
+    // |this - other|, without cloning a whole State to hold the difference.
+    double distanceL2(const State& other) const {
+        if (this->count() != other.count() || this->size() != other.size()) {
+            throw std::invalid_argument("Incompatible State objects for distanceL2");
+        }
+        double sum = 0.0;
+        for (int i = 0; i < this->count(); ++i) {
+            FieldBase* a = this->getFieldByIndex(i);
+            FieldBase* b = other.getFieldByIndex(i);
+
+            if (auto* fa = dynamic_cast<ScalarField*>(a)) {
+                auto* fb = dynamic_cast<ScalarField*>(b);
+                if (!fb) continue;
+                for (int j = 0; j < (int)fa->size(); ++j) {
+                    const double d = (*fa)[j] - (*fb)[j];
+                    sum += d * d;
+                }
+            } else if (auto* fa = dynamic_cast<VectorField*>(a)) {
+                auto* fb = dynamic_cast<VectorField*>(b);
+                if (!fb) continue;
+                for (int j = 0; j < (int)fa->size(); ++j)
+                    sum += ((*fa)[j] - (*fb)[j]).mag2();
+            } else if (auto* fa = dynamic_cast<ComplexField*>(a)) {
+                auto* fb = dynamic_cast<ComplexField*>(b);
+                if (!fb) continue;
+                for (int j = 0; j < (int)fa->size(); ++j)
+                    sum += std::norm((*fa)[j] - (*fb)[j]);
+            }
+        }
         return std::sqrt(sum);
     }
 

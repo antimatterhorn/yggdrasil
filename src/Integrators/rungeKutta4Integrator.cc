@@ -42,29 +42,25 @@ public:
 
         evalWithAccum(state, k1, time, 0);
 
-        interim += k1 * (dt / 2.0);
+        interim.axpy(dt / 2.0, k1);
         physics->ApplyStageBoundaries(&interim);
         evalWithAccum(&interim, k2, time, dt / 2.0);
 
         interim.clone(state);
-        interim += k2 * (dt / 2.0);
+        interim.axpy(dt / 2.0, k2);
         physics->ApplyStageBoundaries(&interim);
         evalWithAccum(&interim, k3, time, dt / 2.0);
 
         interim.clone(state);
-        interim += k3 * dt;
+        interim.axpy(dt, k3);
         physics->ApplyStageBoundaries(&interim);
         evalWithAccum(&interim, k4, time, dt);
 
-        k2 *= 2.0;
-        k3 *= 2.0;
-        k1 += k2;
-        k1 += k3;
-        k1 += k4;
-        k1 *= (dt / 6.0);
-
         State<dim> newState = state->deepCopy();
-        newState += k1;
+        newState.axpy(dt / 6.0, k1);
+        newState.axpy(dt / 3.0, k2);
+        newState.axpy(dt / 3.0, k3);
+        newState.axpy(dt / 6.0, k4);
         return newState;
     }
 };

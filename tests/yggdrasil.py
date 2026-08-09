@@ -1,6 +1,21 @@
 import os
 import sys
 
+# libgomp sizes its thread pool from the *logical* CPU count, which oversubscribes
+# hyperthreads; these kernels are memory-bound, so that costs ~3x at 200^2 (see
+# PERFORMANCE.md). Must run before the compiled modules load, since libgomp reads
+# OMP_NUM_THREADS when it initializes. An explicit setting is left alone.
+if "OMP_NUM_THREADS" not in os.environ:
+    import glob
+    _cores = set()
+    for _p in glob.glob("/sys/devices/system/cpu/cpu[0-9]*/topology/thread_siblings_list"):
+        try:
+            with open(_p) as _f:
+                _cores.add(_f.read().strip())
+        except OSError:
+            pass
+    os.environ["OMP_NUM_THREADS"] = str(len(_cores) or os.cpu_count() or 1)
+
 # Resolve relative to this file's real location (not the caller's cwd) so that
 # importing "yggdrasil" works identically whether a test script lives directly
 # in tests/ or in one of its subdirectories (Machinery/, Physics/), including

@@ -84,6 +84,9 @@ public:
     Field<T>& operator-=(const Field<T>& other);
     Field<T>& operator*=(const double other);
 
+    // Fused this += scalar*other, so a scaled add never builds a scaled copy first.
+    Field<T>& axpy(const double scalar, const Field<T>& other);
+
     bool hasName() const override;
     Name getName() const override;
     std::string getNameString() const override;

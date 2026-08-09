@@ -6,6 +6,9 @@
 #include "field.hh"
 #include <cstdlib>
 
+// Below this element count an OpenMP fork/join costs more than the loop saves.
+static constexpr int fieldParallelThreshold = 4096;
+
 template <typename T>
 Field<T>::Field() {}
 
@@ -95,64 +98,78 @@ Field<T>::operator=(const Field<T>& other) {
     return *this;
 }
 
-template <typename T> 
-Field<T> 
+template <typename T>
+Field<T>
 Field<T>::operator+(const Field<T>& other) const {
     Field<T> result(*this); // Create a copy of the current object
-    for (unsigned int i = 0; i < this->size(); ++i) {
-        result.setValue(i, this->getValue(i) + other.getValue(i)); // Perform element-wise addition
-    }
+    result += other;
     return result; // Return the result
 }
 
-template <typename T> 
-Field<T> 
+template <typename T>
+Field<T>
 Field<T>::operator-(const Field<T>& other) const {
     Field<T> result(*this); // Create a copy of the current object
-    for (int i = 0; i < this->size(); ++i) {
-        result.setValue(i, this->getValue(i) - other.getValue(i)); // Perform element-wise addition
-    }
+    result -= other;
     return result; // Return the result
 }
 
-template <typename T> 
-Field<T> 
+template <typename T>
+Field<T>
 Field<T>::operator*(const double other) const {
     Field<T> result(*this); // Create a copy of the current object
-    for (unsigned int i = 0; i < this->size(); ++i) {
-        result.setValue(i, this->getValue(i) * other); // Perform element-wise scalar multiplication
-    }
+    result *= other;
     return result; // Return the result
 }
 
-template <typename T> 
-Field<T>& 
+template <typename T>
+Field<T>&
 Field<T>::operator+=(const Field<T>& other) {
     if (this != &other) {
-        for (int i = 0; i < this->size(); ++i) {
-            this->setValue(i, this->getValue(i) + other.getValue(i)); // Perform element-wise addition
-        }
+        const int n = (int)values.size();
+        T* a = values.data();
+        const T* b = other.values.data();
+        #pragma omp parallel for if(n >= fieldParallelThreshold)
+        for (int i = 0; i < n; ++i) a[i] += b[i];
     }
     return *this;
 }
 
 template <typename T>
-Field<T>& 
+Field<T>&
 Field<T>::operator-=(const Field<T>& other) {
     if (this->size() != other.size())
         throw std::invalid_argument("Field sizes do not match for subtraction");
-    for (int i = 0; i < this->size(); ++i)
-        (*this)[i] -= other[i];
+    const int n = (int)values.size();
+    T* a = values.data();
+    const T* b = other.values.data();
+    #pragma omp parallel for if(n >= fieldParallelThreshold)
+    for (int i = 0; i < n; ++i) a[i] -= b[i];
     return *this;
 }
 
 
 template <typename T>
-Field<T>& 
+Field<T>&
 Field<T>::operator*=(const double other) {
-    for (int i = 0; i < this->size(); ++i) {
-        this->setValue(i, this->getValue(i) * other); // Perform element-wise scalar multiplication
-    }
+    const int n = (int)values.size();
+    T* a = values.data();
+    #pragma omp parallel for if(n >= fieldParallelThreshold)
+    for (int i = 0; i < n; ++i) a[i] = a[i] * other;
+    return *this;
+}
+
+// Lin::Vector has operator* and operator+= but no operator*=, hence this form.
+template <typename T>
+Field<T>&
+Field<T>::axpy(const double scalar, const Field<T>& other) {
+    if (this->size() != other.size())
+        throw std::invalid_argument("Field sizes do not match for axpy");
+    const int n = (int)values.size();
+    T* a = values.data();
+    const T* b = other.values.data();
+    #pragma omp parallel for if(n >= fieldParallelThreshold)
+    for (int i = 0; i < n; ++i) a[i] += b[i] * scalar;
     return *this;
 }
 

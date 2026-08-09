@@ -38,16 +38,14 @@ public:
 
         evalWithAccum(state, k1, time, 0);
 
-        interim += k1 * dt;
+        interim.axpy(dt, k1);
         physics->ApplyStageBoundaries(&interim);
 
         evalWithAccum(&interim, k2, time, dt);
 
         State<dim> newState = state->deepCopy();
-
-        k1 += k2;
-        k1 *= 0.5 * dt;
-        newState += k1;
+        newState.axpy(0.5 * dt, k1);
+        newState.axpy(0.5 * dt, k2);
 
         return newState;
     }
