@@ -8,11 +8,11 @@ _logo = ["               _             _ _ ",
          "|_  |_  |_  |___|_| |__,|___|_|_|",
          "|___|___|___|"]
 
-_version = "v0.9.0"
+_version = "v0.9.5"
 
-# Vertical gradient down the ASCII logo: canopy green to root cyan.
+# Vertical gradient down the ASCII logo: canopy green to root brown.
 _top = (120, 200, 110)
-_bottom = (60, 170, 200)
+_bottom = (97, 41, 18)
 
 for i, line in enumerate(_logo):
     t = i / (len(_logo) - 1)
