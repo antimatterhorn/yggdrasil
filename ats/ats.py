@@ -1,5 +1,6 @@
 # ats.py
 
+import os
 import importlib
 import scripts
 import difflib
@@ -36,6 +37,8 @@ def load_reference_file(filename="ats_reference.txt"):
     references = {}
     current_test = None
     current_output = []
+    # Alongside this file, not in the caller's cwd, so ats.py runs from anywhere.
+    filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), filename)
     with open(filename, "r") as f:
         for line in f:
             line = line.strip()

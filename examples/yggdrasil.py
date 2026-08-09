@@ -16,7 +16,10 @@ if "OMP_NUM_THREADS" not in os.environ:
             pass
     os.environ["OMP_NUM_THREADS"] = str(len(_cores) or os.cpu_count() or 1)
 
-buildir = "../build/src/"
+# Resolve relative to this file's real location (not the caller's cwd) so that a script
+# here can be run from any working directory.
+_examplesDir = os.path.dirname(os.path.realpath(__file__))
+buildir = os.path.join(_examplesDir, "..", "build", "src") + "/"
 
 for dir in ["Math",
             "DataBase",
