@@ -33,13 +33,19 @@ public:
     }
 
     void SetConductivity() {
+        SetConductivity(this->nodeList->template getField<double>("specificInternalEnergy"));
+    }
+
+    // Refresh temperature and conductivity from the given energy field, which may
+    // belong to an RK sub-stage State rather than to the NodeList.
+    void SetConductivity(ScalarField* u) {
         int numZones = this->nodeList->size();
 
         ScalarField* rho           = this->nodeList->template getField<double>("density");
-        ScalarField* u             = this->nodeList->template getField<double>("specificInternalEnergy");
         ScalarField* T             = this->nodeList->template getField<double>("temperature");
         ScalarField* X             = this->nodeList->template getField<double>("conductivity");
         // looping and using scalar methods for speed
+        #pragma omp parallel for
         for (int i = 0 ; i < numZones ; ++i) SetConductivity(rho,u,T,X,i);
     }
 
@@ -65,6 +71,13 @@ public:
         this->state.updateFields(this->nodeList);
     }
 
+    // EvaluateDerivatives leaves T and X at the last RK sub-stage; resync them
+    // against the finalized energy so anything reading the NodeList sees the step's
+    // actual end-of-step values.
+    virtual void FinalChecks() override {
+        SetConductivity();
+    }
+
     virtual void EvaluateDerivatives(const State<dim>* initialState, State<dim>& deriv, const double time, const double dt) override {
         int numZones = this->nodeList->size();
 
@@ -78,6 +91,8 @@ public:
         double local_dtmin = 1e30;
         double dx2 = grid->getdx() * grid->getdx();  // assume uniform dx for now
 
+        SetConductivity(u);
+
         #pragma omp parallel for reduction(min:local_dtmin)
         for (int i = 0 ; i < numZones ; ++i) {
             if (!grid->onBoundary(i)) {
@@ -86,8 +101,6 @@ public:
                 double divFlux = 0.0;
                 double Xi = X->getValue(i);
                 double Ti = T->getValue(i);
-
-                SetConductivity(rho,u,T,X,i);
 
                 for (int j : grid->neighbors(i)) {
                     if (j < 0 || j >= numZones || j == i) continue;
@@ -106,12 +119,12 @@ public:
                     double flux = -Xij * Tij / std::sqrt(dist2);  // scalar flux across face
                     double Aij = grid->faceArea(i, j);            // effective area between i and j
 
-                    divFlux += flux * Aij;
+                    divFlux -= flux * Aij;
                 }
 
-                dudt->setValue(i,divFlux / Vi);
-
                 double rhoi = rho->getValue(i);  // density
+
+                dudt->setValue(i, divFlux / (rhoi * Vi));
 
                 // Approximate cv = du/dT numerically:
                 double ui = u->getValue(i);
@@ -139,7 +152,7 @@ public:
 
     virtual double EstimateTimestep() const override {
         double timestepCoefficient = 0.25; // Adjust as needed
-        double timestep = timestepCoefficient * std::sqrt(dtmin);
+        double timestep = timestepCoefficient * dtmin;
 
         return timestep;
     }
