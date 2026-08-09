@@ -29,7 +29,7 @@ class Grid:
     def size(self):
         return
     def getNeighboringCells(self,idx="int"):
-        return "std::vector<int>"
+        return "std::array<int, 2*%(dim)s>"
     def index(self,i="int",j=("int",0),k=("int",0)):
         return
     def indexToCoordinates(self,idx="int"):

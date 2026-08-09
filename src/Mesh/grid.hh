@@ -16,6 +16,9 @@ namespace Mesh {
     private:
         std::vector<std::shared_ptr<FieldBase>> _extraFields;
         std::array<std::vector<int>, 3> lowIds, highIds;
+        // Per-cell flag mirroring lowIds/highIds, so onBoundary is a lookup rather
+        // than a scan of every boundary index. Rebuilt by findBoundaries.
+        std::vector<char> boundaryMask;
         Geometry _geometry = Geometry::Cartesian;
     public:
         using Vector = Lin::Vector<dim>;
@@ -125,12 +128,14 @@ namespace Mesh {
         double spacing(int axis) const;
         Lin::Vector<dim> getPosition(int id);
 
-        std::vector<int> getNeighboringCells(int idx) const;
-        inline std::vector<int> neighbors(int idx ) const { return getNeighboringCells(idx); };
+        std::array<int, 2*dim> getNeighboringCells(int idx) const;
+        inline std::array<int, 2*dim> neighbors(int idx ) const { return getNeighboringCells(idx); };
         std::array<int, 3> indexToCoordinates(int idx) const;
 
         void findBoundaries(const int buffer);
-        bool onBoundary(const int idx);
+        inline bool onBoundary(const int idx) const {
+            return idx >= 0 && idx < (int)boundaryMask.size() && boundaryMask[idx] != 0;
+        }
         void assignPositions(NodeList* nodeList);
 
         template <typename T>

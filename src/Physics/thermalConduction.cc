@@ -11,6 +11,7 @@ protected:
     Mesh::Grid<dim>* grid;
     EquationOfState* eos;
     OpacityModel* opac;
+    std::vector<int> insideIds;
     double dtmin;
 public:
     using Vector = Lin::Vector<dim>;
@@ -61,6 +62,10 @@ public:
     }
 
     virtual void ZeroTimeInitialize() override {
+        insideIds.clear();
+        for (int i = 0; i < grid->size(); ++i)
+            if (!grid->onBoundary(i)) insideIds.push_back(i);
+
         SetConductivity();
         this->UpdateState();
         this->InitializeBoundaries();
@@ -89,55 +94,54 @@ public:
         SetConductivity(u);
 
         #pragma omp parallel for reduction(min:local_dtmin)
-        for (int i = 0 ; i < numZones ; ++i) {
-            if (!grid->onBoundary(i)) {
-                const Vector& ri = grid->getPosition(i);
-                double Vi = grid->cellVolume(i);
-                double divFlux = 0.0;
-                double Xi = X->getValue(i);
-                double Ti = T->getValue(i);
+        for (int h = 0 ; h < (int)insideIds.size() ; ++h) {
+            const int i = insideIds[h];
+            const Vector& ri = grid->getPosition(i);
+            double Vi = grid->cellVolume(i);
+            double divFlux = 0.0;
+            double Xi = X->getValue(i);
+            double Ti = T->getValue(i);
 
-                for (int j : grid->neighbors(i)) {
-                    if (j < 0 || j >= numZones || j == i) continue;
+            for (int j : grid->neighbors(i)) {
+                if (j < 0 || j >= numZones || j == i) continue;
 
-                    double Xj = X->getValue(j);
-                    double Tj = T->getValue(j);
+                double Xj = X->getValue(j);
+                double Tj = T->getValue(j);
 
-                    const Vector& rj = grid->getPosition(j);
-                    Vector dx = rj - ri;
-                    double dist2 = dx.mag2();
-                    if (dist2 == 0.0) continue;
+                const Vector& rj = grid->getPosition(j);
+                Vector dx = rj - ri;
+                double dist2 = dx.mag2();
+                if (dist2 == 0.0) continue;
 
-                    double Tij = Tj-Ti;
-                    double Xij = 0.5 * (Xi+Xj);  // symmetric average
+                double Tij = Tj-Ti;
+                double Xij = 0.5 * (Xi+Xj);  // symmetric average
 
-                    double flux = -Xij * Tij / std::sqrt(dist2);  // scalar flux across face
-                    double Aij = grid->faceArea(i, j);            // effective area between i and j
+                double flux = -Xij * Tij / std::sqrt(dist2);  // scalar flux across face
+                double Aij = grid->faceArea(i, j);            // effective area between i and j
 
-                    divFlux -= flux * Aij;
-                }
-
-                double rhoi = rho->getValue(i);  // density
-
-                dudt->setValue(i, divFlux / (rhoi * Vi));
-
-                // Approximate cv = du/dT numerically:
-                double ui = u->getValue(i);
-                double dT = std::max(std::abs(Ti) * 1e-4, 1e-10);
-                double ui_plus, Ti_plus = Ti + dT;
-                eos->setInternalEnergyFromTemperature(&ui_plus, &rhoi, &Ti_plus);
-                double cv = (ui_plus - ui) / dT;
-
-                // Clamp or skip invalid results
-                if (cv <= 0.0 || std::isnan(cv) || std::isinf(cv)) continue;
-
-                double D = Xi / (rhoi * cv);
-                if (D <= 0.0 || std::isnan(D) || std::isinf(D)) continue;
-
-                double dt_candidate = 0.5 * dx2 / D;
-                if (dt_candidate > 0.0)
-                    local_dtmin = std::min(local_dtmin, dt_candidate);
+                divFlux -= flux * Aij;
             }
+
+            double rhoi = rho->getValue(i);  // density
+
+            dudt->setValue(i, divFlux / (rhoi * Vi));
+
+            // Approximate cv = du/dT numerically:
+            double ui = u->getValue(i);
+            double dT = std::max(std::abs(Ti) * 1e-4, 1e-10);
+            double ui_plus, Ti_plus = Ti + dT;
+            eos->setInternalEnergyFromTemperature(&ui_plus, &rhoi, &Ti_plus);
+            double cv = (ui_plus - ui) / dT;
+
+            // Clamp or skip invalid results
+            if (cv <= 0.0 || std::isnan(cv) || std::isinf(cv)) continue;
+
+            double D = Xi / (rhoi * cv);
+            if (D <= 0.0 || std::isnan(D) || std::isinf(D)) continue;
+
+            double dt_candidate = 0.5 * dx2 / D;
+            if (dt_candidate > 0.0)
+                local_dtmin = std::min(local_dtmin, dt_candidate);
         }
         dtmin = local_dtmin;
 

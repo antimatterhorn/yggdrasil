@@ -107,10 +107,11 @@ namespace Mesh {
     // back to conditionally omitting entries, which silently reindexes
     // every neighbor after the gap and invites out-of-bounds reads.
     template <int dim>
-    std::vector<int>
+    std::array<int, 2*dim>
     Grid<dim>::getNeighboringCells(int idx) const {
         std::array<int, 3> coords = indexToCoordinates(idx);
-        std::vector<int> neighbors(2 * dim, -1);
+        std::array<int, 2*dim> neighbors;
+        neighbors.fill(-1);
 
         neighbors[0] = (coords[0] > 0)      ? index(coords[0] - 1, coords[1], coords[2]) : -1;
         neighbors[1] = (coords[0] < nx - 1) ? index(coords[0] + 1, coords[1], coords[2]) : -1;
@@ -191,18 +192,13 @@ namespace Mesh {
                 }
             }
         }
-    }
 
-    template <int dim>
-    bool 
-    Grid<dim>::onBoundary(const int idx) {
+        // Derived from the lists just built, so the two can never disagree.
+        boundaryMask.assign(size(), 0);
         for (int d = 0; d < dim; ++d) {
-            for (int i : lowIds[d])
-                if (i == idx) return true;
-            for (int i : highIds[d])
-                if (i == idx) return true;
+            for (int i : lowIds[d])  boundaryMask[i] = 1;
+            for (int i : highIds[d]) boundaryMask[i] = 1;
         }
-        return false;
     }
 
     template <int dim>

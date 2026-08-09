@@ -20,6 +20,18 @@ if(ASAN)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${SANITIZER_FLAGS}")
 endif()
 
+# Default to an optimized build. Without this CMake passes no -O flag at all,
+# which costs roughly 4x on the hydro solvers and leaves the -flto below doing
+# nothing. Override with -DCMAKE_BUILD_TYPE=Debug when stepping through code.
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    if(ASAN)
+        set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
+    else()
+        set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+    endif()
+endif()
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
 message("CXX Compiler ID: ${CMAKE_CXX_COMPILER_ID}")
 
 # Find and enable OpenMP

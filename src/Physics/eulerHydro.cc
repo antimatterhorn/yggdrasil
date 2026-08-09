@@ -57,7 +57,7 @@ public:
 
         for (int h = 0; h < insideIds.size(); ++h) {
             int i = insideIds[h];
-            std::vector<int> nbrs = grid->getNeighboringCells(i);
+            auto nbrs = grid->getNeighboringCells(i);
 
             double delDotV = 0.0;
             Lin::Vector<dim> delP = Lin::Vector<dim>();
