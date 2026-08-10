@@ -65,7 +65,7 @@ public:
             Vector vi = velocity->getValue(i);
             double si = radius->getValue(i);
             if (vi.magnitude() > 0.0)
-                local_dtmin = std::min(local_dtmin, 0.25*si/vi.magnitude());
+                local_dtmin = std::min(local_dtmin, si/vi.magnitude());
         }
 
         dtmin = local_dtmin;
@@ -73,8 +73,8 @@ public:
 
     virtual double
     EstimateTimestep() const override {
-        double timestepCoefficient = 0.25;
-        return timestepCoefficient * sqrt(dtmin);
+        double timestepCoefficient = 0.2;
+        return timestepCoefficient * dtmin;
     }
 
     virtual std::string name() const override { return "kinetics"; }

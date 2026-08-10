@@ -66,7 +66,7 @@ public:
     virtual double
     EstimateTimestep() const override {
         double timestepCoefficient = 1e-2;
-        return timestepCoefficient * sqrt(dtmin);
+        return timestepCoefficient * dtmin;
     }
 
     virtual std::string name() const override { return "nBodyGravity"; }

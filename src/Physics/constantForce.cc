@@ -52,7 +52,8 @@ public:
 
     virtual double
     EstimateTimestep() const override {
-        return 0.5 * sqrt(dtmin);  // dt ~ 0.5 * v_max / |a|
+        double timestepCoefficient = 0.5;
+        return timestepCoefficient * dtmin;  // dt ~ 0.5 * v_max / |a|
     }
 
     virtual std::string name() const override { return "constantForce"; }

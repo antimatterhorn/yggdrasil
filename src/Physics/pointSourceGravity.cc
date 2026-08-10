@@ -79,7 +79,7 @@ public:
     virtual double
     EstimateTimestep() const override {
         double timestepCoefficient = 1e-4;
-        return timestepCoefficient * sqrt(dtmin);
+        return timestepCoefficient * dtmin;
     }
 
     virtual std::string name() const override { return "pointSourceGravity"; }
