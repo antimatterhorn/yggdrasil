@@ -14,6 +14,7 @@ if __name__ == "__main__":
                                         siloDump = True,
                                         statStep = 10,
                                         dumpCycle= 50,
+                                        cycles=9999,
                                         tstop = 2.0,
                                         res = 200,
                                         dtmin = 0.1e-7,
