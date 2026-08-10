@@ -189,7 +189,7 @@ if __name__ == "__main__":
     if animate:
         from Animation import *
         bounds = (-12, 12, -12, 12)
-        AnimateScatter(bounds, stepper=controller, positions=pos, frames=10, interval=50, size=2,
+        AnimateScatter(bounds, stepper=controller, positions=pos, frames=10, interval=50, size=1,
                     extra_points=lambda: [(cmLoc.x, cmLoc.y)] +
                                         [(moonGravs[name].pointSourceLocation.x, moonGravs[name].pointSourceLocation.y)
                                             for name in SATURN_MOONS],
