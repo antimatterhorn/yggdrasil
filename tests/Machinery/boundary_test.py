@@ -256,7 +256,8 @@ def test_periodic_3d_noncubic():
     grid, nodeList, hydro, *_ = make_hydro_3d(nx, ny, nz)
     fill_gradient_3d(nodeList, grid, nx, ny, nz,
                       rho_fn=lambda i, j, k: rho_L if i < mid_i else rho_R)
-    hydro.addBoundary(PeriodicGridBoundary3d(grid=grid))
+    boundary = PeriodicGridBoundary3d(grid=grid)
+    hydro.addBoundary(boundary)
     run_one_step_3d(hydro)
     d = nodeList.getFieldDouble("density")
     check("x: i=0 ghost copies from i=nx-1 side interior (> 2)",
@@ -268,7 +269,8 @@ def test_periodic_3d_noncubic():
     grid, nodeList, hydro, *_ = make_hydro_3d(nx, ny, nz)
     fill_gradient_3d(nodeList, grid, nx, ny, nz,
                       rho_fn=lambda i, j, k: rho_L if j < mid_j else rho_R)
-    hydro.addBoundary(PeriodicGridBoundary3d(grid=grid))
+    boundary = PeriodicGridBoundary3d(grid=grid)
+    hydro.addBoundary(boundary)
     run_one_step_3d(hydro)
     d = nodeList.getFieldDouble("density")
     check("y: j=0 ghost copies from j=ny-1 side interior (> 2)",
@@ -280,7 +282,8 @@ def test_periodic_3d_noncubic():
     grid, nodeList, hydro, *_ = make_hydro_3d(nx, ny, nz)
     fill_gradient_3d(nodeList, grid, nx, ny, nz,
                       rho_fn=lambda i, j, k: rho_L if k < mid_k else rho_R)
-    hydro.addBoundary(PeriodicGridBoundary3d(grid=grid))
+    boundary = PeriodicGridBoundary3d(grid=grid)
+    hydro.addBoundary(boundary)
     run_one_step_3d(hydro)
     d = nodeList.getFieldDouble("density")
     check("z: k=0 ghost copies from k=nz-1 side interior (> 2)",
@@ -307,7 +310,8 @@ def test_outflow_3d_noncubic():
     # axis, these would pick up the x-gradient instead.
     grid, nodeList, hydro, *_ = make_hydro_3d(nx, ny, nz)
     fill_gradient_3d(nodeList, grid, nx, ny, nz, rho_fn=lambda i, j, k: 1.0 + 0.1 * i)
-    hydro.addBoundary(OutflowGridBoundary3d(grid=grid))
+    boundary = OutflowGridBoundary3d(grid=grid)
+    hydro.addBoundary(boundary)
     run_one_step_3d(hydro)
     d = nodeList.getFieldDouble("density")
 
@@ -355,7 +359,8 @@ def test_reflecting_3d_noncubic_pairing():
                 velocity.setValue(idx, Vector3d(1.0, 10.0 * j, 10.0 * k))
                 density.setValue(idx, 1.0)
                 energy.setValue(idx, 2.5 / (GAMMA - 1.0))
-    hydro.addBoundary(ReflectingGridBoundary3d(grid=grid))
+    boundary = ReflectingGridBoundary3d(grid=grid)
+    hydro.addBoundary(boundary)
     # dtmin deliberately tiny: keeps hydro-driven evolution of the seeded
     # velocity gradient negligible next to the coefficient (10) used above,
     # so any leftover drift can't be confused with a genuine mis-pairing.

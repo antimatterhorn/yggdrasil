@@ -41,7 +41,8 @@ if __name__ == "__main__":
     constants = MKS()
     eos = IdealGasEOS(GAMMA, constants)
     hydro = GridHydroHLLE2d(myNodeList, constants, eos, myGrid)
-    hydro.addBoundary(OutflowGridBoundary2d(grid=myGrid))
+    boundary = OutflowGridBoundary2d(grid=myGrid)
+    hydro.addBoundary(boundary)
     integrator = RungeKutta4Integrator2d([hydro], dtmin=dtmin, verbose=False)
 
     x0 = 0.5 * nx * dx

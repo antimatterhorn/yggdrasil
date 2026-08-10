@@ -19,7 +19,8 @@ def run(nx, ny, dx, dy, cycles=200):
     constants = MKS()
     eos = IdealGasEOS(1.4, constants)
     hydro = GridHydroKT2d(nodes, constants, eos, grid)
-    hydro.addBoundary(ReflectingGridBoundary2d(grid=grid))
+    boundary = ReflectingGridBoundary2d(grid=grid)
+    hydro.addBoundary(boundary)
     integrator = RungeKutta4Integrator2d([hydro], dtmin=0.001, verbose=False)
 
     density = nodes.getFieldDouble("density")

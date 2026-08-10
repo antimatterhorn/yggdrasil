@@ -49,7 +49,8 @@ def run(solver, integrator_cls, n, cycles, dx=0.05,
     grid      = Grid2d(n, n, dx, dx)
     nodeList  = NodeList(grid.size())
     hydro     = solver(nodeList, constants, eos, grid)
-    hydro.addBoundary(boundary(grid=grid))
+    bc        = boundary(grid=grid)
+    hydro.addBoundary(bc)
     integ = integrator_cls([hydro], dtmin=1e-8)
 
     cx = (0.5 * n + offset) * dx

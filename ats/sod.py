@@ -70,7 +70,10 @@ def _solve(Solver, nx=200, ny=4, dx=0.005, tstop=0.2):
     constants = MKS()
     eos = IdealGasEOS(GAMMA, constants)
     hydro = Solver(nodes, constants, eos, grid)
-    hydro.addBoundary(ReflectingGridBoundary2d(grid=grid))
+    # Bound to a name, not passed inline: the package stores a non-owning pointer, so a
+    # temporary would be collected on return and leave it dangling.
+    boundary = ReflectingGridBoundary2d(grid=grid)
+    hydro.addBoundary(boundary)
     integrator = RungeKutta4Integrator2d([hydro], dtmin=1e-7, verbose=False)
 
     x0 = 0.5 * nx * dx

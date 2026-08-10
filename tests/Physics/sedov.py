@@ -46,7 +46,8 @@ if __name__ == "__main__":
     constants = MKS()
     eos = IdealGasEOS(GAMMA, constants)
     hydro = GridHydroHLLE2d(myNodeList, constants, eos, myGrid)
-    hydro.addBoundary(ReflectingGridBoundary2d(grid=myGrid))
+    boundary = ReflectingGridBoundary2d(grid=myGrid)
+    hydro.addBoundary(boundary)
     integrator = RungeKutta4Integrator2d([hydro], dtmin=dtmin, verbose=False)
 
     density = myNodeList.getFieldDouble("density")

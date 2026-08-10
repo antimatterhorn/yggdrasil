@@ -32,7 +32,8 @@ if __name__ == "__main__":
     constants = MKS()
     eos = IdealGasEOS(GAMMA, constants)
     hydro = GridHydroKT2d(myNodeList, constants, eos, myGrid)
-    hydro.addBoundary(ReflectingGridBoundary2d(grid=myGrid))
+    boundary = ReflectingGridBoundary2d(grid=myGrid)
+    hydro.addBoundary(boundary)
     integrator = RungeKutta4Integrator2d([hydro], dtmin=dtmin, verbose=False)
 
     # Classic Sod state: (rho,p) = (1,1) left of x0, (0.125,0.1) right.
