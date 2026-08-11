@@ -4,10 +4,9 @@ from Animation import *
 from Mesh import Grid2d
 from Physics import GridHydroKT2d,GridHydroHLLC2d,GridHydroHLLE2d
 from EOS import IdealGasEOS
-from Boundaries import PeriodicGridBoundary2d
+from Boundaries import PeriodicGridBoundary2d, OutflowGridBoundary2d
 from Utilities import SiloDump
 from math import log
-from IO import RestartWriter
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(animate = True,
@@ -19,16 +18,12 @@ if __name__ == "__main__":
                                         dy = 1,
                                         dtmin = 0.1e-7,
                                         intVerbose = False,
-                                        restartCycle = 250,
                                         dumpCycle= 50,
-                                        rootName = "bowshock",
-                                        vizDir = "viz",
-                                        restartDir = "restart",
-                                        restoreCycle = None)
+                                        rootName = "blob",
+                                        vizDir = "viz")
     vizDir = rootName + "/" + vizDir
-    restartDir = rootName + "/" + restartDir
-    os.makedirs(vizDir, exist_ok=True)
-    os.makedirs(restartDir, exist_ok=True)
+    if siloDump:
+        os.makedirs(vizDir, exist_ok=True)
 
     myGrid = Grid2d(nx,ny,dx,dy)
     print("grid size:",myGrid.size())
@@ -46,8 +41,8 @@ if __name__ == "__main__":
     print("numNodes =",myNodeList.numNodes)
     print("field names =",myNodeList.fieldNames)
 
-    box = PeriodicGridBoundary2d(grid=myGrid)
-    hydro.addBoundary(box)
+    pb = PeriodicGridBoundary2d(grid=myGrid)
+    hydro.addBoundary(pb)
 
     integrator = RungeKutta4Integrator2d([hydro],dtmin=dtmin,verbose=intVerbose)
 
@@ -59,7 +54,8 @@ if __name__ == "__main__":
     p0 = 2.5
     gamma = eos.gamma
 
-    loc = [int(nx//4),int(ny//2)]
+    blobloc = [int(3*nx//4),int(ny//2)]
+    shockfr = nx-2
 
     a = 2.0/log(2)
 
@@ -70,20 +66,18 @@ if __name__ == "__main__":
             x = pos.x
             y = pos.y
 
-            r = np.sqrt((i-loc[0])**2 + (j-loc[1])**2)
+            r = np.sqrt((i-blobloc[0])**2 + (j-blobloc[1])**2)
+
+            vx = vy = 0
 
             if r <= 2.0:
                 rho = 10
-                vx = 5
             else:
-                rho = 20*np.exp(-r/a)
-                if rho < 1: 
-                    rho = 1
-                    vx = 0
-                    vy = 0
-                else:
-                    vx = 5
-                    vy = 0
+                rho = max(20*np.exp(-r/a),1)
+
+            if x > shockfr:
+                rho = 4
+                vx  = -10
 
             velocity.setValue(idx, Vector2d(vx, vy))
             density.setValue(idx, rho)
@@ -99,11 +93,6 @@ if __name__ == "__main__":
                                 grid=myGrid)
         periodicWork += [meshWriter]
 
-    restartWriter = RestartWriter(myNodeList, integrator)
-    def dropRestart(cycle, time, dt):
-        restartWriter.write(restartFileName(restartDir, rootName, cycle))
-    dropRestart.cycle = restartCycle
-    periodicWork += [dropRestart]
 
     controller = Controller(integrator=integrator,periodicWork=periodicWork,statStep=20)
 
