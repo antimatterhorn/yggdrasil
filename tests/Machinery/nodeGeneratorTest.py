@@ -40,12 +40,12 @@ points = getPoints[method](n).positions
 
 
 
-from scipy.spatial import distance_matrix
+from scipy.spatial.distance import cdist
 
 points = np.array(points)
 
 # Compute pairwise distances on the sphere
-dists = distance_matrix(points, points)
+dists = cdist(points, points)
 
 # Define a Gaussian-like weight function
 sigma = 0.1  # Tune this for best results

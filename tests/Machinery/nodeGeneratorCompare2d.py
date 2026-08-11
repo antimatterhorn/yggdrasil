@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from yggdrasil import *
-from scipy.spatial import distance_matrix
+from scipy.spatial.distance import cdist
 from progressBar import ProgressBar
 
 def stDev(method):
@@ -13,7 +13,7 @@ def stDev(method):
         p = np.array(p)
 
         # Compute pairwise distances on the sphere
-        dists = distance_matrix(p, p)
+        dists = cdist(p, p)
 
         # Define a Gaussian-like weight function
         sigma = 0.1  # Tune this for best results

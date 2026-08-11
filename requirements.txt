@@ -1,5 +1,6 @@
 PYB11Generator
 matplotlib
+scipy
 decorator
 setuptools
 wheel
