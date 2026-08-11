@@ -16,7 +16,7 @@ if __name__ == "__main__":
                                         ny = 100,
                                         dx = 1,
                                         dy = 1,
-                                        dtmin = 0.1e-7,
+                                        dtmin = 1e-5,
                                         g  = -10,
                                         rho1 = 1,
                                         rho2 = 5,
