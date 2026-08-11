@@ -50,23 +50,14 @@ public:
         return (2.0 * deltaL * deltaR) / (deltaL + deltaR);
     }
 
-    // Whether `idx` has both neighbours along `axis`, i.e. a full slope stencil.
-    bool slopesAvailable(int idx, int axis) const {
-        auto neighbors = this->grid->getNeighboringCells(idx);
-        return neighbors[2 * axis] >= 0 && neighbors[2 * axis + 1] >= 0;
-    }
-
+    // Van Leer slope of `field` at `idx`, from the two axis-neighbours the caller has
+    // already resolved. The stencil is passed in rather than looked up here because
+    // every quantity reconstructed at a face shares the same two stencils.
     template<typename T>
-    T slopeLimitedValue(const Field<T>& field, int idx, int axis) const {
-        auto neighbors = this->grid->getNeighboringCells(idx);
-        int iL = neighbors[2 * axis];
-        int iR = neighbors[2 * axis + 1];
-
-        if (iL < 0 || iR < 0) return T();
-
-        T uL = field.getValue(iL);
+    T slopeLimitedValue(const Field<T>& field, int idx, int im, int ip) const {
+        T uL = field.getValue(im);
         T uC = field.getValue(idx);
-        T uR = field.getValue(iR);
+        T uR = field.getValue(ip);
 
         if constexpr (std::is_same<T, double>::value) {
             return vanleer_slope(uL, uC, uR);
@@ -94,22 +85,29 @@ public:
         double u0L      = u.getValue(iL), u0R       = u.getValue(iR);
         double p0L      = p.getValue(iL), p0R       = p.getValue(iR);
 
-        // Slopes
-        double drhoL    = slopeLimitedValue(rho, iL, axis);
-        double drhoR    = slopeLimitedValue(rho, iR, axis);
-        Vector dvL      = slopeLimitedValue(v, iL, axis);
-        Vector dvR      = slopeLimitedValue(v, iR, axis);
-        double duL      = slopeLimitedValue(u, iL, axis);
-        double duR      = slopeLimitedValue(u, iR, axis);
-        double dpL      = slopeLimitedValue(p, iL, axis);
-        double dpR      = slopeLimitedValue(p, iR, axis);
+        // Both cells' axis-neighbours, fetched once and shared by all eight slopes.
+        const auto nbrL = this->grid->getNeighboringCells(iL);
+        const auto nbrR = this->grid->getNeighboringCells(iR);
+        const int iLm = nbrL[2 * axis], iLp = nbrL[2 * axis + 1];
+        const int iRm = nbrR[2 * axis], iRp = nbrR[2 * axis + 1];
 
-        // A one-sided slope at a domain edge breaks the mirror symmetry a wall's flux cancellation needs.
-        if (!slopesAvailable(iL, axis) || !slopesAvailable(iR, axis)) {
-            drhoL = drhoR = 0.0;
-            duL   = duR   = 0.0;
-            dpL   = dpR   = 0.0;
-            dvL   = dvR   = Vector::zero();
+        // Slopes. A one-sided slope at a domain edge breaks the mirror symmetry a wall's
+        // flux cancellation needs, so an incomplete stencil on either side drops both to
+        // piecewise-constant.
+        double drhoL = 0.0, drhoR = 0.0;
+        double duL   = 0.0, duR   = 0.0;
+        double dpL   = 0.0, dpR   = 0.0;
+        Vector dvL   = Vector::zero(), dvR = Vector::zero();
+
+        if (iLm >= 0 && iLp >= 0 && iRm >= 0 && iRp >= 0) {
+            drhoL = slopeLimitedValue(rho, iL, iLm, iLp);
+            drhoR = slopeLimitedValue(rho, iR, iRm, iRp);
+            dvL   = slopeLimitedValue(v,   iL, iLm, iLp);
+            dvR   = slopeLimitedValue(v,   iR, iRm, iRp);
+            duL   = slopeLimitedValue(u,   iL, iLm, iLp);
+            duR   = slopeLimitedValue(u,   iR, iRm, iRp);
+            dpL   = slopeLimitedValue(p,   iL, iLm, iLp);
+            dpR   = slopeLimitedValue(p,   iR, iRm, iRp);
         }
 
         // Reconstructed interface values

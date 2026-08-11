@@ -8,9 +8,7 @@
 #include <memory>
 #include <unordered_set>
 
-// Forward declaration for return type of computeFlux
-template<int dim>
-struct HLLFlux;
+#include "HLL.cc"   // HLLFlux, the return type of computeFlux
 
 template<int dim>
 class GridHydroBase : public Hydro<dim> {
@@ -23,6 +21,13 @@ protected:
     std::vector<int> insideIds;
     double dxmin = 1e30;
     mutable double dtmin = 1e30;
+
+    // A face is identified by the cell on its low side along the sweep axis, so cell i's
+    // high face is face i and its low face is face neighbors[2k]. faceLowIds[k] lists
+    // every face along axis k that some interior cell needs; faceFlux holds one axis'
+    // worth of solved fluxes, indexed the same way and reused across axes.
+    std::array<std::vector<int>, dim> faceLowIds;
+    std::vector<HLLFlux<dim>> faceFlux;
 
     // r=0 axis (symmetry) boundary for RZ grids, owned here because the solver
     // installs it rather than the user. Null for Cartesian.
@@ -96,6 +101,24 @@ public:
         for (int i = 0; i < grid->size(); ++i)
             if (!grid->onBoundary(i) && obstacleSet.count(i) == 0)
                 insideIds.push_back(i);
+
+        // Every face an interior cell touches, per axis. An interior cell is never on the
+        // rim, so its high neighbour always exists; a low neighbour pulled in here is at
+        // worst a rim cell, whose high neighbour is the interior cell that named it. So
+        // every face listed has a valid pair.
+        faceFlux.assign(grid->size(), HLLFlux<dim>{});
+        std::vector<char> needed(grid->size());
+        for (int k = 0; k < dim; ++k) {
+            std::fill(needed.begin(), needed.end(), 0);
+            for (int i : insideIds) {
+                needed[i] = 1;
+                const int jL = grid->getNeighboringCells(i)[2 * k];
+                if (jL >= 0) needed[jL] = 1;
+            }
+            faceLowIds[k].clear();
+            for (int j = 0; j < grid->size(); ++j)
+                if (needed[j]) faceLowIds[k].push_back(j);
+        }
     }
 
     virtual void 
@@ -117,76 +140,107 @@ public:
         auto* soundSpeed = nodeList->getField<double>("soundSpeed");
 
         double local_dtmin = 1e30;
+        const int nInside = (int)insideIds.size();
 
-        #pragma omp parallel for reduction(min:local_dtmin)
-        for (int h = 0; h < insideIds.size(); ++h) {
-            int i = insideIds[h];
-            Vector vi = v->getValue(i);
-            double rhoi = rho->getValue(i);
-            double ui = u->getValue(i);
-            rhoi = std::max(rhoi, 1e-12);
-            ui   = std::max(ui, 1e-12);
-            double ci = soundSpeed->getValue(i);
-
-            double ei = ui + 0.5 * vi.mag2();
-
-            if (rhoi > 1e10 || ui > 1e10 || vi.magnitude() > 1e5) {
+        // State sanity, once per interior cell and its neighbours rather than once per
+        // axis. A rim cell is covered as some interior cell's neighbour.
+        #pragma omp parallel for
+        for (int h = 0; h < nInside; ++h) {
+            const int i = insideIds[h];
+            if (rho->getValue(i) > 1e10 || u->getValue(i) > 1e10 ||
+                v->getValue(i).mag2() > 1e10) {
                 std::cerr << "FATAL: Exploding state at cell " << i
-                        << " rho=" << rhoi << " u=" << ui << " v=" << vi.toString() << std::endl;
+                        << " rho=" << rho->getValue(i) << " u=" << u->getValue(i)
+                        << " v=" << v->getValue(i).toString() << std::endl;
                 std::exit(EXIT_FAILURE);
             }
-
-            Vector momi = vi * rhoi;
-            double Ei = rhoi * ei;
-
-            double net_rho_flux = 0.0;
-            Vector net_mom_flux = Vector::zero();
-            double net_E_flux = 0.0;
-
-            double Vi = grid->cellVolume(i);
-            double A_Lr = 0.0, A_Rr = 0.0;   // radial (axis-0) face areas, for the RZ source
-
-            auto neighbors = grid->getNeighboringCells(i);
-
-            for (int k = 0; k < dim; ++k) {
-                int jL = neighbors[2 * k];
-                int jR = neighbors[2 * k + 1];
-
-                // Check validity of jL and jR
-                for (int q : {jL, jR, i}) {
-                    if (!std::isfinite(rho->getValue(q)) ||
-                        !std::isfinite(u->getValue(q)) ||
-                        !std::isfinite(v->getValue(q)[0])) {
-                        std::cerr << "BAD INPUT at cell " << q << ": "
-                                << "rho=" << rho->getValue(q)
-                                << ", u=" << u->getValue(q)
-                                << ", vx=" << v->getValue(q)[0] << std::endl;
-                        std::exit(EXIT_FAILURE);
-                    }
+            const auto neighbors = grid->getNeighboringCells(i);
+            for (int k = 0; k < 2 * dim; ++k) {
+                const int q = neighbors[k];
+                if (q < 0) continue;
+                if (!std::isfinite(rho->getValue(q)) ||
+                    !std::isfinite(u->getValue(q)) ||
+                    !std::isfinite(v->getValue(q)[0])) {
+                    std::cerr << "BAD INPUT at cell " << q << ": "
+                            << "rho=" << rho->getValue(q)
+                            << ", u=" << u->getValue(q)
+                            << ", vx=" << v->getValue(q)[0] << std::endl;
+                    std::exit(EXIT_FAILURE);
                 }
-
-
-                auto flux_L = this->computeFlux(jL, i, k, *rho, *v, *u, *pressure, *soundSpeed);
-                auto flux_R = this->computeFlux(i, jR, k, *rho, *v, *u, *pressure, *soundSpeed);
-
-                // Area-weighted finite-volume divergence: sum(flux * face area)
-                // / cell volume. With the RZ metric this is the cylindrical
-                // divergence (1/r) d(r F)/dr + dF/dz.
-                double A_L = grid->faceArea(jL, i, k);
-                double A_R = grid->faceArea(i, jR, k);
-                if (k == 0) { A_Lr = A_L; A_Rr = A_R; }
-                net_rho_flux += (flux_L.mass     * A_L - flux_R.mass     * A_R) / Vi;
-                net_mom_flux += (flux_L.momentum * A_L - flux_R.momentum * A_R) / Vi;
-                net_E_flux   += (flux_L.energy   * A_L - flux_R.energy   * A_R) / Vi;
             }
+        }
+
+        // Net flux accumulators, kept in the derivative fields until the conversion
+        // pass below.
+        #pragma omp parallel for
+        for (int h = 0; h < nInside; ++h) {
+            const int i = insideIds[h];
+            drhodt->setValue(i, 0.0);
+            dvdt->setValue(i, Vector::zero());
+            dudt->setValue(i, 0.0);
+        }
+
+        for (int k = 0; k < dim; ++k) {
+            // Solve each face once. The old form evaluated cell i's high face and cell
+            // jR's low face separately, which are the same face with the same arguments.
+            const auto& faces = faceLowIds[k];
+            #pragma omp parallel for
+            for (int h = 0; h < (int)faces.size(); ++h) {
+                const int j  = faces[h];
+                const int jR = grid->getNeighboringCells(j)[2 * k + 1];
+                faceFlux[j] = this->computeFlux(j, jR, k, *rho, *v, *u, *pressure, *soundSpeed);
+            }
+
+            // Area-weighted finite-volume divergence: sum(flux * face area) / cell
+            // volume. With the RZ metric this is the cylindrical divergence
+            // (1/r) d(r F)/dr + dF/dz.
+            #pragma omp parallel for
+            for (int h = 0; h < nInside; ++h) {
+                const int i  = insideIds[h];
+                const auto neighbors = grid->getNeighboringCells(i);
+                const int jL = neighbors[2 * k];
+                const int jR = neighbors[2 * k + 1];
+
+                const double Vi  = grid->cellVolume(i);
+                const double A_L = grid->faceArea(jL, i, k);
+                const double A_R = grid->faceArea(i, jR, k);
+
+                const HLLFlux<dim>& flux_L = faceFlux[jL];
+                const HLLFlux<dim>& flux_R = faceFlux[i];
+
+                drhodt->setValue(i, drhodt->getValue(i) +
+                                 (flux_L.mass * A_L - flux_R.mass * A_R) / Vi);
+                dvdt->setValue(i, dvdt->getValue(i) +
+                               (flux_L.momentum * A_L - flux_R.momentum * A_R) / Vi);
+                dudt->setValue(i, dudt->getValue(i) +
+                               (flux_L.energy * A_L - flux_R.energy * A_R) / Vi);
+            }
+        }
+
+        // Convert the accumulated net fluxes into the conserved-variable derivatives.
+        #pragma omp parallel for reduction(min:local_dtmin)
+        for (int h = 0; h < nInside; ++h) {
+            const int i = insideIds[h];
+            const Vector vi = v->getValue(i);
+            const double rhoi = std::max(rho->getValue(i), 1e-12);
+            const double ui   = std::max(u->getValue(i), 1e-12);
+            const double ci   = soundSpeed->getValue(i);
+
+            double net_rho_flux = drhodt->getValue(i);
+            Vector net_mom_flux = dvdt->getValue(i);
+            double net_E_flux   = dudt->getValue(i);
 
             // Cylindrical geometric source: the radius-weighted divergence above
             // puts an extra p/r on radial momentum ((1/r) d(r*p)/dr = dp/dr +
             // p/r), so adding p/r back leaves only the physical dp/dr. Written
             // p*(A_Rr - A_Lr)/Vi (= p/r) to reuse the same radial face areas and
             // volume as the flux, so a uniform gas stays exactly at rest.
-            if (grid->geometry() == Mesh::Geometry::CylindricalRZ)
-                net_mom_flux[0] += pressure->getValue(i) * (A_Rr - A_Lr) / Vi;
+            if (grid->geometry() == Mesh::Geometry::CylindricalRZ) {
+                const auto neighbors = grid->getNeighboringCells(i);
+                const double A_Lr = grid->faceArea(neighbors[0], i, 0);
+                const double A_Rr = grid->faceArea(i, neighbors[1], 0);
+                net_mom_flux[0] += pressure->getValue(i) * (A_Rr - A_Lr) / grid->cellVolume(i);
+            }
 
             drhodt->setValue(i, net_rho_flux);
             Vector dvi = (net_mom_flux - vi * net_rho_flux) / rhoi;
@@ -229,7 +283,7 @@ public:
             // Clamp velocity if rho is near floor
             if (rhoi <= 1.1 * rho_floor)
                 vi = Vector::zero();
-            else if (vi.magnitude() > v_max)
+            else if (vi.mag2() > v_max * v_max)
                 vi = vi.normal() * v_max;
 
             // Clamp energy if absurd

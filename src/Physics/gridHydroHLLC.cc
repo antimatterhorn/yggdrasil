@@ -91,10 +91,11 @@ public:
         uL = std::clamp(uL, 1e-12, 1e4);
         uR = std::clamp(uR, 1e-12, 1e4);
 
-        // Clamp reconstructed velocities
+        // Clamp reconstructed velocities. Tested squared so the sqrt is paid only by the
+        // rare vector that actually needs clamping.
         const double vmax = 1e3;
-        if (vL.magnitude() > vmax) vL = vL.unit() * vmax;
-        if (vR.magnitude() > vmax) vR = vR.unit() * vmax;
+        if (vL.mag2() > vmax * vmax) vL = vL.unit() * vmax;
+        if (vR.mag2() > vmax * vmax) vR = vR.unit() * vmax;
 
         // Pressure and sound speed from the reconstructed (rho, u) via the EOS,
         // so the interface state is thermodynamically consistent (the passed-in
