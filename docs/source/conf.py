@@ -10,9 +10,9 @@ import sys
 import os
 sys.path.append(os.path.abspath('.'))
 project = 'Yggdrasil'
-copyright = '2025, Cody Raskin'
+copyright = '2026, Cody Raskin'
 author = 'Cody Raskin'
-release = '0.8.0'
+release = '0.9.5'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
