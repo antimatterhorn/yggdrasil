@@ -80,6 +80,7 @@ if __name__ == "__main__":
                                                 stepper=controller.Step,
                                                 title=title,
                                                 fieldName="density")
-        AnimateGrid2d(bounds, update_method, extremis=[0, 4], frames=cycles, cmap="plasma")
+        AnimateGrid2d(bounds, update_method, extremis=[0, 3], frames=cycles, cmap="seismic",
+                        lineout_axis='y', lineout_index=2)
     else:
         controller.Step(cycles)

@@ -5,9 +5,8 @@ from Materials import IsotropicLinearElastic2d, PlaneCondition
 from Boundaries import MotionConstraint2d
 from Utilities import SiloDump
 
-# Cantilever beam test using example.obj
-# Left edge is pinned, gravity pulls remaining nodes down.
-# Outputs silo files every dumpCycle cycles for visualization.
+# FEM Compression test using example.obj
+# Left edge is pinned, compression from rightmost edge. 
 
 if __name__ == "__main__":
     commandLine = CommandLineArguments(
