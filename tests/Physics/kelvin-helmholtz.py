@@ -122,6 +122,6 @@ if __name__ == "__main__":
                                                 stepper=controller.Step,
                                                 title=title,
                                                 fieldName="density")
-        AnimateGrid2d(bounds,update_method,extremis=[0,5],frames=cycles,cmap="plasma")
+        AnimateGrid2d(bounds,update_method,extremis=[1,2],frames=cycles,cmap="RdBu")
     else:
         controller.Step(9999999) # run until tstop

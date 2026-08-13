@@ -74,6 +74,6 @@ if __name__ == "__main__":
                                                 stepper=controller.Step,
                                                 title=title,
                                                 fieldName="temperature")
-        AnimateGrid2d(bounds,update_method,extremis=[100,300],frames=cycles,cmap="plasma")
+        AnimateGrid2d(bounds,update_method,extremis=[100,300],frames=cycles,cmap="RdBu")
     else:
         controller.Step(cycles)
