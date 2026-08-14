@@ -66,14 +66,16 @@ def run(solver, integrator_cls, n, cycles, dx=0.05,
         u.setValue(i, p / ((GAMMA - 1.0) * r))
         v.setValue(i, Vector2d(0.0, 0.0))
 
-    real = [grid.index(i, j, 0) for j in range(1, n - 1) for i in range(1, n - 1)]
+    # Sum over every logical cell (the full n x n domain) -- the wall itself
+    # lives one cell further out, in the ghost halo, which is never summed here.
+    real = [grid.index(i, j, 0) for j in range(n) for i in range(n)]
     mass = lambda: sum(rho[i] * grid.cellVolume(i) for i in real)
 
     integ.Initialize()
     m0 = mass()
     for _ in range(cycles):
         integ.Step()
-    wall = max(abs(v[grid.index(i, 1, 0)].y) for i in range(1, n - 1))
+    wall = max(abs(v[grid.index(i, 0, 0)].y) for i in range(n))
     return (mass() - m0) / m0, wall
 
 # ---------------------------------------------------------------------------
@@ -82,7 +84,11 @@ def run(solver, integrator_cls, n, cycles, dx=0.05,
 def test_wall_conservation():
     print("Test 1: mass conserved at a reflecting wall being struck")
     for label, solver in SOLVERS:
-        drift, wall = run(solver, RungeKutta2Integrator2d, 16, 40)
+        # 55 cycles: the wave crosses the full n-cell domain before reaching
+        # the wall (one cell beyond it, in the ghost halo); KT (the most
+        # diffusive solver) needs the extra cycles to reliably clear the
+        # sanity threshold below.
+        drift, wall = run(solver, RungeKutta2Integrator2d, 16, 55)
         check(f"{label} RK2: wave actually reaches the wall (|vy|={wall:.2e} > 1e-3)",
               wall > 1e-3)
         check(f"{label} RK2: mass drift {drift:+.2e} at round-off (< {ROUNDOFF:.0e})",
@@ -94,7 +100,7 @@ def test_wall_conservation():
 def test_wall_conservation_rk4():
     print("Test 2: same, under RK4 (three intermediate states per step)")
     for label, solver in SOLVERS:
-        drift, wall = run(solver, RungeKutta4Integrator2d, 16, 40)
+        drift, wall = run(solver, RungeKutta4Integrator2d, 16, 55)
         check(f"{label} RK4: wave actually reaches the wall (|vy|={wall:.2e} > 1e-3)",
               wall > 1e-3)
         check(f"{label} RK4: mass drift {drift:+.2e} at round-off (< {ROUNDOFF:.0e})",

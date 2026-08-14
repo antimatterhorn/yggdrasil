@@ -33,7 +33,7 @@ if __name__ == "__main__":
     myGrid = Grid2d(nr, nz, dr, dz, Geometry.CylindricalRZ)
     print("grid size:", myGrid.size())
 
-    myNodeList = NodeList(nr * nz)
+    myNodeList = NodeList(myGrid.size())
     constants = MKS()
     eos = IdealGasEOS(1.4, constants)
     print(eos, "gamma =", eos.gamma)
@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
     density = myNodeList.getFieldDouble("density")
     energy = myNodeList.getFieldDouble("specificInternalEnergy")
-    for i in range(nr * nz):
+    for i in range(myGrid.size()):
         density.setValue(i, 1.0)
         energy.setValue(i, 1e-3)               # cold ambient
 

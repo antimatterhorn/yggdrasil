@@ -42,9 +42,8 @@ def run():
     cycles = 100
 
     constants = MKS()
-    numNodes = nx*ny
     myGrid = Grid2d(nx, ny,1,1)
-    myNodes = NodeList(numNodes)
+    myNodes = NodeList(myGrid.size())
     rps = ReactionDiffusion(myNodes,constants,grid=myGrid,A=A,D=D)
 
     pm = PeriodicGridBoundary2d(grid=myGrid)

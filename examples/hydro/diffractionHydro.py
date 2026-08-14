@@ -38,9 +38,9 @@ if __name__ == "__main__":
 
     constants = MKS()
 
-    myNodeList = NodeList(nx*ny)
-    
     grid = Grid2d(nx,ny,1,1)
+
+    myNodeList = NodeList(grid.size())
     print("grid %dx%d"%(nx,ny))
     print(grid)
 

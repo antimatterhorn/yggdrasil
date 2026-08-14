@@ -23,9 +23,9 @@ if __name__ == "__main__":
                                        save_as=None)
     
     constants = MKS()
-    numNodes = nx*ny
-    myNodeList = NodeList(numNodes)
     mesh = Grid2d(nx,ny,1.0/nx,1.0/ny)
+    numNodes = mesh.size()
+    myNodeList = NodeList(numNodes)
 
     searchRadius = searchRadius/sqrt(nx*nx + ny*ny)
 

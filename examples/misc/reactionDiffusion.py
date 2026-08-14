@@ -38,9 +38,8 @@ if __name__ == "__main__":
 
 
     constants = MKS()
-    numNodes = nx*ny
     myGrid = Grid2d(nx, ny,1,1)
-    myNodes = NodeList(numNodes)
+    myNodes = NodeList(myGrid.size())
     print("%i x %i grid"%(nx,ny))
     rps = ReactionDiffusion(myNodes,constants,grid=myGrid,A=A,D=D)
 

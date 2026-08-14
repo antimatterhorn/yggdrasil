@@ -80,12 +80,15 @@ private:
 public:
     ReflectingGridBoundary(Mesh::Grid<dim>* grid) :
         GridBoundary<dim>(grid) {
+        // boundaryLists[i] are the ghost cells for face i; interiorLists[i][j]
+        // is boundaryLists[i][j]'s mirror source -- the real first/last
+        // logical cell along that axis (index 0 / n-1).
         if constexpr (dim == 1) {
             boundaryLists.push_back(grid->lowMost(0));
-            interiorLists.push_back({1});
+            interiorLists.push_back({grid->index(0)});
 
             boundaryLists.push_back(grid->highMost(0));
-            interiorLists.push_back({grid->highMost(0)[0]-1});
+            interiorLists.push_back({grid->index(grid->size_x() - 1)});
         }
         else if constexpr (dim == 2) {
             std::vector<int> xLow  = grid->lowMost(0);
@@ -99,13 +102,13 @@ public:
             int Ny = grid->size_y();
 
             for (int j = 0; j < Ny; ++j) {
-                xLowInt.push_back(grid->index(1, j));
-                xHighInt.push_back(grid->index(Nx - 2, j));
+                xLowInt.push_back(grid->index(0, j));
+                xHighInt.push_back(grid->index(Nx - 1, j));
             }
 
             for (int i = 0; i < Nx; ++i) {
-                yLowInt.push_back(grid->index(i, 1));
-                yHighInt.push_back(grid->index(i, Ny - 2));
+                yLowInt.push_back(grid->index(i, 0));
+                yHighInt.push_back(grid->index(i, Ny - 1));
             }
 
             boundaryLists = {xLow, xHigh, yLow, yHigh};
@@ -125,29 +128,29 @@ public:
             int Ny = grid->size_y();
             int Nz = grid->size_z();
 
-            // Iteration order here must match Grid<3>::findBoundaries exactly,
+            // Iteration order here must match Grid<3>::buildGhostLists exactly,
             // since ApplyThis pairs boundaryLists[i][j] with interiorLists[i][j]
             // by position: j outer / k inner for the x faces.
             for (int j = 0; j < Ny; ++j) {
                 for (int k = 0; k < Nz; ++k) {
-                    xLowInt.push_back(grid->index(1, j, k));
-                    xHighInt.push_back(grid->index(Nx - 2, j, k));
+                    xLowInt.push_back(grid->index(0, j, k));
+                    xHighInt.push_back(grid->index(Nx - 1, j, k));
                 }
             }
 
             // i outer / k inner for the y faces.
             for (int i = 0; i < Nx; ++i) {
                 for (int k = 0; k < Nz; ++k) {
-                    yLowInt.push_back(grid->index(i, 1, k));
-                    yHighInt.push_back(grid->index(i, Ny - 2, k));
+                    yLowInt.push_back(grid->index(i, 0, k));
+                    yHighInt.push_back(grid->index(i, Ny - 1, k));
                 }
             }
 
             // i outer / j inner for the z faces.
             for (int i = 0; i < Nx; ++i) {
                 for (int j = 0; j < Ny; ++j) {
-                    zLowInt.push_back(grid->index(i, j, 1));
-                    zHighInt.push_back(grid->index(i, j, Nz - 2));
+                    zLowInt.push_back(grid->index(i, j, 0));
+                    zHighInt.push_back(grid->index(i, j, Nz - 1));
                 }
             }
 
@@ -185,8 +188,11 @@ public:
 
     // Register an axis-aligned box of cells as a Neumann (reflecting) obstacle.
     // p1/p2 are in real-space coordinates (cell centres at i*dx+0.5*dx, etc.).
+    // Restricted to logical cells -- an obstacle is carved out of real domain
+    // interior, never out of the ghost halo (that's what setFaces is for).
     virtual void addBox(Vector p1, Vector p2) {
         for (int idx = 0; idx < this->grid->size(); ++idx) {
+            if (this->grid->isGhost(idx)) continue;
             Vector pos = this->grid->getPosition(idx);
             bool inside = true;
             for (int d = 0; d < dim; ++d)
@@ -198,6 +204,7 @@ public:
     virtual void removeBox(Vector p1, Vector p2) {
         std::vector<int> toRemove;
         for (int idx = 0; idx < this->grid->size(); ++idx) {
+            if (this->grid->isGhost(idx)) continue;
             Vector pos = this->grid->getPosition(idx);
             bool inside = true;
             for (int d = 0; d < dim; ++d)
@@ -212,6 +219,7 @@ public:
 
     virtual void addSphere(Vector p, double radius) {
         for (int idx = 0; idx < this->grid->size(); ++idx) {
+            if (this->grid->isGhost(idx)) continue;
             Vector pos = this->grid->getPosition(idx);
             if ((pos - p).mag2() <= radius * radius)
                 obstacleIds.push_back(idx);
@@ -221,6 +229,7 @@ public:
     virtual void removeSphere(Vector p, double radius) {
         std::vector<int> toRemove;
         for (int idx = 0; idx < this->grid->size(); ++idx) {
+            if (this->grid->isGhost(idx)) continue;
             Vector pos = this->grid->getPosition(idx);
             if ((pos - p).mag2() <= radius * radius)
                 toRemove.push_back(idx);

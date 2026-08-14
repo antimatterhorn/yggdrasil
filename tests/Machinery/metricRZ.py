@@ -20,7 +20,8 @@ if __name__ == "__main__":
     # 1. Cartesian: uniform cell volume
     cart = Grid2d(nr, nz, dr, dz)                       # default Geometry.Cartesian
     assert cart.geometry() == Geometry.Cartesian
-    for idx in (0, cart.size() // 2, cart.size() - 1):
+    for (i, j) in ((0, 0), (nr // 2, nz // 2), (nr - 1, nz - 1)):
+        idx = cart.index(i, j, 0)
         assert approx(cart.cellVolume(idx), dr * dz), \
             f"cartesian cellVolume[{idx}]={cart.cellVolume(idx)} != {dr*dz}"
     print(f"[ok] Cartesian: uniform cellVolume = {dr*dz}")
@@ -39,7 +40,10 @@ if __name__ == "__main__":
     print("[ok] RZ: cellVolume = r*dr*dz and cellRadius > 0 everywhere")
 
     # 3. Summed volume = analytic 0.5*R^2*L (per radian, i.e. 2*pi omitted).
-    total = sum(rz.cellVolume(idx) for idx in range(rz.size()))
+    # Logical cells only -- rz.size() includes the ghost halo, whose r<0 side
+    # would corrupt the sum (cellVolume is r*dr*dz, and r extrapolates negative
+    # there).
+    total = sum(rz.cellVolume(rz.index(i, j, 0)) for j in range(nz) for i in range(nr))
     analytic = 0.5 * R * R * L
     rel = abs(total - analytic) / analytic
     assert rel < 1e-12, f"summed RZ volume {total} vs analytic {analytic} (rel {rel})"

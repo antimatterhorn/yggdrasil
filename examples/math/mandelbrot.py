@@ -22,8 +22,8 @@ numNodes = nx * ny
 
 # Create grid
 print("Creating Grid...")
-nodeList = NodeList(numNodes)
 myGrid = Grid2d(nx, ny, dx, dy)
+nodeList = NodeList(myGrid.size())
 
 # Set grid origin to upper-right corner (consistent with your system)
 # so that coordinates descend as i,j increase
@@ -40,8 +40,10 @@ mand.compute()
 # Extract and reshape results
 mp = nodeList.mandelbrot
 print("Generating Plot...")
-data = np.array([mp[i] for i in range(numNodes)])
-data2D = data.reshape((ny, nx))  # NOTE: row = y, col = x
+data2D = np.zeros((ny, nx))  # NOTE: row = y, col = x
+for j in range(ny):
+    for i in range(nx):
+        data2D[j, i] = mp[myGrid.index(i, j, 0)]
 
 # Plot using user-specified domain extents
 plt.imshow(data2D, extent=[xmin, xmax, ymin, ymax], origin='lower', cmap='inferno')

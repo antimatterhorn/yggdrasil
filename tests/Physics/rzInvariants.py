@@ -29,7 +29,7 @@ GAMMA = 1.4
 def build(geometry, nr, nz, dr, dz, install_axis_left=False):
     grid = Grid2d(nr, nz, dr, dz, geometry) if geometry == Geometry.CylindricalRZ \
         else Grid2d(nr, nz, dr, dz)
-    nodes = NodeList(nr * nz)
+    nodes = NodeList(grid.size())
     constants = MKS()
     eos = IdealGasEOS(GAMMA, constants)
     hydro = GridHydroKT2d(nodes, constants, eos, grid)
@@ -56,15 +56,21 @@ def test_uniform_rest():
     grid, nodes, hydro = sim["grid"], sim["nodes"], sim["hydro"]
     density = nodes.getFieldDouble("density")
     energy = nodes.getFieldDouble("specificInternalEnergy")
-    for i in range(nr * nz):
+    ids = [grid.index(i, j, 0) for j in range(nz) for i in range(nr)]
+    # Uniform value has no position dependence, so fill every allocated cell
+    # (ghost halo included) directly by raw index -- the ghost's pressure is
+    # only ever recomputed from *its own* density/energy (never mirrored), so
+    # it must start at the same uniform value too, or FinalizeStep's EOSLookup
+    # gives it p=0 and the mismatch shows up as spurious radial acceleration.
+    for i in range(grid.size()):
         density.setValue(i, 1.0)
         energy.setValue(i, 2.5)          # p = 0.4*1*2.5 = 1.0, uniform
     integ = integrator_for(hydro)
     Controller(integrator=integ, periodicWork=[], statStep=100000).Step(300)
 
     v = nodes.getFieldVector2d("velocity")
-    vmax = max(abs(v[i].x) + abs(v[i].y) for i in range(nr * nz))
-    drho = max(abs(density[i] - 1.0) for i in range(nr * nz))
+    vmax = max(abs(v[i].x) + abs(v[i].y) for i in ids)
+    drho = max(abs(density[i] - 1.0) for i in ids)
     assert vmax < 1e-9, f"uniform RZ gas accelerated: max|v|={vmax:.3e}"
     assert drho < 1e-9, f"uniform RZ density drifted: max|drho|={drho:.3e}"
     print(f"[A ok] uniform rest: max|v|={vmax:.2e}, max|drho|={drho:.2e}")
@@ -120,18 +126,19 @@ def test_axis_guard_and_autoinstall():
     sim = build(Geometry.CylindricalRZ, nr, nz, 0.05, 0.1)
     nodes = sim["nodes"]
     d = nodes.getFieldDouble("density"); e = nodes.getFieldDouble("specificInternalEnergy")
-    for i in range(nr * nz):
+    ids = [sim["grid"].index(i, j, 0) for j in range(nz) for i in range(nr)]
+    for i in range(sim["grid"].size()):
         d.setValue(i, 1.0); e.setValue(i, 2.5)
     integ = integrator_for(sim["hydro"])
     Controller(integrator=integ, periodicWork=[], statStep=100000).Step(5)
-    assert all(d[i] == d[i] for i in range(nr * nz)), "NaN near axis with auto-installed BC"
+    assert all(d[i] == d[i] for i in ids), "NaN near axis with auto-installed BC"
     print("[C ok] axis boundary auto-installed (no user 'left'): stable at r=0")
 
     # Guard: a user boundary that also claims 'left' must be rejected.
     sim2 = build(Geometry.CylindricalRZ, nr, nz, 0.05, 0.1, install_axis_left=True)
     nodes2 = sim2["nodes"]
     d2 = nodes2.getFieldDouble("density"); e2 = nodes2.getFieldDouble("specificInternalEnergy")
-    for i in range(nr * nz):
+    for i in range(sim2["grid"].size()):
         d2.setValue(i, 1.0); e2.setValue(i, 2.5)
     integ2 = integrator_for(sim2["hydro"])
     raised = False

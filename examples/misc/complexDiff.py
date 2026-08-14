@@ -36,12 +36,12 @@ if __name__ == "__main__":
 
     constants = MKS()
 
-    myNodeList = NodeList(nx*ny)
-    
     grid = Grid2d(nx,ny,1,1)
     print("grid %dx%d"%(nx,ny))
     print(grid)
-    
+
+    myNodeList = NodeList(grid.size())
+
     cwaveEqn = ComplexWaveEquation2d(nodeList=myNodeList,
                                     constants=constants,
                                     grid=grid,C=1.0)

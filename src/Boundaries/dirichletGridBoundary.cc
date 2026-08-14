@@ -88,6 +88,9 @@ public:
         initialized = true;
     }
 
+    // addBox/addSphere carve a Dirichlet obstacle out of real domain interior
+    // -- ghost cells are excluded here; addDomain() below is the way to make
+    // the whole ghost halo Dirichlet.
     virtual void
     addBox(Vector p1, Vector p2){
         std::vector<int> local;
@@ -96,6 +99,7 @@ public:
             std::vector<int> chunk;
             #pragma omp for nowait
             for (int idx = 0; idx < grid->size(); ++idx) {
+                if (grid->isGhost(idx)) continue;
                 Vector thisPos = grid->getPosition(idx);
                 bool inside = true;
                 for (int i = 0; i < dim; ++i)
@@ -118,6 +122,7 @@ public:
             std::vector<int> chunk;
             #pragma omp for nowait
             for (int idx = 0; idx < grid->size(); ++idx) {
+                if (grid->isGhost(idx)) continue;
                 Vector thisPos = grid->getPosition(idx);
                 bool inside = true;
                 for (int i = 0; i < dim; ++i)
@@ -143,6 +148,7 @@ public:
             std::vector<int> chunk;
             #pragma omp for nowait
             for (int idx = 0; idx < grid->size(); ++idx) {
+                if (grid->isGhost(idx)) continue;
                 Vector thisPos = grid->getPosition(idx);
                 if ((thisPos - p).mag2() <= radius * radius)
                     chunk.push_back(idx);
@@ -161,6 +167,7 @@ public:
             std::vector<int> chunk;
             #pragma omp for nowait
             for (int idx = 0; idx < grid->size(); ++idx) {
+                if (grid->isGhost(idx)) continue;
                 Vector thisPos = grid->getPosition(idx);
                 if ((thisPos - p).mag2() <= radius * radius)
                     chunk.push_back(idx);

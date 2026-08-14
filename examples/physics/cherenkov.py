@@ -40,10 +40,11 @@ if __name__ == "__main__":
     # ------------------------------------------------
     # Create the nodelist and grid
     # ------------------------------------------------
-    myNodeList = NodeList(nx*ny)
     grid = Grid2d(nx,ny,1,1)
     print("grid %dx%d"%(nx,ny))
     print(grid)
+
+    myNodeList = NodeList(grid.size())
 
     # ------------------------------------------------
     # Create the physics package and add to physics packages

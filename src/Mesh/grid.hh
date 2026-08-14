@@ -16,19 +16,26 @@ namespace Mesh {
     private:
         std::vector<std::shared_ptr<FieldBase>> _extraFields;
         std::array<std::vector<int>, 3> lowIds, highIds;
-        // Per-cell flag mirroring lowIds/highIds, so onBoundary is a lookup rather
-        // than a scan of every boundary index. Rebuilt by findBoundaries.
-        std::vector<char> boundaryMask;
         Geometry _geometry = Geometry::Cartesian;
+        // Allocated (logical + ghost) extents. nx/ny/nz below stay the
+        // user-requested logical extent; these are nx+2*ghostWidth etc. on
+        // every axis that exists for this dim, unpadded (== nx/ny/nz) otherwise.
+        int nxTotal = 0, nyTotal = 0, nzTotal = 0;
     public:
         using Vector = Lin::Vector<dim>;
-        int nx; // Number of grid cells in x-direction
-        int ny; // Number of grid cells in y-direction
-        int nz; // Number of grid cells in z-direction
+        int nx; // Number of logical (real, user-visible) grid cells in x
+        int ny; // Number of logical grid cells in y
+        int nz; // Number of logical grid cells in z
 
         double dx; // Grid spacing in x-direction
         double dy; // Grid spacing in y-direction
         double dz; // Grid spacing in z-direction
+
+        // Depth of the ghost halo surrounding the logical domain on every
+        // side. A domain-edge face has only one real neighbor beyond it, so
+        // GridHydroHLLC/KT's 4-cell stencil falls back to piecewise-constant
+        // at that face (see their computeFlux).
+        static constexpr int ghostWidth = 1;
 
         Field<Vector> gridPositions;
 
@@ -42,6 +49,9 @@ namespace Mesh {
 
         inline Geometry geometry() const { return _geometry; }
 
+        // Logical coordinates: i in [-ghostWidth, nx-1+ghostWidth] (and likewise
+        // j, k on any axis this dim has), 0..n-1 being the real domain and the
+        // rest being ghost cells. Maps to the flat storage index.
         int index(int i, int j = 0, int k = 0) const;
 
         inline int getnx() const    { return nx; };
@@ -50,12 +60,18 @@ namespace Mesh {
         inline int size_x() const   { return nx; };
         inline int size_y() const   { return ny; };
         inline int size_z() const   { return nz; };
-        inline int size() const     { return nx*ny*nz; };
+        // Total allocated storage (logical cells + ghost halo) -- what a
+        // NodeList living on this grid should be sized to, e.g.
+        // NodeList(grid.size()).
+        inline int size() const     { return nxTotal * nyTotal * nzTotal; };
+        // Real (non-ghost) cell count -- nx*ny*nz.
+        inline int logicalSize() const { return nx * ny * nz; };
         inline double getdx() const { return dx; };
         inline double getdy() const { return dy; };
         inline double getdz() const { return dz; };
-        // Boundary cell indices on the low/high side of `axis` (0=x, 1=y, 2=z),
-        // matching getNeighboringCells' [low-x, high-x, low-y, ...] ordering.
+        // Ghost cell indices one halo layer out from the low/high side of
+        // `axis` (0=x, 1=y, 2=z), matching getNeighboringCells' [low-x, high-x,
+        // low-y, ...] ordering.
         inline std::vector<int> lowMost(int axis) const  { return lowIds[axis]; };
         inline std::vector<int> highMost(int axis) const { return highIds[axis]; };
 
@@ -132,10 +148,11 @@ namespace Mesh {
         inline std::array<int, 2*dim> neighbors(int idx ) const { return getNeighboringCells(idx); };
         std::array<int, 3> indexToCoordinates(int idx) const;
 
-        void findBoundaries(const int buffer);
-        inline bool onBoundary(const int idx) const {
-            return idx >= 0 && idx < (int)boundaryMask.size() && boundaryMask[idx] != 0;
-        }
+        void buildGhostLists();
+        // Whether cell `idx` lies outside the logical [0,nx)x[0,ny)x[0,nz)
+        // domain -- i.e. is part of the ghost halo rather than real state.
+        bool isGhost(int idx) const;
+        inline bool isInterior(int idx) const { return !isGhost(idx); }
         void assignPositions(NodeList* nodeList);
 
         template <typename T>
@@ -151,7 +168,7 @@ namespace Mesh {
         T laplacian(int idx, F&& valueAt) const;
 
         Vector gradient(int idx, Field<double>* field) const;
-        
+
         template <typename F>
         Vector gradient(int idx, F&& valueAt) const;
     };

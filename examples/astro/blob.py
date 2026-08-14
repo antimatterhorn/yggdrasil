@@ -28,7 +28,7 @@ if __name__ == "__main__":
     myGrid = Grid2d(nx,ny,dx,dy)
     print("grid size:",myGrid.size())
     
-    myNodeList = NodeList(nx*ny)
+    myNodeList = NodeList(myGrid.size())
     print("numNodes =",myNodeList.numNodes)
     print("field names =",myNodeList.fieldNames)
 

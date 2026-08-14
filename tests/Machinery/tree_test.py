@@ -9,8 +9,8 @@ commandLine = CommandLineArguments(nx = 10,
                                    dy = 0.1,
                                    dz = 0.1)
 
-nodeList = NodeList(nx*ny*nz)
 myGrid = Grid3d(nx,ny,nz,dx,dy,dz)
+nodeList = NodeList(myGrid.size())
 
 myGrid.assignPositions(nodeList)
 
@@ -18,7 +18,7 @@ positions = nodeList.getFieldVector3d("position")
 
 tree = KDTree3d(positions)
 
-idx = int(nx/2*ny/2*nz/2)
+idx = myGrid.index(nx // 2, ny // 2, nz // 2)
 
 point = positions[idx]
 nbrs = tree.findNearestNeighbors(point,1.1*dx)

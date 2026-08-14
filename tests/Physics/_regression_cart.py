@@ -15,7 +15,7 @@ from Boundaries import ReflectingGridBoundary2d
 
 def run(nx, ny, dx, dy, cycles=200):
     grid = Grid2d(nx, ny, dx, dy)
-    nodes = NodeList(nx * ny)
+    nodes = NodeList(grid.size())
     constants = MKS()
     eos = IdealGasEOS(1.4, constants)
     hydro = GridHydroKT2d(nodes, constants, eos, grid)
@@ -37,10 +37,12 @@ def run(nx, ny, dx, dy, cycles=200):
 
     velocity = nodes.getFieldVector2d("velocity")
     srho = ssie = svel = 0.0
-    for i in range(nx * ny):
-        srho += density[i]
-        ssie += energy[i]
-        svel += abs(velocity[i].x) + abs(velocity[i].y)
+    for j in range(ny):
+        for i in range(nx):
+            idx = grid.index(i, j, 0)
+            srho += density[idx]
+            ssie += energy[idx]
+            svel += abs(velocity[idx].x) + abs(velocity[idx].y)
     return srho, ssie, svel
 
 

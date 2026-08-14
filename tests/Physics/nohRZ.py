@@ -39,7 +39,7 @@ def setup(Solver, nr, nz, dr, dz, dtmin):
     """Build a complete RZ Noh problem for one solver. Every object is returned and
     kept alive by the caller: the physics package stores non-owning pointers."""
     grid = Grid2d(nr, nz, dr, dz, Geometry.CylindricalRZ)
-    nodeList = NodeList(nr * nz)
+    nodeList = NodeList(grid.size())
     constants = MKS()
     eos = IdealGasEOS(GAMMA, constants)
     hydro = Solver(nodeList, constants, eos, grid)

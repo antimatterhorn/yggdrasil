@@ -38,7 +38,7 @@ public:
     ZeroTimeInitialize() override {
         int numNodes = this->nodeList->size();
         for (int i=0; i<numNodes; ++i) {
-            if (!grid->onBoundary(i))
+            if (!grid->isGhost(i))
                 insideIds.push_back(i);
         }
 
@@ -81,7 +81,11 @@ public:
             rho->setValue(idx, r);
 
             std::vector<ScalarField*> fields = { c1, c2, c3 };
-            // Diffusion term for each component
+            // Diffusion term for each component. Reads diagonal (corner)
+            // neighbors, which a GridBoundary's face-based ghost fill never
+            // writes (only axis-aligned ghost layers are filled) -- so the
+            // four logical-domain corners see a stale/default diagonal
+            // neighbor regardless of which boundary condition is registered.
             for (int c = 0; c < 3; ++c) {
                 double del = 0.0;
 

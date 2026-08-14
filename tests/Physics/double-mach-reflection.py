@@ -25,7 +25,7 @@ if __name__ == "__main__":
         intVerbose = False)
 
     myGrid     = Grid2d(nx, ny, dx, dy)
-    myNodeList = NodeList(nx * ny)
+    myNodeList = NodeList(myGrid.size())
 
     constants = MKS()
     eos       = IdealGasEOS(1.4, constants)
@@ -118,19 +118,20 @@ if __name__ == "__main__":
             x_foot = x0 + vs_x * time
             x_top  = x0 + ny * dy * inv_sqrt3 + vs_x * time
 
-            # Left wall: steady post-shock inflow.
+            # Left wall: steady post-shock inflow. These write the ghost halo
+            # (index -1 / nx / ny), not the real domain-edge cells at 0/nx-1/ny-1.
             for j in range(ny):
-                self._post(myGrid.index(0, j, 0))
+                self._post(myGrid.index(-1, j, 0))
 
             # Bottom wall: post-shock inflow left of the moving shock foot;
             # ReflectingGridBoundary handles the wedge to the right.
             for i in range(nx):
                 if (i + 0.5) * dx < x_foot:
-                    self._post(myGrid.index(i, 0, 0))
+                    self._post(myGrid.index(i, -1, 0))
 
             # Top wall: post-shock left of the shock, pre-shock right.
             for i in range(nx):
-                idx = myGrid.index(i, ny - 1, 0)
+                idx = myGrid.index(i, ny, 0)
                 if (i + 0.5) * dx < x_top:
                     self._post(idx)
                 else:

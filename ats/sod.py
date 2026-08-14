@@ -66,7 +66,7 @@ def exact_riemann(rhoL, uL, pL, rhoR, uR, pR, g):
 
 def _solve(Solver, nx=200, ny=4, dx=0.005, tstop=0.2):
     grid = Grid2d(nx, ny, dx, dx)
-    nodes = NodeList(nx * ny)
+    nodes = NodeList(grid.size())
     constants = MKS()
     eos = IdealGasEOS(GAMMA, constants)
     hydro = Solver(nodes, constants, eos, grid)

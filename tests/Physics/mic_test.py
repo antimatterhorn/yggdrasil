@@ -15,7 +15,7 @@ class oscillate:
         self.phi = self.nodeList.getFieldDouble("phi")
     def __call__(self,cycle,time,dt):
         a = 5.0*(cos(0.5*time))
-        self.phi.setValue(0,a)
+        self.phi.setValue(self.grid.index(0,0,0),a)
 
 class SpkOscillator:
     def __init__(self,speaker,nodeList,grid,width,height,workCycle=1):
@@ -29,7 +29,7 @@ class SpkOscillator:
     def __call__(self,cycle,time,dt):
         a = self.speaker.get_output(cycle*2.5e-5)*1e3
         #print(cycle*1e-4,a)
-        self.phi.setValue(0,a)
+        self.phi.setValue(self.grid.index(0,0,0),a)
 
 
 
@@ -45,8 +45,8 @@ if __name__ == "__main__":
     # ------------------------------------------------
     # Create the nodelist and grid
     # ------------------------------------------------
-    myNodeList = NodeList(nx*ny)
     grid = Grid2d(nx,ny,1,1)
+    myNodeList = NodeList(grid.size())
     print("grid %dx%d"%(nx,ny))
     print(grid)
 

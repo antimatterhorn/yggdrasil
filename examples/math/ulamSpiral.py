@@ -24,15 +24,15 @@ for i in range(2, int(numNodes**0.5) + 1):
 print("Finished generating primes. Now creating grid and assigning %s values..."%("random" if randomize else "prime/composite"))
 
 myGrid = Grid2d(size, size, 1, 1)
-myNodes = NodeList(numNodes)
+myNodes = NodeList(myGrid.size())
 myNodes.insertFieldDouble("prime")
 prime_field = myNodes.prime
 
-for k in range(numNodes):
+for k in range(myGrid.size()):
     prime_field[k] = 0.0
 
 # Build a parallel integer map: integer_map[k] = the integer at grid cell k
-integer_map = np.zeros(numNodes, dtype=int)
+integer_map = np.zeros(myGrid.size(), dtype=int)
 
 directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
 x, y = n, n
@@ -68,9 +68,13 @@ while num < numNodes:
         break
     dir_idx += 1
 
-data = np.array([prime_field[k] for k in range(numNodes)])
-data2D = data.reshape((size, size))
-integer2D = integer_map.reshape((size, size))
+data2D = np.zeros((size, size))
+integer2D = np.zeros((size, size), dtype=int)
+for j in range(size):
+    for i in range(size):
+        idx = myGrid.index(i, j, 0)
+        data2D[j, i] = prime_field[idx]
+        integer2D[j, i] = integer_map[idx]
 
 fig, ax = plt.subplots(figsize=(10, 10))
 ax.imshow(data2D, origin='lower', cmap='binary_r', interpolation='nearest')

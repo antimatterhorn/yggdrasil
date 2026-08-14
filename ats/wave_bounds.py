@@ -30,9 +30,9 @@ def run():
 
     constants = MKS()
 
-    myNodeList = NodeList(nx*ny)
-    
     grid = Grid2d(nx,ny,1,1)
+
+    myNodeList = NodeList(grid.size())
 
     waveEqn = WaveEquation2d(nodeList=myNodeList,
                              constants=constants,

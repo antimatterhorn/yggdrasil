@@ -48,10 +48,10 @@ if __name__ == "__main__":
 
     constants = MKS()
 
-    myNodeList = NodeList(nx*ny)
-    
     grid = Grid2d(nx,ny,cellsize_meters,cellsize_meters)
     print(grid)
+
+    myNodeList = NodeList(grid.size())
 
     waveEqn = WaveEquation2d(nodeList=myNodeList,
                              constants=constants,

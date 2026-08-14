@@ -15,7 +15,7 @@ V0, RHO0, P0 = 1.0, 1.0, 1.0e-6
 def run():
     nx, ny, dx, tstop = 200, 6, 0.005, 0.3
     grid = Grid2d(nx, ny, dx, dx)
-    nodes = NodeList(nx * ny)
+    nodes = NodeList(grid.size())
     constants = MKS()
     eos = IdealGasEOS(GAMMA, constants)
     hydro = GridHydroHLLE2d(nodes, constants, eos, grid)

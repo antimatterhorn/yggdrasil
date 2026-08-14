@@ -9,6 +9,11 @@
 #include "../DataBase/nodeList.hh"
 #include "../Math/vectorMath.hh"
 
+// Not Grid-aware: writes every NodeList entry as a point, unconditionally.
+// For a Grid-backed NodeList (sized NodeList(grid.size())) that includes the
+// grid's ghost halo, which shows up here as an extra ring of boundary
+// points -- use SiloMeshWriter's grid= quadmesh constructor for a real,
+// ghost-free visualization of grid data.
 template <int dim>
 class VTKMeshWriter {
 public:

@@ -17,7 +17,7 @@ def _mass(grid, density, ids):
 def run():
     nr, nz, dr = 60, 60, 0.02
     grid = Grid2d(nr, nz, dr, dr, Geometry.CylindricalRZ)
-    nodes = NodeList(nr * nz)
+    nodes = NodeList(grid.size())
     constants = MKS()
     eos = IdealGasEOS(GAMMA, constants)
     hydro = GridHydroHLLE2d(nodes, constants, eos, grid)
@@ -29,14 +29,16 @@ def run():
     amb = 1.0
     density = nodes.getFieldDouble("density")
     energy = nodes.getFieldDouble("specificInternalEnergy")
-    for i in range(nr * nz):
-        density[i] = amb; energy[i] = 1e-3
+    for j in range(nz):
+        for i in range(nr):
+            idx = grid.index(i, j, 0)
+            density[idx] = amb; energy[idx] = 1e-3
     for j in range(2):
         for i in range(2):
             energy[grid.index(i, j, 0)] = 400.0
 
-    ids = [grid.index(i, j, 0) for j in range(nz) for i in range(nr)
-           if not grid.onBoundary(grid.index(i, j, 0))]
+    # Every logical cell is a real physics cell -- nothing to filter out.
+    ids = [grid.index(i, j, 0) for j in range(nz) for i in range(nr)]
 
     def shock_radius():
         return max((grid.cellRadius(grid.index(i, j, 0))
@@ -46,7 +48,7 @@ def run():
     m0 = _mass(grid, density, ids)
     Controller(integrator=integrator, periodicWork=[], statStep=100000).Step(400)
 
-    finite = all(density[i] == density[i] and abs(density[i]) < 1e6 for i in range(nr * nz))
+    finite = all(density[i] == density[i] and abs(density[i]) < 1e6 for i in ids)
     r1 = shock_radius()
     dm = abs(_mass(grid, density, ids) - m0) / m0
 

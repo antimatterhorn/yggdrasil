@@ -52,10 +52,12 @@ class BolideEnergySource:
     def _columnCellIndices(self, altitude):
         halfThickness = 0.5 * self.layerThickness
         cells = []
-        for idx in range(self.grid.nx * self.grid.ny):
-            pos = self.position[idx]
-            if pos.x <= self.columnRadius and abs(pos.y - altitude) <= halfThickness:
-                cells.append(idx)
+        for j in range(self.grid.ny):
+            for i in range(self.grid.nx):
+                idx = self.grid.index(i, j, 0)
+                pos = self.position[idx]
+                if pos.x <= self.columnRadius and abs(pos.y - altitude) <= halfThickness:
+                    cells.append(idx)
         return cells
 
     def __call__(self, cycle, time, dt):
@@ -106,7 +108,7 @@ if __name__ == "__main__":
     myGrid = Grid2d(nr, nz, dr, dz, Geometry.CylindricalRZ)
     print("grid size:", myGrid.size(), " domain: %gm x %gm (r x z)" % (nr * dr, nz * dz))
 
-    myNodeList = NodeList(nr * nz)
+    myNodeList = NodeList(myGrid.size())
     constants = MKS()
     eos = IdealGasEOS(gamma, constants)
     print(eos, "gamma =", eos.gamma)

@@ -24,7 +24,7 @@ public:
         this->template EnrollStateFields<Vector>({"velocity"}, FieldPolicy::INTEGRATE);
 
         for(int i=0;i<grid->size();i++)
-            if(!grid->onBoundary(i))
+            if(!grid->isGhost(i))
                 insideIds.push_back(i);
 
         Field<Lin::Vector<dim>>* position = nodeList->getField<Lin::Vector<dim>>("position");

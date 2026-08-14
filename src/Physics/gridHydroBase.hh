@@ -99,7 +99,7 @@ public:
 
         insideIds.clear();
         for (int i = 0; i < grid->size(); ++i)
-            if (!grid->onBoundary(i) && obstacleSet.count(i) == 0)
+            if (!grid->isGhost(i) && obstacleSet.count(i) == 0)
                 insideIds.push_back(i);
 
         // Every face an interior cell touches, per axis. An interior cell is never on the

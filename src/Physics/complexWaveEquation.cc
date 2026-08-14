@@ -41,7 +41,7 @@ public:
     virtual void ZeroTimeInitialize() override {
         int numNodes = this->nodeList->size();
         for (int i = 0; i < numNodes; ++i) {
-            if (!grid->onBoundary(i)) insideIds.push_back(i);
+            if (!grid->isGhost(i)) insideIds.push_back(i);
         }
         this->UpdateState();
         this->InitializeBoundaries();

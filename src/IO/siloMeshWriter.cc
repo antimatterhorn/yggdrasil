@@ -120,11 +120,12 @@ SiloMeshWriter<dim>::writeQuadMesh(DBfile* dbfile) {
     }
 
     // Grid cells are the NodeList entries (zones); reconstruct the (n+1)
-    // corner-node coordinates per axis from the first cell's center, since
+    // corner-node coordinates per axis from the first *logical* cell's
+    // center (index(0,0,0), not raw index 0 -- that's a ghost cell), since
     // Grid only stores cell centers and uniform per-axis spacing.
     int ncells[3] = {grid->size_x(), grid->size_y(), grid->size_z()};
     double spacing[3] = {grid->getdx(), grid->getdy(), grid->getdz()};
-    Lin::Vector<dim> base = grid->getPosition(0);
+    Lin::Vector<dim> base = grid->getPosition(grid->index(0, 0, 0));
 
     int dims[dim];
     std::vector<float> coords[dim];
@@ -166,14 +167,27 @@ SiloMeshWriter<dim>::writeQuadFields(DBfile* dbfile) {
         zdims[d] = ncells[d];
     }
 
+    // writeQuadMesh built a zone per *logical* cell only, so field data must
+    // be packed the same way -- NodeList also carries the ghost halo, which
+    // isn't part of this mesh. Walk logical (i,j,k) through grid->index()
+    // (k-outer/j/i-inner, matching zdims' expected order) to get each zone's
+    // underlying NodeList entry.
+    std::vector<int> logicalIds;
+    logicalIds.reserve(grid->logicalSize());
+    for (int k = 0; k < ncells[2]; ++k)
+        for (int j = 0; j < ncells[1]; ++j)
+            for (int i = 0; i < ncells[0]; ++i)
+                logicalIds.push_back(grid->index(i, j, k));
+    const int nzones = static_cast<int>(logicalIds.size());
+
     for (const auto& field_name : fieldNames) {
         if (field_name == "position") continue;  // Skip the position field
 
         auto field_double = nodeList.getField<double>(field_name);
         if (field_double) {
-            std::vector<float> field_data(nodeList.size());
-            for (unsigned int i = 0; i < field_double->size(); ++i) {
-                field_data[i] = static_cast<float>(field_double->getValue(i));
+            std::vector<float> field_data(nzones);
+            for (int k = 0; k < nzones; ++k) {
+                field_data[k] = static_cast<float>(field_double->getValue(logicalIds[k]));
             }
             DBPutQuadvar1(dbfile, field_name.c_str(), "quadmesh", field_data.data(), zdims, dim, nullptr, 0, DB_FLOAT, DB_ZONECENT, nullptr);
             continue;
@@ -183,12 +197,12 @@ SiloMeshWriter<dim>::writeQuadFields(DBfile* dbfile) {
         if (field_vector) {
             std::vector<float> field_data[dim];
             for (int d = 0; d < dim; ++d) {
-                field_data[d].resize(nodeList.size());
+                field_data[d].resize(nzones);
             }
-            for (unsigned int i = 0; i < field_vector->size(); ++i) {
-                Lin::Vector<dim> vec = field_vector->getValue(i);
+            for (int k = 0; k < nzones; ++k) {
+                Lin::Vector<dim> vec = field_vector->getValue(logicalIds[k]);
                 for (int d = 0; d < dim; ++d) {
-                    field_data[d][i] = static_cast<float>(vec[d]);
+                    field_data[d][k] = static_cast<float>(vec[d]);
                 }
             }
 

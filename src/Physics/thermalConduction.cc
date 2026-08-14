@@ -64,7 +64,7 @@ public:
     virtual void ZeroTimeInitialize() override {
         insideIds.clear();
         for (int i = 0; i < grid->size(); ++i)
-            if (!grid->onBoundary(i)) insideIds.push_back(i);
+            if (!grid->isGhost(i)) insideIds.push_back(i);
 
         SetConductivity();
         this->UpdateState();

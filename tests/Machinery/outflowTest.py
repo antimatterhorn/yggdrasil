@@ -51,9 +51,9 @@ if __name__ == "__main__":
     nx = 50
     ny = 50
 
-    myNodeList = NodeList(nx*ny)
-    
     grid = Grid2d(nx,ny,1,1)
+
+    myNodeList = NodeList(grid.size())
     print("grid %dx%d"%(nx,ny))
     print(grid)
 

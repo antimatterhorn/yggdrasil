@@ -9,7 +9,7 @@ dx = 0.1
 dy = 0.1
 
 myGrid = Grid2d(nx,ny,dx,dy)
-myNodeList = NodeList(nx*ny)
+myNodeList = NodeList(myGrid.size())
 
 waveEqn = WaveEquation2d(nodeList=myNodeList,
                             constants=constants,
@@ -19,4 +19,4 @@ meshWriter = SiloMeshWriter2d(baseName="testMesh",nodeList=myNodeList,fieldNames
 meshWriter.write("00.silo")
 
 print(myGrid.nx,myGrid.ny,myGrid.nz,myGrid.dx,myGrid.dy,myGrid.dz)
-print(myGrid.position(0))
+print(myGrid.position(myGrid.index(0,0,0)))

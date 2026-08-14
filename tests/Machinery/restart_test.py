@@ -18,7 +18,7 @@ def make_kh_problem(nx, ny, dx=0.02, dy=0.02, dtmin=1e-6):
     # Return every long-lived object explicitly -- the C++ side holds raw
     # pointers to constants/eos, so they must outlive the hydro package.
     grid      = Grid2d(nx, ny, dx, dy)
-    nodeList  = NodeList(nx * ny)
+    nodeList  = NodeList(grid.size())
     constants = MKS()
     eos       = IdealGasEOS(GAMMA, constants)
     hydro     = GridHydroKT2d(nodeList, constants, eos, grid)

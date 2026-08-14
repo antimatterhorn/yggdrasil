@@ -35,7 +35,7 @@ def setup(Solver, nx, ny, dx, dy, dtmin):
     """Build a complete Noh problem for one solver. Every object is returned and
     kept alive by the caller: the physics package stores non-owning pointers."""
     grid = Grid2d(nx, ny, dx, dy)
-    nodeList = NodeList(nx * ny)
+    nodeList = NodeList(grid.size())
     constants = MKS()
     eos = IdealGasEOS(GAMMA, constants)
     hydro = Solver(nodeList, constants, eos, grid)

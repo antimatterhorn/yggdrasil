@@ -26,24 +26,35 @@ namespace Mesh {
     }
 
     template <int dim>
-    void 
+    void
     Grid<dim>::initializeGrid() {
+        nxTotal = nx + 2 * ghostWidth;
+        nyTotal = (dim >= 2) ? ny + 2 * ghostWidth : ny;
+        nzTotal = (dim >= 3) ? nz + 2 * ghostWidth : nz;
+
         gridPositions = Field<Lin::Vector<dim>>("gridPosition");
 
-        // Compute and store the position of each cell center
-        for (int k = 0; k < nz; ++k) {
-            for (int j = 0; j < ny; ++j) {
-                for (int i = 0; i < nx; ++i) {
+        // Cell-centre positions over the full padded (logical + ghost) domain,
+        // in the same k-major/j/i-minor flat order as index(), so ghost cells
+        // get sensible extrapolated positions (the i*dx+0.5*dx formula works
+        // unchanged for negative i) without any special-casing.
+        const int kLo = (dim >= 3) ? -ghostWidth : 0, kHi = (dim >= 3) ? nz - 1 + ghostWidth : 0;
+        const int jLo = (dim >= 2) ? -ghostWidth : 0, jHi = (dim >= 2) ? ny - 1 + ghostWidth : 0;
+        const int iLo = -ghostWidth, iHi = nx - 1 + ghostWidth;
+
+        for (int k = kLo; k <= kHi; ++k) {
+            for (int j = jLo; j <= jHi; ++j) {
+                for (int i = iLo; i <= iHi; ++i) {
                     Lin::Vector<dim> gridPosition;
                     for (int d = 0; d < dim; ++d) {
                         gridPosition.values[d] = (d == 0 ? i * dx + 0.5 * dx : (d == 1 ? j * dy + 0.5 * dy : k * dz + 0.5 * dz));
                     }
-                    gridPositions.addValue(gridPosition);   
+                    gridPositions.addValue(gridPosition);
                 }
             }
         }
 
-        findBoundaries(1); // the buffer determines the thickness of the boundary in cell widths
+        buildGhostLists();
     }
 
     template <int dim>
@@ -58,19 +69,19 @@ namespace Mesh {
     // Specialization for 1D
     template <>
     int Grid<1>::index(int i, int, int) const {
-        return i;
+        return i + ghostWidth;
     }
 
     // Specialization for 2D
     template <>
     int Grid<2>::index(int i, int j, int) const {
-        return j * nx + i;
+        return (j + ghostWidth) * nxTotal + (i + ghostWidth);
     }
 
     // Specialization for 3D
     template <>
     int Grid<3>::index(int i, int j, int k) const {
-        return (k * ny + j) * nx + i;
+        return ((k + ghostWidth) * nyTotal + (j + ghostWidth)) * nxTotal + (i + ghostWidth);
     }
 
     // Generic template definition (if you need for other dimensions)
@@ -101,11 +112,12 @@ namespace Mesh {
 
     // Always returns exactly 2*dim entries, in fixed axis-major order
     // [-axis0, +axis0, -axis1, +axis1, -axis2, +axis2], using -1 for any
-    // direction that runs off the domain. Callers (e.g. GridHydroKT's
-    // slopeLimitedValue) rely on both the fixed size/position and the -1
-    // sentinel to detect a missing neighbor near a boundary -- do not go
-    // back to conditionally omitting entries, which silently reindexes
-    // every neighbor after the gap and invites out-of-bounds reads.
+    // direction that runs off the padded (logical + ghost) array. Callers
+    // (e.g. GridHydroKT's slopeLimitedValue) rely on both the fixed
+    // size/position and the -1 sentinel to detect a missing neighbor at the
+    // edge of the ghost halo -- do not go back to conditionally omitting
+    // entries, which silently reindexes every neighbor after the gap and
+    // invites out-of-bounds reads.
     template <int dim>
     std::array<int, 2*dim>
     Grid<dim>::getNeighboringCells(int idx) const {
@@ -113,92 +125,100 @@ namespace Mesh {
         std::array<int, 2*dim> neighbors;
         neighbors.fill(-1);
 
-        neighbors[0] = (coords[0] > 0)      ? index(coords[0] - 1, coords[1], coords[2]) : -1;
-        neighbors[1] = (coords[0] < nx - 1) ? index(coords[0] + 1, coords[1], coords[2]) : -1;
+        neighbors[0] = (coords[0] - 1 >= -ghostWidth)      ? index(coords[0] - 1, coords[1], coords[2]) : -1;
+        neighbors[1] = (coords[0] + 1 <= nx - 1 + ghostWidth) ? index(coords[0] + 1, coords[1], coords[2]) : -1;
 
         if constexpr (dim > 1) {
-            neighbors[2] = (coords[1] > 0)      ? index(coords[0], coords[1] - 1, coords[2]) : -1;
-            neighbors[3] = (coords[1] < ny - 1) ? index(coords[0], coords[1] + 1, coords[2]) : -1;
+            neighbors[2] = (coords[1] - 1 >= -ghostWidth)      ? index(coords[0], coords[1] - 1, coords[2]) : -1;
+            neighbors[3] = (coords[1] + 1 <= ny - 1 + ghostWidth) ? index(coords[0], coords[1] + 1, coords[2]) : -1;
         }
 
         if constexpr (dim == 3) {
-            neighbors[4] = (coords[2] > 0)      ? index(coords[0], coords[1], coords[2] - 1) : -1;
-            neighbors[5] = (coords[2] < nz - 1) ? index(coords[0], coords[1], coords[2] + 1) : -1;
+            neighbors[4] = (coords[2] - 1 >= -ghostWidth)      ? index(coords[0], coords[1], coords[2] - 1) : -1;
+            neighbors[5] = (coords[2] + 1 <= nz - 1 + ghostWidth) ? index(coords[0], coords[1], coords[2] + 1) : -1;
         }
 
         return neighbors;
     }
 
+    // Inverse of index(): flat storage index -> logical (i,j,k). Ghost cells
+    // decode to coordinates outside [0,n) on the corresponding axis.
     template <int dim>
-    std::array<int, 3> 
+    std::array<int, 3>
     Grid<dim>::indexToCoordinates(int idx) const {
         std::array<int, 3> coords;
         coords.fill(0);
         if constexpr (dim == 3) {
-            coords[2] = idx / (nx * ny); // Compute k
-            idx -= coords[2] * nx * ny;
+            coords[2] = idx / (nxTotal * nyTotal); // Compute k
+            idx -= coords[2] * nxTotal * nyTotal;
+            coords[2] -= ghostWidth;
         }
-        if constexpr (dim > 1) 
-            coords[1] = idx / nx; // Compute j
-        coords[0] = idx % nx; // Compute i
+        if constexpr (dim > 1)
+            coords[1] = idx / nxTotal - ghostWidth; // Compute j
+        coords[0] = idx % nxTotal - ghostWidth; // Compute i
         return coords;
     }
 
+    // Rebuilds the per-axis ghost-cell index lists (lowMost/highMost) from the
+    // current logical extents. One layer per call, `ghostWidth` layers deep.
     template <int dim>
     void
-    Grid<dim>::findBoundaries(const int buffer) {
+    Grid<dim>::buildGhostLists() {
         for (int d = 0; d < 3; ++d) {
             lowIds[d].clear();
             highIds[d].clear();
         }
 
         if constexpr (dim == 1) {
-            for (int b=0; b<buffer; ++b) {
-                lowIds[0].push_back(index(b));
-                highIds[0].push_back(index(nx - 1 - b));
+            for (int b = 0; b < ghostWidth; ++b) {
+                lowIds[0].push_back(index(-1 - b));
+                highIds[0].push_back(index(nx + b));
             }
         }
         else if constexpr (dim == 2) {
-            for (int b=0; b<buffer; ++b) {
+            for (int b = 0; b < ghostWidth; ++b) {
                 for (int j = 0; j < ny; ++j) {
-                    lowIds[0].push_back(index(b, j));
-                    highIds[0].push_back(index(nx - 1 - b, j));
+                    lowIds[0].push_back(index(-1 - b, j));
+                    highIds[0].push_back(index(nx + b, j));
                 }
                 for (int i = 0; i < nx; ++i) {
-                    lowIds[1].push_back(index(i, b));
-                    highIds[1].push_back(index(i, ny - 1 - b));
+                    lowIds[1].push_back(index(i, -1 - b));
+                    highIds[1].push_back(index(i, ny + b));
                 }
             }
         }
         else if constexpr (dim == 3) {
-            for (int b=0; b<buffer; ++b) {
+            for (int b = 0; b < ghostWidth; ++b) {
                 for (int j = 0; j < ny; ++j) {
                     for (int k = 0; k < nz; ++k) {
-                        lowIds[0].push_back(index(b, j, k));
-                        highIds[0].push_back(index(nx - 1 - b, j, k));
+                        lowIds[0].push_back(index(-1 - b, j, k));
+                        highIds[0].push_back(index(nx + b, j, k));
                     }
                 }
                 for (int i = 0; i < nx; ++i) {
                     for (int k = 0; k < nz; ++k) {
-                        lowIds[1].push_back(index(i, b, k));
-                        highIds[1].push_back(index(i, ny - 1 - b, k));
+                        lowIds[1].push_back(index(i, -1 - b, k));
+                        highIds[1].push_back(index(i, ny + b, k));
                     }
                 }
                 for (int i = 0; i < nx; ++i) {
                     for (int j = 0; j < ny; ++j) {
-                        lowIds[2].push_back(index(i, j, b));
-                        highIds[2].push_back(index(i, j, nz - 1 - b));
+                        lowIds[2].push_back(index(i, j, -1 - b));
+                        highIds[2].push_back(index(i, j, nz + b));
                     }
                 }
             }
         }
+    }
 
-        // Derived from the lists just built, so the two can never disagree.
-        boundaryMask.assign(size(), 0);
-        for (int d = 0; d < dim; ++d) {
-            for (int i : lowIds[d])  boundaryMask[i] = 1;
-            for (int i : highIds[d]) boundaryMask[i] = 1;
-        }
+    template <int dim>
+    bool
+    Grid<dim>::isGhost(int idx) const {
+        auto c = indexToCoordinates(idx);
+        if (c[0] < 0 || c[0] >= nx) return true;
+        if constexpr (dim > 1) if (c[1] < 0 || c[1] >= ny) return true;
+        if constexpr (dim > 2) if (c[2] < 0 || c[2] >= nz) return true;
+        return false;
     }
 
     template <int dim>

@@ -34,13 +34,16 @@ public:
             dxmin = std::min(dxmin, grid->spacing(i));
     }
 
-    WaveEquation(NodeList* nodeList, PhysicalConstants& constants, Mesh::Grid<2>* grid, const std::string& depthMap) : 
+    WaveEquation(NodeList* nodeList, PhysicalConstants& constants, Mesh::Grid<2>* grid, const std::string& depthMap) :
         Physics<dim>(nodeList, constants),
         grid2d(grid), C(constants.ESurfaceGrav()), ocean(true) {
         if (dim != 2) {
             std::cerr << "Error: This constructor can only be used with dim = 2" << std::endl;
             std::exit(EXIT_FAILURE);
         }
+        // EvaluateDerivatives dereferences the dim-generic `grid` member unconditionally;
+        // alias it to grid2d here since dim==2 is enforced above.
+        if constexpr (dim == 2) this->grid = grid2d;
         VerifyWaveFields();
 
         grid2d->assignPositions(nodeList);
@@ -91,8 +94,8 @@ public:
         insideIds.clear();
         int numNodes = this->nodeList->size();
         for (int i = 0; i < numNodes; ++i) {
-            bool onBound = ocean ? grid2d->onBoundary(i) : grid->onBoundary(i);
-            if (!onBound && obstacleSet.count(i) == 0)
+            bool ghost = ocean ? grid2d->isGhost(i) : grid->isGhost(i);
+            if (!ghost && obstacleSet.count(i) == 0)
                 insideIds.push_back(i);
         }
     }

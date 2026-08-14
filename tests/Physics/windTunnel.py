@@ -27,7 +27,7 @@ if __name__ == "__main__":
     myGrid = Grid2d(nx, ny, dx, dy)
     print("grid size:", myGrid.size())
 
-    myNodeList = NodeList(nx * ny)
+    myNodeList = NodeList(myGrid.size())
 
     constants = MKS()
     eos = IdealGasEOS(1.4, constants)
@@ -91,8 +91,11 @@ if __name__ == "__main__":
     #                             ZeroTimeInitialize) and leaves them for
     #                             this boundary's Apply to fill each step.
     # ------------------------------------------------------------------
+    # addBox only ever selects real (logical) cells, never the ghost halo, so
+    # this must bound the box to x < 0 to land on the left ghost column
+    # (x = -0.5*dx) rather than the first real interior column (x = 0.5*dx).
     inflow = DirichletGridBoundary2d(grid=myGrid)
-    inflow.addBox(Vector2d(-10.0, -10.0), Vector2d(dx, ny * dy + 10.0))
+    inflow.addBox(Vector2d(-10.0 * dx, -10.0), Vector2d(0.0, ny * dy + 10.0))
     hydro.addBoundary(inflow)
 
     outflow = OutflowGridBoundary2d(grid=myGrid)

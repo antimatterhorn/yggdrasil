@@ -28,6 +28,8 @@ class Grid:
         return
     def size(self):
         return
+    def logicalSize(self):
+        return
     def getNeighboringCells(self,idx="int"):
         return "std::array<int, 2*%(dim)s>"
     def index(self,i="int",j=("int",0),k=("int",0)):
@@ -40,7 +42,9 @@ class Grid:
         return "std::vector<int>"
     def highMost(self,axis="int"):
         return "std::vector<int>"
-    def onBoundary(self,idx="int"):
+    def isGhost(self,idx="int"):
+        return
+    def isInterior(self,idx="int"):
         return
     def geometry(self):
         return "Mesh::Geometry"

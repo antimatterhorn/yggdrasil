@@ -29,7 +29,7 @@ def run():
     nx, ny = 100, 100
     cyclesA, cyclesB = 300, 600
     grid = Grid2d(nx, ny, 1.0, 1.0)
-    nodes = NodeList(nx * ny)
+    nodes = NodeList(grid.size())
     constants = MKS()
     eos = IdealGasEOS(GAMMA, constants)
     hydro = GridHydroHLLE2d(nodes, constants, eos, grid)

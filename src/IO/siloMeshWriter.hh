@@ -40,8 +40,11 @@ private:
     // Writes the NodeList as zone-centered data on a real Silo quadmesh built
     // from the Grid's cell topology, so VisIt renders actual cells instead of
     // points that need glyphing into squares. Requires nodeList.size() ==
-    // grid->size() (one NodeList entry per grid cell); returns false without
-    // writing anything if that doesn't hold, so the caller can fall back to
+    // grid->size() (one NodeList entry per grid cell, including its ghost
+    // halo -- the normal case for NodeList(grid.size())); the mesh/fields
+    // themselves cover only the logical (non-ghost) cells, so the ghost halo
+    // never shows up in the written file. Returns false without writing
+    // anything if the size check fails, so the caller can fall back to
     // writePointMesh/writeFields.
     bool writeQuadMesh(DBfile* dbfile);
     void writeQuadFields(DBfile* dbfile);

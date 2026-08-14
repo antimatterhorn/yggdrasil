@@ -21,7 +21,7 @@ def _interface_spread(nodes, grid, nx, ny):
 def run():
     nx, ny, dx, dy, tstop = 100, 50, 0.02, 0.02, 0.3
     grid = Grid2d(nx, ny, dx, dy)
-    nodes = NodeList(nx * ny)
+    nodes = NodeList(grid.size())
     constants = MKS()
     eos = IdealGasEOS(1.4, constants)
     hydro = GridHydroKT2d(nodes, constants, eos, grid)

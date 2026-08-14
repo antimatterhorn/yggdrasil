@@ -22,7 +22,7 @@ if __name__ == "__main__":
     myGrid = Grid2d(nx,ny,dx,dy)
     print("grid size:",myGrid.size())
     
-    myNodeList = NodeList(nx*ny)
+    myNodeList = NodeList(myGrid.size())
     print("numNodes =",myNodeList.numNodes)
     print("field names =",myNodeList.fieldNames)
 
@@ -42,8 +42,9 @@ if __name__ == "__main__":
     energy  = myNodeList.getFieldDouble("specificInternalEnergy")
     position = myNodeList.getFieldVector2d("position")
 
-    for j in range(ny):
-        for i in range(nx):
+    # Seed the ghost halo (not just the logical domain)
+    for j in range(-1, ny + 1):
+        for i in range(-1, nx + 1):
             idx = myGrid.index(i,j,0)
             energy.setValue(idx, 3e6)
             density.setValue(idx, 1.0)

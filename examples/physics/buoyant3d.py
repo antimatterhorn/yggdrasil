@@ -35,8 +35,8 @@ if __name__ == "__main__":
 
     myGrid = Grid3d(nx,ny,nz,dx,dy,dz)
     print("grid size:",myGrid.size())
-    
-    myNodeList = NodeList(nx*ny*nz)
+
+    myNodeList = NodeList(myGrid.size())
     print("numNodes =",myNodeList.numNodes)
     print("field names =",myNodeList.fieldNames)
 

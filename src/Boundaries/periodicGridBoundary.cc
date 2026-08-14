@@ -38,16 +38,19 @@ public:
     using Complex     = std::complex<double>;
     using ComplexField= Field<Complex>;
 
-    PeriodicGridBoundary(Mesh::Grid<dim>* grid) : 
+    // boundaryLists[2*face] are face's ghost cells; boundaryLists[2*face+1] is
+    // what they copy from -- the real cell at the *opposite* side of the
+    // logical domain (index 0 / n-1).
+    PeriodicGridBoundary(Mesh::Grid<dim>* grid) :
         GridBoundary<dim>(grid) {
         if (dim == 1) {
             std::vector<int> xLow = grid->lowMost(0);
             std::vector<int> xLowInt;
-            xLowInt.push_back(1);
+            xLowInt.push_back(grid->index(0));
 
             std::vector<int> xHigh = grid->highMost(0);
             std::vector<int> xHighInt;
-            xHighInt.push_back(xHigh[0]-1);
+            xHighInt.push_back(grid->index(grid->size_x() - 1));
 
             boundaryLists.push_back(xLow);
             boundaryLists.push_back(xHighInt);
@@ -67,13 +70,13 @@ public:
             int Ny = grid->size_y();
 
             for (int j = 0; j < Ny; ++j) {
-                xLowInt.push_back(grid->index(1, j));
-                xHighInt.push_back(grid->index(Nx - 2, j));
+                xLowInt.push_back(grid->index(0, j));
+                xHighInt.push_back(grid->index(Nx - 1, j));
             }
 
             for (int i = 0; i < Nx; ++i) {
-                yLowInt.push_back(grid->index(i, 1));
-                yHighInt.push_back(grid->index(i, Ny - 2));
+                yLowInt.push_back(grid->index(i, 0));
+                yHighInt.push_back(grid->index(i, Ny - 1));
             }
 
             boundaryLists.push_back(xLow);
@@ -102,29 +105,29 @@ public:
             int Ny = grid->size_y();
             int Nz = grid->size_z();
 
-            // Iteration order here must match Grid<3>::findBoundaries exactly,
+            // Iteration order here must match Grid<3>::buildGhostLists exactly,
             // since CopyBoundaryData pairs boundaryIds[i] with copyIds[i] by
             // position: j outer / k inner for the x faces.
             for (int j = 0; j < Ny; ++j) {
                 for (int k = 0; k < Nz; ++k) {
-                    xLowInt.push_back(grid->index(1, j, k));
-                    xHighInt.push_back(grid->index(Nx - 2, j, k));
+                    xLowInt.push_back(grid->index(0, j, k));
+                    xHighInt.push_back(grid->index(Nx - 1, j, k));
                 }
             }
 
             // i outer / k inner for the y faces.
             for (int i = 0; i < Nx; ++i) {
                 for (int k = 0; k < Nz; ++k) {
-                    yLowInt.push_back(grid->index(i, 1, k));
-                    yHighInt.push_back(grid->index(i, Ny - 2, k));
+                    yLowInt.push_back(grid->index(i, 0, k));
+                    yHighInt.push_back(grid->index(i, Ny - 1, k));
                 }
             }
 
             // i outer / j inner for the z faces.
             for (int i = 0; i < Nx; ++i) {
                 for (int j = 0; j < Ny; ++j) {
-                    zLowInt.push_back(grid->index(i, j, 1));
-                    zHighInt.push_back(grid->index(i, j, Nz - 2));
+                    zLowInt.push_back(grid->index(i, j, 0));
+                    zHighInt.push_back(grid->index(i, j, Nz - 1));
                 }
             }
 

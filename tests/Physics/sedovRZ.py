@@ -29,8 +29,8 @@ SOLVERS = [("KT", GridHydroKT2d, 0.15),
 
 
 def interior_ids(grid, nr, nz):
-    return [grid.index(i, j, 0) for j in range(nz) for i in range(nr)
-            if not grid.onBoundary(grid.index(i, j, 0))]
+    # Every logical cell is a real physics cell -- nothing to filter out.
+    return [grid.index(i, j, 0) for j in range(nz) for i in range(nr)]
 
 
 def total_mass(density, grid, ids):
@@ -62,7 +62,7 @@ def setup(Solver, nr, nz, dr, dtmin, rho_ambient, blob, E_blob):
     """Build a complete RZ Sedov problem for one solver. Every object is returned
     and kept alive by the caller: the physics package stores non-owning pointers."""
     grid = Grid2d(nr, nz, dr, dr, Geometry.CylindricalRZ)
-    nodeList = NodeList(nr * nz)
+    nodeList = NodeList(grid.size())
     constants = MKS()
     eos = IdealGasEOS(GAMMA, constants)
     hydro = Solver(nodeList, constants, eos, grid)
@@ -73,9 +73,13 @@ def setup(Solver, nr, nz, dr, dtmin, rho_ambient, blob, E_blob):
 
     density = nodeList.getFieldDouble("density")
     energy = nodeList.getFieldDouble("specificInternalEnergy")
-    for i in range(nr * nz):
-        density.setValue(i, rho_ambient)
-        energy.setValue(i, 1e-3)               # cold ambient
+    # Logical cells only, via grid.index(i,j,0) -- flat indices span the full
+    # padded (ghost-inclusive) storage, not just the logical domain.
+    for j in range(nz):
+        for i in range(nr):
+            idx = grid.index(i, j, 0)
+            density.setValue(idx, rho_ambient)
+            energy.setValue(idx, 1e-3)         # cold ambient
 
     # Deposit energy in a blob at the axis/base corner.
     for j in range(blob):
@@ -120,7 +124,7 @@ if __name__ == "__main__":
 
         # (i) finite and bounded
         if not all(density[i] == density[i] and abs(density[i]) < 1e6
-                   for i in range(nr * nz)):
+                   for i in ids):
             failures.append(f"{label}: blast produced NaN/inf or runaway density")
 
         # (ii) shock expanded outward

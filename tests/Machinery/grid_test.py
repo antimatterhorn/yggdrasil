@@ -27,12 +27,12 @@ for j in range(ny):
         row.append(idx)
     print(", ".join(f"{num:02d}" for num in row))
 
-print("bounds:")
+print("ghost (should all be False -- these are the real logical cells):")
 for j in range(ny):
     row = []
     for i in range(nx):
         idx = myGrid.index(i,j,0)
-        row.append(myGrid.onBoundary(idx))
+        row.append(myGrid.isGhost(idx))
     print(", ".join(f"{num:b}" for num in row))
 
 print("\ndirichlet ids:")

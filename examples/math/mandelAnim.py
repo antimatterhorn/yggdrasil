@@ -18,8 +18,8 @@ class AnimatedMandelbrotZoom:
         self.num_nodes = nx * ny
         self.t = 0
 
-        self.nodeList = NodeList(self.num_nodes)
         self.grid = Grid2d(nx, ny, self.width / nx, self.height / ny)
+        self.nodeList = NodeList(self.grid.size())
         origin = Vector2d(-xmin, -ymin)
         self.grid.setOrigin(origin)
         self.compute()
@@ -31,7 +31,8 @@ class AnimatedMandelbrotZoom:
     def compute(self):
         mand = Mandelbrot(self.nodeList, self.grid, self.dynamic_max_iter())
         mand.compute()
-        self.values = [self.nodeList.mandelbrot[i] for i in range(self.num_nodes)]
+        mp = self.nodeList.mandelbrot
+        self.values = [[mp[self.grid.index(i, j, 0)] for i in range(self.nx)] for j in range(self.ny)]
 
     def module_stepper(self):
         self.t += 1
@@ -45,12 +46,11 @@ class AnimatedMandelbrotZoom:
         self.grid = Grid2d(self.nx, self.ny, dx, dy)
         origin = Vector2d(-xmin, -ymin)
         self.grid.setOrigin(origin)
-        self.nodeList = NodeList(self.num_nodes)
+        self.nodeList = NodeList(self.grid.size())
         self.compute()
 
     def module_call(self, i, j, fieldName):
-        idx = j * self.nx + i
-        return self.values[idx]
+        return self.values[j][i]
 
     def module_title(self):
         return f"Zoom Step {self.t}"
