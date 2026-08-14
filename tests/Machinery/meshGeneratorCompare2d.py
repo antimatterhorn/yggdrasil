@@ -24,9 +24,9 @@ getMesh: dict[str,Func] ={
 }
 
 if __name__ == "__main__":
-    commandLine = CommandLineArguments(method="CircleQuad", n1 = 20, n2 = 20)
+    commandLine = CommandLineArguments(n1 = 20, n2 = 20)
+    for method in getMesh.keys():
+        gen = getMesh[method](n1, n2)
 
-    gen = getMesh[method](n1, n2)
-
-    mesh_viz = MeshViz(gen)
-    mesh_viz.plot(method)
+        mesh_viz = MeshViz(gen)
+        mesh_viz.plot(method)

@@ -18,3 +18,4 @@ phi2 = myNodeList.getFieldDouble("phi")
 
 print(phi)
 print(phi2)
+print(phi.name,phi2.name)
