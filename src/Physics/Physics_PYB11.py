@@ -21,6 +21,7 @@ PYB11includes = ['"physics.hh"',
                 '"fem.cc"',
                 '"thermalConduction.cc"',
                 '"phaseCoupling.cc"',
+                '"cellFlow.cc"',
                 '"treeGravity.cc"',
                 '"reactionDiffusion.cc"',
                 '"complexWaveEquation.cc"',
@@ -50,6 +51,7 @@ from fem import *
 from femLinearElasticity import *
 from thermalConduction import *
 from phaseCoupling import *
+from cellFlow import *
 from treeGravity import *
 from reactionDiffusion import *
 from complexWaveEquation import *

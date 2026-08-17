@@ -28,6 +28,8 @@ class NodeList:
     count = PYB11property("int", getter="getFieldCount", doc="The number of fields in the nodeList.")
     fieldNames = PYB11property("std::vector<std::string>", getter="fieldNames", doc="The names of fields in the nodeList.")
 
+    getFieldInt = PYB11TemplateMethod(getField,
+                                template_parameters = ("int"))
     getFieldDouble = PYB11TemplateMethod(getField,
                                 template_parameters = ("double"))
     getFieldComplex = PYB11TemplateMethod(getField,
@@ -38,6 +40,8 @@ class NodeList:
                                 template_parameters = ("Lin::Vector<2>"))
     getFieldVector3d = PYB11TemplateMethod(getField,
                                 template_parameters = ("Lin::Vector<3>"))
+    insertFieldInt = PYB11TemplateMethod(insertField,
+                                template_parameters = ("int"))
     insertFieldDouble = PYB11TemplateMethod(insertField,
                                 template_parameters = ("double"))
     insertFieldComplex = PYB11TemplateMethod(insertField,

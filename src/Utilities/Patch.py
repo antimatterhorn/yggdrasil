@@ -4,6 +4,10 @@ from DataBase import *
 
 def nodelist_getattr(self, name):
     try:
+        return self.getFieldInt(name)
+    except:
+        pass
+    try:
         return self.getFieldDouble(name)
     except:
         pass
