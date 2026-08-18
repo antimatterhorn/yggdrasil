@@ -32,6 +32,9 @@ public:
     bool operator==(const Tensor<dim> other) const;
     bool operator!=(const Tensor<dim> other) const;
 
+    double trace() const;
+    static Tensor<dim> outer(const Vector<dim>& v, const Vector<dim>& w);
+
     double xx() const;
     double xy() const;
     double xz() const;

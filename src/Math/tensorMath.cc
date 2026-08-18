@@ -221,6 +221,23 @@ void Tensor<dim>::setzz(double val) {
 }
 
 template <int dim>
+double Tensor<dim>::trace() const {
+    double result = 0.0;
+    for (int i = 0; i < dim; ++i)
+        result += values[i*dim + i];
+    return result;
+}
+
+template <int dim>
+Tensor<dim> Tensor<dim>::outer(const Vector<dim>& v, const Vector<dim>& w) {
+    Tensor<dim> result;
+    for (int i = 0; i < dim; ++i)
+        for (int j = 0; j < dim; ++j)
+            result.values[i*dim + j] = v[i] * w[j];
+    return result;
+}
+
+template <int dim>
 Tensor<dim> Tensor<dim>::one() {
     Tensor<dim> result = Tensor<dim>();
     for (int i = 0; i < dim; ++i) {
