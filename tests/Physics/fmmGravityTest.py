@@ -19,7 +19,7 @@ class dumpState:
 if __name__ == "__main__":
     bounds = np.asarray([[-1,-1],[1,1]])
     vbounds = bounds * 0.015
-    numNodes = 20
+    numNodes = 100
     posGenerator = RandomNodeGenerator2d(numNodes=numNodes,bounds=bounds)
     velGenerator = RandomNodeGenerator2d(numNodes=numNodes,bounds=vbounds)
     myNodeList = NodeList(numNodes)
@@ -46,13 +46,13 @@ if __name__ == "__main__":
         velocity.setValue(i,Vector2d(velGenerator.positions[i][0],velGenerator.positions[i][1])*0.5)
 
     integrator = RungeKutta4Integrator2d(packages=packages,
-                                         dtmin=0.1,verbose=False)
+                                         dtmin=0.5,verbose=False)
   
 
     dump = dumpState(myNodeList,workCycle=1000,G=constants.G)
     periodicWork = [dump]
 
-    controller = Controller(integrator=integrator,periodicWork=[],statStep=1,tstop=1e3)
+    controller = Controller(integrator=integrator,periodicWork=[],statStep=100,tstop=1e3)
 
     bounds = (-1,1,-1,1)
 
