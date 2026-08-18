@@ -81,7 +81,7 @@ if __name__ == "__main__":
     for bound in cbounds:
         kinetics.addBoundary(bound)
 
-    integrator = RungeKutta2Integrator2d(packages=packages, dtmin=0.01,verbose=False)
+    integrator = RungeKutta2Integrator2d(packages=packages, dtmin=0.02,verbose=False)
     print(integrator)
 
 
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     for i in range(numNodes):
         pos[i] = Vector2d(random.uniform(-9, 9), 10)
 
-    controller = Controller(integrator=integrator, periodicWork=[], statStep=1)
+    controller = Controller(integrator=integrator, periodicWork=[], statStep=100)
 
     bounds = (-10, 10, 0, 10)
     AnimateScatter(bounds, stepper=controller, positions=pos, colliders=colliders, frames=100, interval=50)

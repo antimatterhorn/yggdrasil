@@ -23,67 +23,101 @@ def AnimateGrid2d(bounds, update_method, threeColors=False, frames=100, interval
       or 'y' for a horizontal lineout at a fixed row (varies over x). Ignored if threeColors.
     - lineout_index: index of the fixed column/row to sample. Defaults to the midpoint
       (nx*scale//2 for 'x', ny*scale//2 for 'y'), matching the previous fixed behavior.
+
+    Redraws via blitting (persistent image/line/title artists updated in place) rather than
+    clearing and rebuilding the axes every frame, since a full clear+rebuild forces matplotlib
+    to re-layout and re-rasterize artists that didn't change. Blitting requires an axes'
+    coordinate limits to stay fixed once drawn, so the lineout subplot's y-limits are set once
+    before the animation starts (from `extremis` if given, else the first frame's range plus
+    margin) instead of being rescaled every frame; the image's color limits still autoscale
+    per frame when `extremis` is omitted, since that only changes color mapping, not axis
+    layout.
     """
+    nx = bounds[0]
+    ny = bounds[1]
+
     if threeColors:
         fig, ax = plt.subplots()
 
-        nx = bounds[0]
-        ny = bounds[1]
+        rgb_grid = np.zeros((ny * scale, nx * scale, 3))
+        im = ax.imshow(rgb_grid, origin='lower', extent=[0, nx * scale, 0, ny * scale],
+                        interpolation='nearest', animated=True)
+        title = ax.set_title(update_method.module_title(), animated=True)
+
+        def init():
+            return im, title
 
         def update(frame):
             update_method.module_stepper()
-            ax.clear()
-
-            # Generate RGB values for each cell
-            rgb_grid = np.zeros((ny * scale, nx * scale, 3))
-
-            for j in range(ny * scale):
-                for i in range(nx * scale):
-                    rgb_grid[j,i] = update_method(i % nx, j % ny)
-            # Plot the grid
-            ax.imshow(rgb_grid, origin='lower', extent=[0, nx * scale, 0, ny * scale], interpolation='nearest')
-            ax.set_title(update_method.module_title())
-    else:
-        fig, (ax_top, ax_bottom) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [10, 1]})
-
-        nx = bounds[0]
-        ny = bounds[1]
-
-        def update(frame):
-            update_method.module_stepper()
-            ax_top.clear()
-            ax_bottom.clear()
-
-            # Generate RGB values for each cell
-            rgb_grid = np.zeros((ny * scale, nx * scale))  # Rows = y, Cols = x
 
             for j in range(ny * scale):
                 for i in range(nx * scale):
                     rgb_grid[j, i] = update_method(i % nx, j % ny)
 
+            im.set_data(rgb_grid)
+            title.set_text(update_method.module_title())
+            return im, title
+    else:
+        fig, (ax_top, ax_bottom) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [10, 1]})
+
+        if lineout_axis == 'y':
+            idx = lineout_index if lineout_index is not None else ny * scale // 2
+            lineout_extent = nx * scale
+        else:
+            idx = lineout_index if lineout_index is not None else nx * scale // 2
+            lineout_extent = ny * scale
+
+        def sampleLineout(rgb_grid):
             if lineout_axis == 'y':
-                idx = lineout_index if lineout_index is not None else ny * scale // 2
-                lineout_values = rgb_grid[idx, :]
-                lineout_extent = nx * scale
-            else:
-                idx = lineout_index if lineout_index is not None else nx * scale // 2
-                lineout_values = rgb_grid[:, idx]
-                lineout_extent = ny * scale
+                return rgb_grid[idx, :]
+            return rgb_grid[:, idx]
 
-            # Plot the grid
-            if extremis:
-                ax_top.imshow(rgb_grid, origin='lower', extent=[0, nx * scale, 0, ny * scale], cmap=cmap, interpolation='nearest',
-                              vmin=extremis[0], vmax=extremis[1])
-            else:
-                ax_top.imshow(rgb_grid, origin='lower', extent=[0, nx * scale, 0, ny * scale], cmap=cmap, interpolation='nearest')
-            ax_bottom.plot(range(lineout_extent), lineout_values, color='blue')
-            ax_bottom.set_xlim(0, lineout_extent)
+        rgb_grid = np.zeros((ny * scale, nx * scale))  # Rows = y, Cols = x
+
+        if extremis:
+            im = ax_top.imshow(rgb_grid, origin='lower', extent=[0, nx * scale, 0, ny * scale], cmap=cmap,
+                                interpolation='nearest', vmin=extremis[0], vmax=extremis[1], animated=True)
+        else:
+            im = ax_top.imshow(rgb_grid, origin='lower', extent=[0, nx * scale, 0, ny * scale], cmap=cmap,
+                                interpolation='nearest', animated=True)
+        title = ax_top.set_title(update_method.module_title(), animated=True)
+
+        line, = ax_bottom.plot(range(lineout_extent), np.zeros(lineout_extent), color='blue', animated=True)
+        ax_bottom.set_xlim(0, lineout_extent)
+
+        # Fix the lineout's y-limits once, up front, so blitting stays valid for the whole
+        # animation -- see the blit note in the docstring above.
+        if extremis:
+            lo, hi = extremis[0], extremis[1]
+        else:
+            for j in range(ny * scale):
+                for i in range(nx * scale):
+                    rgb_grid[j, i] = update_method(i % nx, j % ny)
+            lineout_values = sampleLineout(rgb_grid)
             lo, hi = min(lineout_values), max(lineout_values)
-            margin = 0.1 * (hi - lo) if hi > lo else 0.1 * abs(lo) if lo != 0 else 1.0
-            ax_bottom.set_ylim(lo - margin, hi + margin)
-            ax_top.set_title(update_method.module_title())
+        margin = 0.1 * (hi - lo) if hi > lo else 0.1 * abs(lo) if lo != 0 else 1.0
+        ax_bottom.set_ylim(lo - margin, hi + margin)
 
-    ani = FuncAnimation(fig, update, frames=frames, interval=interval)
+        def init():
+            return im, title, line
+
+        def update(frame):
+            update_method.module_stepper()
+
+            for j in range(ny * scale):
+                for i in range(nx * scale):
+                    rgb_grid[j, i] = update_method(i % nx, j % ny)
+
+            lineout_values = sampleLineout(rgb_grid)
+
+            im.set_data(rgb_grid)
+            if not extremis:
+                im.set_clim(rgb_grid.min(), rgb_grid.max())
+            line.set_ydata(lineout_values)
+            title.set_text(update_method.module_title())
+            return im, title, line
+
+    ani = FuncAnimation(fig, update, init_func=init, frames=frames, interval=interval, blit=True)
 
     if save_as:
         ani.save(save_as, writer='ffmpeg')
